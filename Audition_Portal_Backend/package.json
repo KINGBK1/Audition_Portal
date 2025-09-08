@@ -1,0 +1,52 @@
+{
+  "name": "audition_portal_backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.ts",
+  "scripts": {
+    "dev": "nodemon server.ts",
+    "build": "npm install",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lugnitdgp/Audition_Portal_Backend.git"
+  },
+  "author": "GLUG",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lugnitdgp/Audition_Portal_Backend/issues"
+  },
+  "homepage": "https://github.com/lugnitdgp/Audition_Portal_Backend#readme",
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "@types/multer": "^1.4.13",
+    "bcrypt": "^5.1.1",
+    "cloudinary": "^1.41.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "express-session": "^1.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "multer-storage-cloudinary": "^4.0.0",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "prisma": "^5.22.0",
+    "pug": "^3.0.3"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/cookie-parser": "^1.4.7",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/express-session": "^1.18.0",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^24.0.4",
+    "@types/passport-google-oauth20": "^2.0.16",
+    "nodemon": "^3.1.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}

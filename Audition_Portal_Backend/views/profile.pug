@@ -1,0 +1,12 @@
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    title Profile
+  body 
+    h1 Hello, #{user.username}!
+    if user.picture
+      img(src=user.picture alt="Profile Picture")
+    p= user.email
+    a(href="/logout") Logout

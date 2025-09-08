@@ -1,0 +1,135 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  USER
+  MEMBER
+  ADMIN
+}
+
+enum QuestionType {
+  MCQ
+  Descriptive
+  Pictorial
+}
+
+model Option {
+  id         Int      @id @default(autoincrement())
+  text       String
+  isCorrect  Boolean
+  question   Question @relation(fields: [questionId], references: [id])
+  questionId Int
+
+  answers Answer[]
+}
+
+model User {
+  id             Int              @id @default(autoincrement())
+  username       String
+  email          String           @unique
+  googleId       String           @unique
+  picture        String?
+  contact        String?          @unique
+  gender         String?
+  specialization String?
+  role           Role            @default(USER)
+  round          Int?             @default(0)
+  roundTwo       RoundTwo[]
+  hasGivenExam   Boolean          @default(false)
+  auditionRounds AuditionRound[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  RoundTwoReview RoundTwoReview[]
+}
+
+model AuditionRound {
+  id     Int  @id @default(autoincrement())
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+
+  round          Int
+  finalSelection Boolean? // Whether user passed current round
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  reviews Review[]
+
+  @@unique([userId, round])
+}
+
+model Review {
+  id              Int           @id @default(autoincrement())
+  auditionRound   AuditionRound @relation(fields: [auditionRoundId], references: [id])
+  auditionRoundId Int
+
+  panel       Int
+  remarks     String?
+  evaluatedBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Question {
+  id          Int          @id @default(autoincrement())
+  description String
+  picture     String?
+  type        QuestionType
+  options     Option[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Answer {
+  id          Int      @id @default(autoincrement())
+  optionId    Int?
+  option      Option?  @relation(fields: [optionId], references: [id])
+  description String
+  userId      Int
+  questionId  Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model RoundTwo {
+  id          String          @id @default(uuid())
+  taskAlloted String
+  taskLink    String
+  status      String
+  addOns      String[]
+  tags        String[]
+  panel       Int             @default(0)
+  updatedAt   DateTime        @default(now()) @updatedAt
+  createdAt   DateTime        @default(now())
+  userId      Int             @unique
+  user        User            @relation(fields: [userId], references: [id])
+  review      RoundTwoReview?
+}
+
+model RoundTwoReview {
+  id         String    @id @default(uuid())
+  attendance Boolean
+  reviewedBy String
+  taskgiven  String
+  clubPrefer String
+  subDomain  String
+  hs_place   String
+  reviews    String[]
+  remarks    String
+  rating     Int
+  gd         Boolean
+  general    Boolean
+  forwarded  Boolean
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  userId     Int
+  user       User      @relation(fields: [userId], references: [id])
+  roundTwoId String?   @unique
+  roundTwo   RoundTwo? @relation(fields: [roundTwoId], references: [id])
+}

@@ -26,7 +26,8 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
       }
 
       // Save decoded user in req.user
-      (req as Request & { user?: any }).user = decoded;
+    (req as Request & { user?: any }).user = (decoded as any).user;
+
       next();
     }
   );

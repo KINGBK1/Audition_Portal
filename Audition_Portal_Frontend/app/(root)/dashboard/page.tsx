@@ -92,6 +92,7 @@ const Dashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // console.log(userInfo);
 
   async function logout(): Promise<void> {
     try {
@@ -102,8 +103,10 @@ const Dashboard = () => {
 
       const data = await res.json();
 
-      if (data.redirectUrl) {
-        window.location.href = data.redirectUrl; 
+      if (data.success) {
+        push('/');
+      } else {
+        alert('Logout failed');
       }
     } catch (error) {
       console.error('Error logging out:', error);
@@ -122,7 +125,7 @@ const Dashboard = () => {
             <Popover>
               <PopoverTrigger>
                 <Avatar className="hover:brightness-75 w-12 h-12">
-                  <AvatarImage src={userInfo?.picture} alt="image" />
+                  <AvatarImage src={userInfo.picture} alt="image" />
                   <AvatarFallback>Pic</AvatarFallback>
                 </Avatar>
               </PopoverTrigger>

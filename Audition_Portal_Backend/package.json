@@ -37,7 +37,7 @@
     "pug": "^3.0.3"
   },
   "devDependencies": {
-    "@prisma/internals": "^7.0.1",
+    "@prisma/internals": "^5.22.0",
     "@types/bcrypt": "^5.0.2",
     "@types/cookie-parser": "^1.4.7",
     "@types/cors": "^2.8.17",

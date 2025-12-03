@@ -24,11 +24,14 @@ console.log("Prisma DB URL:", process.env.DATABASE_URL);
 
 
 const prisma = new PrismaClient();
+
 app.use(cookieParser());
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_HOME_URL,
+    origin: "http://localhost:3000",
+    methods: "GET,POST,PUT,DELETE",
+    allowedHeaders: "Content-Type,Authorization",
     credentials: true,
   })
 );
@@ -123,8 +126,8 @@ app.put(
         );
         res.cookie("token", newToken, {
           httpOnly: true,
-          sameSite: "strict",
-          secure: process.env.NODE_ENV === "production", 
+          sameSite: "lax",
+          secure: false,
         });
 
         res.json(updatedUser);

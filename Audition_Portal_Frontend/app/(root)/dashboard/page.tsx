@@ -211,7 +211,7 @@ const Dashboard = () => {
                             <Button variant="link">Rules</Button>
                           </PopoverTrigger>
                           <PopoverContent className='dark'>
-                            <p>1. You will have 30 minutes to complete the test</p>
+                            <p>1. You will have 45 minutes to complete the test</p>
                             <p>2. The test consists of 10 questions</p>
                             <p>3. Each question carries 1 mark</p>
                             <p>4. There is no negative marking</p>

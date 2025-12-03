@@ -24,7 +24,7 @@ const Exam = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const { push } = useRouter()
+  const router = useRouter()
 
   const [questions, setQuestions] = useState<QuestionWithOptions[]>([])
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false)
@@ -64,7 +64,7 @@ const Exam = () => {
           variant: "destructive",
           description: "You have already given the exam.",
         })
-        push("/dashboard")
+        router.push("/dashboard")
       }
       
     } catch (e) {
@@ -77,6 +77,55 @@ const Exam = () => {
     fetchQuestions()
   }, [])
 
+
+  const handleAutoSubmit = async () => {
+  if (isSubmitting) return;
+  setIsSubmitting(true);
+
+  try {
+    const formattedAnswers = Object.entries(answers).map(([questionId, answer]) => ({
+      questionId: Number(questionId),
+      option: answer.optionId ? { id: answer.optionId } : undefined,
+      ans: answer.description || "",
+    }));
+
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/answer`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ answers: formattedAnswers }),
+      }
+    );
+
+    const data = await response.json();
+    console.log("submit response:", response.status, data);
+
+    if (!response.ok) {
+      throw new Error(data?.message || "Failed to submit exam");
+    }
+
+    toast({
+      className: "dark",
+      variant: "default",
+      description: "Exam submitted successfully.",
+    });
+
+    setIsExamStarted(false);
+
+    router.push("/dashboard");
+  } catch (error) {
+    console.error("Error submitting exam:", error);
+    toast({
+      className: "dark",
+      variant: "destructive",
+      description: "Failed to submit answers. Please try again.",
+    });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
 
 
@@ -219,55 +268,8 @@ const Exam = () => {
     // document.addEventListener("mousemove", handleMouseMove)
   }
 
-  const handleAutoSubmit = async () => {
-  if (isSubmitting) return
-  setIsSubmitting(true)
 
-  try {
-    const formattedAnswers = Object.entries(answers).map(([questionId, answer]) => ({
-      questionId: Number(questionId),
-      option: answer.optionId ? { id: answer.optionId } : undefined,
-      ans: answer.description || "",
-    }))
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/answer`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ answers: formattedAnswers }),
-    })
-
-    if (!response.ok) throw new Error("Failed to submit exam")
-
-    toast({
-      className: "dark",
-      variant: "default",
-      description: "Exam submitted successfully.",
-    })
-
-    // Cleanup listeners
-    document.removeEventListener("visibilitychange", handleVisibilityChange)
-    document.removeEventListener("contextmenu", handleContextMenu)
-    document.removeEventListener("keydown", handleKeyDown)
-    window.removeEventListener("blur", handleWindowBlur)
-    window.removeEventListener("beforeunload", handleBeforeUnload)
-    document.removeEventListener("mousemove", handleMouseMove)
-
-    setIsExamStarted(false)
-
-    // ✅ Redirect to dashboard
-    push("/dashboard")
-  } catch (error) {
-    console.error(error)
-    toast({
-      className: "dark",
-      variant: "destructive",
-      description: "Failed to submit answers. Please try again.",
-    })
-  } finally {
-    setIsSubmitting(false)
-  }
-}
 
   const submitAnswer = async (questionId: number) => {
     const answer = answers[questionId]
@@ -377,6 +379,7 @@ const Exam = () => {
       </div>
     )
   }
+  
 
   return (
     <div className="exam-container w-full">

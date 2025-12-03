@@ -19,11 +19,14 @@ const app = express();
 console.log("Prisma DB URL:", process.env.DATABASE_URL);
 
 const prisma = new PrismaClient();
+
 app.use(cookieParser());
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_HOME_URL,
+    origin: "http://localhost:3000",
+    methods: "GET,POST,PUT,DELETE",
+    allowedHeaders: "Content-Type,Authorization",
     credentials: true,
   })
 );

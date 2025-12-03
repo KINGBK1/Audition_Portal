@@ -1,16 +1,43 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { FaGithub } from 'react-icons/fa'
 import { HiPlus, HiCheck, HiExclamation, HiClock } from 'react-icons/hi'
 import { Navbar } from '../../../../components/Navbar'
 import { Footer } from '../../../../components/Footer'
+import { useRouter } from 'next/navigation'
+import { toast } from '@/components/ui/use-toast'
 
 export default function Round2() {
+  const router = useRouter()
   const [status, setStatus] = useState('incomplete')
   const [addOns, setAddOns] = useState<string[]>([])
   const [newAddOn, setNewAddOn] = useState('')
+  // Lines 62-81
+  const fetchUser = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
+        {
+          method: "GET",
+          credentials: "include"
+        })
+      const user = await res.json()
+
+      if (!user.hasGivenExam || user.round < 2) {
+        router.push("/dashboard")
+      }
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        description: "Failed to fetch user data, please refresh.",
+      })
+    }
+  }
+
+  useEffect(() => { 
+    fetchUser()
+  }, [])
 
   const handleAddMore = () => {
     if (newAddOn.trim()) {
@@ -22,7 +49,7 @@ export default function Round2() {
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-blue-900 to-black overflow-hidden relative">
       <Navbar />
-      
+
       {/* Gradient Circles */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
       <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
@@ -69,9 +96,9 @@ export default function Round2() {
                 <FaGithub className="mr-2" /> Drive/Github Link
               </h2>
               <div className="flex items-center bg-white bg-opacity-30 rounded-lg overflow-hidden">
-                <input 
+                <input
                   type="text"
-                  placeholder="Enter your Drive or Github link" 
+                  placeholder="Enter your Drive or Github link"
                   className="flex-grow bg-transparent text-white placeholder-white placeholder-opacity-70 px-4 py-2 focus:outline-none"
                 />
                 <button className="bg-blue-600 text-white px-4 py-2 hover:bg-blue-700 transition-colors duration-200">
@@ -86,7 +113,7 @@ export default function Round2() {
             className="bg-white bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl p-6 shadow-xl border border-blue-400 border-opacity-70"
           >
             <h2 className="text-2xl font-semibold text-white mb-4">Task Allotted</h2>
-            <textarea 
+            <textarea
               className="w-full h-32 bg-white bg-opacity-30 rounded-lg p-2 text-white placeholder-white placeholder-opacity-70 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Describe your task here..."
             />
@@ -98,14 +125,14 @@ export default function Round2() {
           >
             <h2 className="text-2xl font-semibold text-white mb-4">Add-ons</h2>
             <div className="space-y-2">
-              <input 
+              <input
                 type="text"
                 value={newAddOn}
                 onChange={(e) => setNewAddOn(e.target.value)}
-                placeholder="Enter any add-ons" 
+                placeholder="Enter any add-ons"
                 className="w-full bg-white bg-opacity-30 rounded-lg px-4 py-2 text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <button 
+              <button
                 onClick={handleAddMore}
                 className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center"
               >
@@ -133,22 +160,20 @@ export default function Round2() {
                 <button
                   key={option}
                   onClick={() => setStatus(option)}
-                  className={`w-full py-2 px-4 rounded-lg flex items-center justify-between ${
-                    status === option
+                  className={`w-full py-2 px-4 rounded-lg flex items-center justify-between ${status === option
                       ? 'bg-blue-600 text-white'
                       : 'bg-white bg-opacity-30 text-white'
-                  } hover:bg-blue-500 hover:text-white transition-colors duration-200`}
+                    } hover:bg-blue-500 hover:text-white transition-colors duration-200`}
                 >
                   <span className="capitalize">{option}</span>
                   {status === option && <HiCheck className="text-xl" />}
                 </button>
               ))}
             </div>
-            <div className={`mt-4 p-3 rounded-lg flex items-center justify-center text-white ${
-              status === 'done' ? 'bg-green-500' :
-              status === 'partially done' ? 'bg-yellow-500' :
-              'bg-red-500'
-            }`}>
+            <div className={`mt-4 p-3 rounded-lg flex items-center justify-center text-white ${status === 'done' ? 'bg-green-500' :
+                status === 'partially done' ? 'bg-yellow-500' :
+                  'bg-red-500'
+              }`}>
               {status === 'done' && <HiCheck className="mr-2 text-xl" />}
               {status === 'partially done' && <HiClock className="mr-2 text-xl" />}
               {status === 'incomplete' && <HiExclamation className="mr-2 text-xl" />}

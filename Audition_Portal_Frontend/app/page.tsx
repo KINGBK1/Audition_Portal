@@ -27,7 +27,7 @@ export default function Home() {
           router.push("/admin/profile");
         } 
         else {
-          router.push("/profile");
+          router.push("/dashboard");
         }
       } catch {
         setLoading(false);

@@ -23,10 +23,8 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
         return res.status(403).json({ message: "Forbidden: Invalid token" });
       }
 
-      const payload = decoded as JwtPayload;
-
-      // ✅ store JUST the inner user object
-      (req as Request & { user?: any }).user = (payload as any).user;
+      // Save decoded user in req.user
+    (req as Request & { user?: any }).user = (decoded as any).user;
 
       next();
     }

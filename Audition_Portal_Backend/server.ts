@@ -12,6 +12,7 @@ import { verifyAdmin, verifyJWT } from "./middleware/verifyJWT";
 import jwt from "jsonwebtoken";
 import { Request, Response } from "express";
 import round2Router from "./routes/round2";
+import adminRoundOneRouter from "./routes/adminRoundOne.route";
 require("dotenv").config();
 
 const app = express();
@@ -125,7 +126,7 @@ app.put(
         );
         res.cookie("token", newToken, {
           httpOnly: true,
-          sameSite: "strict",
+          sameSite: "lax",
           secure: process.env.NODE_ENV === "production",
         });
 
@@ -177,8 +178,6 @@ app.use("/auth", authRouter);
 app.use("/admin/login", registerRouter);
 app.use("/api/quiz", quizRouter);
 app.use("/api/round2", round2Router);
-
-import adminRoundOneRouter from "./routes/adminRoundOne.route";
 
 app.use("/api/admin/r1", adminRoundOneRouter);
 

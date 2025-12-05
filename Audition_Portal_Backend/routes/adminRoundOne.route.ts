@@ -1,5 +1,4 @@
 import { Router } from "express";
-require("dotenv").config();
 import {
   fetchAllCandidates,
   getCandidatePersonalDetails,
@@ -8,15 +7,14 @@ import {
   submitEvaluation,
 } from "../controllers/adminRoundOne.controller";
 
+import { verifyAdmin } from "../middleware/verifyJWT";  
+
 const router = Router();
 
-// Routes are not yet protected
-router.route("/candidate").get(fetchAllCandidates);
-router.route("/responses/:userId").get(getCandidateResponses);
-router.route("/candidate-personal-details/:userId").get(getCandidatePersonalDetails);
-router.route("/evaluate").post(submitEvaluation);
-router.route("/progress/:userId").get(getCandidateProgress);
-
-
+router.get("/candidate", verifyAdmin, fetchAllCandidates);
+router.get("/responses/:userId", verifyAdmin, getCandidateResponses);
+router.post("/evaluate", verifyAdmin, submitEvaluation);
+router.get("/candidate-personal-details/:userId", verifyAdmin, getCandidatePersonalDetails);
+router.get("/progress/:userId", verifyAdmin, getCandidateProgress);
 
 export default router;

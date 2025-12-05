@@ -1,32 +1,19 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
-enum Role {
-  USER
-  MEMBER
-  ADMIN
-}
-
-enum QuestionType {
-  MCQ
-  Descriptive
-  Pictorial
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Option {
   id         Int      @id @default(autoincrement())
   text       String
   isCorrect  Boolean
-  question   Question @relation(fields: [questionId], references: [id])
   questionId Int
-
-  answers Answer[]
+  answers    Answer[]
+  question   Question @relation(fields: [questionId], references: [id])
 }
 
 model User {
@@ -34,67 +21,65 @@ model User {
   username       String
   email          String           @unique
   googleId       String           @unique
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
   picture        String?
   contact        String?          @unique
   gender         String?
   specialization String?
-  role           Role            @default(USER)
   round          Int?             @default(0)
-  roundTwo       RoundTwo[]
+  role           Role             @default(USER)
   hasGivenExam   Boolean          @default(false)
   auditionRounds AuditionRound[]
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  roundTwo       RoundTwo?
   RoundTwoReview RoundTwoReview[]
+  quizAttempts   QuizAttempt[]
 }
 
 model AuditionRound {
-  id     Int  @id @default(autoincrement())
-  user   User @relation(fields: [userId], references: [id])
-  userId Int
-
+  id             Int      @id @default(autoincrement())
+  userId         Int
   round          Int
-  finalSelection Boolean? // Whether user passed current round
+  finalSelection Boolean?
+  panel          Int?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-
-  reviews Review[]
+  user           User     @relation(fields: [userId], references: [id])
+  reviews        Review[]
 
   @@unique([userId, round])
 }
 
 model Review {
   id              Int           @id @default(autoincrement())
-  auditionRound   AuditionRound @relation(fields: [auditionRoundId], references: [id])
   auditionRoundId Int
-
-  panel       Int
-  remarks     String?
-  evaluatedBy String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  panel           Int
+  remarks         String?
+  evaluatedBy     String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  auditionRound   AuditionRound @relation(fields: [auditionRoundId], references: [id])
 }
 
 model Question {
   id          Int          @id @default(autoincrement())
   description String
   picture     String?
-  type        QuestionType
-  options     Option[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  type        QuestionType
+  options     Option[]
 }
 
 model Answer {
   id          Int      @id @default(autoincrement())
-  optionId    Int?
-  option      Option?  @relation(fields: [optionId], references: [id])
   description String
-  userId      Int
-  questionId  Int
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  userId      Int
+  questionId  Int
+  optionId    Int?
+  option      Option?  @relation(fields: [optionId], references: [id])
 }
 
 model RoundTwo {
@@ -103,11 +88,11 @@ model RoundTwo {
   taskLink    String
   status      String
   addOns      String[]
-  tags        String[]
-  panel       Int             @default(0)
-  updatedAt   DateTime        @default(now()) @updatedAt
   createdAt   DateTime        @default(now())
   userId      Int             @unique
+  panel       Int             @default(0)
+  tags        String[]
+  updatedAt   DateTime        @default(now()) @updatedAt
   user        User            @relation(fields: [userId], references: [id])
   review      RoundTwoReview?
 }
@@ -129,7 +114,28 @@ model RoundTwoReview {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   userId     Int
-  user       User      @relation(fields: [userId], references: [id])
   roundTwoId String?   @unique
   roundTwo   RoundTwo? @relation(fields: [roundTwoId], references: [id])
+  user       User      @relation(fields: [userId], references: [id])
+}
+
+model QuizAttempt {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  score     Int
+  total     Int
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  USER
+  MEMBER
+  ADMIN
+}
+
+enum QuestionType {
+  MCQ
+  Descriptive
+  Pictorial
 }

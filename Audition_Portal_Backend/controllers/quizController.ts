@@ -71,39 +71,53 @@ const createQuizzes = async (req: AuthenticatedRequest, res: Response): Promise<
 
 const answerQuiz = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   const user = req.user;
-  
 
-  if (!user) {
+  if (!user || (!user.id && !user.email)) {
+    console.error("answerQuiz: Missing user or user.id/email on req.user:", user);
     return res.status(401).json({ message: "User not authenticated." });
   }
 
+  const userEmail: string | undefined = user.email;
+  const userIdFromToken: number | undefined = user.id;
+
   const { answers } = req.body;
-  console.log(" Exam submission request received", req.body);
-  console.log(" Authenticated user info:", user);
+
+  console.log("Exam submission request received:", JSON.stringify(req.body, null, 2));
+  console.log("Authenticated user (from token):", userEmail, "id:", userIdFromToken);
 
   if (!answers || !Array.isArray(answers)) {
     return res.status(400).json({ message: "Answers are required." });
   }
 
   try {
+    // 🔥 Look up by email first (more stable across DB resets)
+    let existingUser = userEmail
+      ? await prisma.user.findUnique({ where: { email: userEmail } })
+      : null;
 
-if (!user?.email) {
-  return res.status(401).json({ message: "User email missing in token." });
-}
-    // Check if the user actually exists in the DB
-    const existingUser = await prisma.user.findUnique({
-      where: { email:user.email }, // safer than using id
-    });
+    // fallback to id if email lookup fails but id exists
+    if (!existingUser && userIdFromToken) {
+      existingUser = await prisma.user.findUnique({ where: { id: userIdFromToken } });
+    }
 
     if (!existingUser) {
-      console.error("User not found in the database with email:", user.email);
+      console.error(
+        "User not found in the database with email/id:",
+        userEmail,
+        userIdFromToken
+      );
       return res.status(404).json({ message: "User not found in the database." });
     }
 
+    const userId = existingUser.id; // ✅ use DB-confirmed id from here
+
+    // -------- store answers (unchanged) --------
     for (const answer of answers) {
       const { questionId, option, ans } = answer;
 
-      const question = await prisma.question.findUnique({ where: { id: questionId } });
+      const question = await prisma.question.findUnique({
+        where: { id: questionId },
+      });
       if (!question) continue;
 
       await prisma.answer.create({
@@ -111,25 +125,66 @@ if (!user?.email) {
           optionId: option?.id || null,
           description: ans || "",
           questionId,
-          userId: existingUser.id, // use confirmed user.id
+          userId,
         },
       });
     }
 
+    // -------- compute score (unchanged) --------
+    const mcqOptionIds = answers
+      .map((a: any) => a.option?.id)
+      .filter((id: number | undefined): id is number => typeof id === "number");
+
+    let score = 0;
+    let total = mcqOptionIds.length;
+
+    if (mcqOptionIds.length > 0) {
+      const options = await prisma.option.findMany({
+        where: { id: { in: mcqOptionIds } },
+        select: { id: true, isCorrect: true },
+      });
+
+      const optionMap = new Map<number, boolean>();
+      options.forEach((opt) => optionMap.set(opt.id, opt.isCorrect));
+
+      for (const ans of answers) {
+        const optId = ans.option?.id as number | undefined;
+        if (!optId) continue;
+
+        const isCorrect = optionMap.get(optId);
+        if (isCorrect === true) {
+          score += 1;
+        }
+      }
+    }
+
+    // -------- save attempt & mark hasGivenExam --------
+    const attempt = await prisma.quizAttempt.create({
+      data: {
+        userId,
+        score,
+        total,
+      },
+    });
+
     await prisma.user.update({
-      where: { email: user.email },
+      where: { id: userId },
       data: { hasGivenExam: true },
     });
 
-    return res.status(201).json({ message: "Exam submitted successfully" });
+    console.log("Exam submitted OK — score:", score, "total:", total);
+
+    return res.status(201).json({
+      message: "Exam submitted successfully",
+      score,
+      total,
+      attemptId: attempt.id,
+    });
   } catch (err: any) {
     console.error("Error in answerQuiz:", err);
     return res.status(500).json({ message: err.message || "Internal Server Error" });
   }
 };
-
-
-
 
 
 const getQuizz = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {

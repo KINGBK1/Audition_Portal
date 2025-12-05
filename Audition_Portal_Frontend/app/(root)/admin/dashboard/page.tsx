@@ -146,14 +146,17 @@ useEffect(() => {
       const usersJson = await usersRes.json();
       const questionsJson = await questionsRes.json();
 
-      // ApiResponse always returns { statusCode, data, message }
-      const usersData: User[] = usersJson.data || [];
-      const questionsData: Question[] = questionsJson.data || [];
+      const usersData: User[] = Array.isArray(usersJson)
+        ? usersJson
+        : (usersJson.data || []);
+
+      const questionsData: Question[] = Array.isArray(questionsJson)
+        ? questionsJson
+        : (questionsJson.data || []);
 
       setUsers(usersData);
       setQuestions(questionsData);
 
-      // Calculate scores for users who have taken the exam
       const examTakenUsers = usersData.filter((u) => u.hasGivenExam);
       if (examTakenUsers.length > 0) {
         calculateAllScores(examTakenUsers, questionsData);
@@ -187,48 +190,64 @@ useEffect(() => {
     setUserScores(scores)
   }
 
-  // Calculate individual user score
   const calculateUserScore = async (userId: number, questionsData: Question[]): Promise<UserScore> => {
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/responses/${userId}`, {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/responses/${userId}`,
+      {
         method: "GET",
         credentials: "include",
-      })
-
-      const json = await res.json()
-      const answers: Answer[] = json.data
-
-      let correct = 0
-      const total = questionsData.filter((q) => q.type === "MCQ" || q.type === "Pictorial").length
-
-      answers.forEach((ans) => {
-        const question = questionsData.find((q) => q.id === ans.questionId)
-        if (question && (question.type === "MCQ" || question.type === "Pictorial")) {
-          const correctOption = question.options.find((o) => o.isCorrect)
-          if (correctOption && ans.optionId === correctOption.id) {
-            correct++
-          }
-        }
-      })
-
-      const percentage = total > 0 ? Math.round((correct / total) * 100) : 0
-
-      return {
-        userId,
-        correct,
-        total,
-        percentage,
       }
-    } catch (error) {
-      console.error(`Error fetching responses for user ${userId}:`, error)
-      return {
-        userId,
-        correct: 0,
-        total: questionsData.filter((q) => q.type === "MCQ" || q.type === "Pictorial").length,
-        percentage: 0,
+    );
+
+    const json = await res.json();
+    const answers: Answer[] = json.data;
+
+    const answerMap = new Map<number, Answer>();
+    for (const ans of answers) {
+      answerMap.set(ans.questionId, ans);
+    }
+
+    const mcqQuestions = questionsData.filter(
+      (q) => q.type === "MCQ" || q.type === "Pictorial"
+    );
+    const total = mcqQuestions.length;
+
+    let correct = 0;
+
+    for (const question of mcqQuestions) {
+      const userAnswer = answerMap.get(question.id);
+      if (!userAnswer || !userAnswer.optionId) continue;
+
+      const correctOption = question.options.find((o) => o.isCorrect);
+      if (correctOption && userAnswer.optionId === correctOption.id) {
+        correct++;
       }
     }
+
+    const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+    return {
+      userId,
+      correct,
+      total,
+      percentage,
+    };
+  } catch (error) {
+    console.error(`Error fetching responses for user ${userId}:`, error);
+    const total = questionsData.filter(
+      (q) => q.type === "MCQ" || q.type === "Pictorial"
+    ).length;
+
+    return {
+      userId,
+      correct: 0,
+      total,
+      percentage: 0,
+    };
   }
+};
+
 
   // Filter logic
   useEffect(() => {

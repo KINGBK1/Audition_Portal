@@ -23,7 +23,7 @@ export function middleware(request: NextRequest) {
 
     // Add admin role check here if needed
     //   In admin also scheck that the user has admin role
-    const fetchUserRole = async () => {
+    /*const fetchUserRole = async () => {
     try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
             {
@@ -47,7 +47,7 @@ export function middleware(request: NextRequest) {
     // Redirect to dashboard if accessing auth page with token
     if (isAuthPage && token) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
-    }
+    }*/
 
 
     return NextResponse.next()

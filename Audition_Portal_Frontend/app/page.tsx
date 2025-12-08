@@ -27,7 +27,13 @@ export default function Home() {
         console.log("Verified user:", user);
         if (user.role === "ADMIN") {
           router.push("/admin/profile");
+<<<<<<< Updated upstream
         } else {
+=======
+          console.log("admin has logged in !!!")
+        } 
+        else {
+>>>>>>> Stashed changes
           router.push("/dashboard");
         }
       } catch (err) {

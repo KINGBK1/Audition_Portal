@@ -1,3 +1,4 @@
+// frontend/middleware.ts
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
@@ -20,52 +21,62 @@ function decodeJWT(token: string) {
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value
-  console.log('Middleware executed for path:', request.nextUrl.pathname)
+  const path = request.nextUrl.pathname
 
-  const isAuthPage = request.nextUrl.pathname === '/'
-  const isProtectedRoute = request.nextUrl.pathname.startsWith('/dashboard') ||
-    request.nextUrl.pathname.startsWith('/exam') ||
-    request.nextUrl.pathname.startsWith('/profile') ||
-    request.nextUrl.pathname.startsWith('/round-info')
+  console.log('Middleware executed for path:', path)
 
-  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
+  const isAuthPage = path === '/'
+  const isAdminRoute = path.startsWith('/admin')
+  const isUserRoute = path.startsWith('/dashboard') || 
+                      path.startsWith('/exam') || 
+                      path.startsWith('/profile') || 
+                      path.startsWith('/round-info')
 
-  // Redirect to home if accessing protected route without token
-  if (isProtectedRoute && !token) {
+  // No token - redirect all protected routes to home
+  if (!token && (isAdminRoute || isUserRoute)) {
     console.log('No token, redirecting to home')
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  // Check admin role for admin routes
-  if (isAdminRoute) {
-    if (!token) {
-      console.log('Admin route: No token, redirecting to home')
-      return NextResponse.redirect(new URL('/', request.url))
-    }
-    
+  // Has token
+  if (token) {
     const decoded = decodeJWT(token)
-    console.log('Decoded token:', decoded)
+    const isAdmin = decoded?.user?.role === 'ADMIN'
     
-    // Check if user has ADMIN role - role is nested in user object
-    if (!decoded || !decoded.user || decoded.user.role !== 'ADMIN') {
-      console.log('Not an admin, redirecting to dashboard')
-      return NextResponse.redirect(new URL('/dashboard', request.url))
-    }
-  }
+    console.log('User role:', decoded?.user?.role, 'isAdmin:', isAdmin)
 
-  // Redirect to dashboard if accessing auth page with token
-  if (isAuthPage && token) {
-    const decoded = decodeJWT(token)
-    // Redirect admin to admin dashboard, regular users to user dashboard
-    if (decoded?.user?.role === 'ADMIN') {
+    // On auth page - redirect based on role
+    if (isAuthPage) {
+      if (isAdmin) {
+        return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+      } else {
+        return NextResponse.redirect(new URL('/dashboard', request.url))
+      }
+    }
+
+    // Admin trying to access user routes - redirect to admin dashboard
+    if (isAdmin && isUserRoute) {
+      console.log('Admin accessing user route, redirecting to /admin/dashboard')
       return NextResponse.redirect(new URL('/admin/dashboard', request.url))
     }
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+
+    // Regular user trying to access admin routes - redirect to user dashboard
+    if (!isAdmin && isAdminRoute) {
+      console.log('Regular user accessing admin route, redirecting to /dashboard')
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
   }
 
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/exam/:path*', '/profile/:path*', '/round-info/:path*', '/admin/:path*', '/']
+  matcher: [
+    '/dashboard/:path*', 
+    '/exam/:path*', 
+    '/profile/:path*', 
+    '/round-info/:path*', 
+    '/admin/:path*', 
+    '/'
+  ]
 }

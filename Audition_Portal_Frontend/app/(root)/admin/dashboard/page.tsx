@@ -118,24 +118,24 @@ export default function AdminDashboard() {
   const router = useRouter()
 
   // Verify that user is admin or not:
-  useEffect(() => {
-  const verifyAdmin = async () => {
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/verify-admin`, {
-        method: "GET",
-        credentials: "include"
-      })
+//   useEffect(() => {
+//   const verifyAdmin = async () => {
+//     try {
+//       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/verify-admin`, {
+//         method: "GET",
+//         credentials: "include"
+//       })
       
-      if (!res.ok || res.status === 403) {
-        router.push('/dashboard')
-      }
-    } catch (e) {
-      router.push('/dashboard')
-    }
-  }
+//       if (!res.ok || res.status === 403) {
+//         router.push('/dashboard')
+//       }
+//     } catch (e) {
+//       router.push('/dashboard')
+//     }
+//   }
   
-  verifyAdmin()
-}, [router])
+//   verifyAdmin()
+// }, [router])
 
 
 

@@ -33,7 +33,6 @@
     "multer-storage-cloudinary": "^4.0.0",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
-    "prisma": "^5.22.0",
     "pug": "^3.0.3"
   },
   "devDependencies": {
@@ -46,6 +45,7 @@
     "@types/node": "^24.0.4",
     "@types/passport-google-oauth20": "^2.0.16",
     "nodemon": "^3.1.3",
+    "prisma": "^5.22.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
   }

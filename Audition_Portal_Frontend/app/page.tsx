@@ -20,22 +20,25 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
+    console.log("Home mounted");
     const checkAuth = async () => {
       try {
         const user = await dispatch(verifyToken()).unwrap();
+        console.log("Verified user:", user);
         if (user.role === "ADMIN") {
           router.push("/admin/profile");
-        } 
-        else {
+        } else {
           router.push("/dashboard");
         }
-      } catch {
+      } catch (err) {
+        console.error("verifyToken failed", err);
         setLoading(false);
       }
     };
 
     checkAuth();
   }, [dispatch, router]);
+
 
   function Signin() {
     const oauthUrl = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_URL;

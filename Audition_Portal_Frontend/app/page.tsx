@@ -12,7 +12,12 @@ import Loader from "@/components/Loader";
 import { useAppDispatch } from "@/lib/hooks";
 import { verifyToken } from "@/lib/store/features/auth/authSlice";
 
-const slugs = [ "typescript","javascript","dart","java","react","flutter","android","html5","css3","nodedotjs","express","nextdotjs","prisma","amazonaws","postgresql","firebase","nginx","vercel","testinglibrary","jest","cypress","docker","git","jira","github","gitlab","visualstudiocode","androidstudio","sonarqube","figma", ];
+const slugs = [ 
+  "typescript","javascript","dart","java","react","flutter","android","html5","css3",
+  "nodedotjs","express","nextdotjs","prisma","amazonaws","postgresql","firebase","nginx",
+  "vercel","testinglibrary","jest","cypress","docker","git","jira","github","gitlab",
+  "visualstudiocode","androidstudio","sonarqube","figma", 
+];
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -20,16 +25,21 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
+    console.log("Home mounted");
     const checkAuth = async () => {
       try {
         const user = await dispatch(verifyToken()).unwrap();
+        console.log("Verified user:", user);
+        
         if (user.role === "ADMIN") {
+          console.log("Admin has logged in, redirecting to admin profile");
           router.push("/admin/profile");
-        } 
-        else {
+        } else {
+          console.log("Regular user has logged in, redirecting to dashboard");
           router.push("/dashboard");
         }
-      } catch {
+      } catch (err) {
+        console.error("verifyToken failed (user not logged in)", err);
         setLoading(false);
       }
     };

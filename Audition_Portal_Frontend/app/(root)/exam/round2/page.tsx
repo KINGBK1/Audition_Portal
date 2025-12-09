@@ -9,12 +9,20 @@ import { Footer } from '../../../../components/Footer'
 import { useRouter } from 'next/navigation'
 import { toast } from '@/components/ui/use-toast'
 
+
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+import { toast } from '@/components/ui/use-toast'
+
 export default function Round2() {
-  const router = useRouter()
+  const router = useRouter();
   const [status, setStatus] = useState('incomplete')
   const [addOns, setAddOns] = useState<string[]>([])
   const [newAddOn, setNewAddOn] = useState('')
-  // Lines 62-81
+  const [taskLink, setTaskLink] = useState('')
+  const [taskAlloted, setTaskAlloted] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  
   const fetchUser = async () => {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
@@ -43,6 +51,76 @@ export default function Round2() {
     if (newAddOn.trim()) {
       setAddOns([...addOns, newAddOn.trim()])
       setNewAddOn('')
+    }
+  }
+
+  const handleRemoveAddOn = (index: number) => {
+    setAddOns(addOns.filter((_, i) => i !== index))
+  }
+
+  const handleSubmit = async () => {
+    // Validation
+    if (!taskLink.trim()) {
+      toast({
+        variant: "destructive",
+        description: "Please enter a GitHub/Drive link",
+      })
+      return
+    }
+
+    if (!taskAlloted.trim()) {
+      toast({
+        variant: "destructive",
+        description: "Please describe your task",
+      })
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/round2`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          taskLink,
+          taskAlloted,
+          status,
+          addOns,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        toast({
+          variant: "destructive",
+          description: data.error || "Failed to submit Round 2",
+        })
+        return
+      }
+
+      toast({
+        description: "Round 2 submission saved successfully!",
+      })
+
+      // Reset form
+      setTaskLink('')
+      setTaskAlloted('')
+      setAddOns([])
+      setStatus('incomplete')
+      setNewAddOn('')
+    } catch (error) {
+      console.error('Submission error:', error)
+      toast({
+        variant: "destructive",
+        description: "An error occurred while submitting",
+      })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -98,13 +176,28 @@ export default function Round2() {
               <div className="flex items-center bg-white bg-opacity-30 rounded-lg overflow-hidden">
                 <input
                   type="text"
+                  value={taskLink}
+                  onChange={(e) => setTaskLink(e.target.value)}
                   placeholder="Enter your Drive or Github link"
                   className="flex-grow bg-transparent text-white placeholder-white placeholder-opacity-70 px-4 py-2 focus:outline-none"
                 />
-                <button className="bg-blue-600 text-white px-4 py-2 hover:bg-blue-700 transition-colors duration-200">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    if (taskLink.trim()) {
+                      toast({
+                        description: "Link added",
+                      })
+                    }
+                  }}
+                  className="bg-blue-600 text-white px-4 py-2 hover:bg-blue-700 transition-colors duration-200"
+                >
                   Add
                 </button>
               </div>
+              {taskLink && (
+                <p className="text-sm text-green-400 mt-2">✓ Link added: {taskLink}</p>
+              )}
             </motion.div>
           </div>
 
@@ -114,6 +207,8 @@ export default function Round2() {
           >
             <h2 className="text-2xl font-semibold text-white mb-4">Task Allotted</h2>
             <textarea
+              value={taskAlloted}
+              onChange={(e) => setTaskAlloted(e.target.value)}
               className="w-full h-32 bg-white bg-opacity-30 rounded-lg p-2 text-white placeholder-white placeholder-opacity-70 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Describe your task here..."
             />
@@ -142,8 +237,15 @@ export default function Round2() {
             {addOns.length > 0 && (
               <ul className="mt-4 space-y-2">
                 {addOns.map((addOn, index) => (
-                  <li key={index} className="text-white bg-white bg-opacity-30 rounded-lg px-4 py-2">
-                    {addOn}
+                  <li key={index} className="text-white bg-white bg-opacity-30 rounded-lg px-4 py-2 flex items-center justify-between">
+                    <span>{addOn}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveAddOn(index)}
+                      className="text-red-400 hover:text-red-600 ml-2"
+                    >
+                      ✕
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -184,11 +286,13 @@ export default function Round2() {
 
         <div className="mt-12 text-center">
           <motion.button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
             whileHover={{ scale: 1.05, boxShadow: '0 0 20px #4299e1' }}
             whileTap={{ scale: 0.95 }}
-            className="px-8 py-4 text-lg font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg border border-blue-400 border-opacity-70"
+            className="px-8 py-4 text-lg font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg border border-blue-400 border-opacity-70 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Submit
+            {isSubmitting ? 'Submitting...' : 'Submit'}
           </motion.button>
         </div>
       </motion.div>

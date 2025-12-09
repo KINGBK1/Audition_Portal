@@ -3,12 +3,10 @@ import { Request, Response, NextFunction } from "express";
 import { Role } from "../types";
 require("dotenv").config();
 
-// Helper to extract token
 const getTokenFromCookies = (req: Request): string | undefined => {
   return req.cookies?.token;
 };
 
-// Middleware to verify general JWT
 export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
   const token = getTokenFromCookies(req);
 
@@ -19,14 +17,15 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
   jwt.verify(
     token,
     process.env.ACCESS_TOKEN_SECRET as Secret,
-    (err: jwt.VerifyErrors | null, decoded: string | JwtPayload | undefined) => {
-      if (err) {
+    (err, decoded) => {
+      if (err || !decoded) {
         console.error("JWT verification error:", err);
         return res.status(403).json({ message: "Forbidden: Invalid token" });
       }
 
       // Save decoded user in req.user
-      (req as Request & { user?: any }).user = decoded;
+    (req as Request & { user?: any }).user = (decoded as any).user;
+
       next();
     }
   );

@@ -10,10 +10,6 @@ import { useRouter } from 'next/navigation'
 import { toast } from '@/components/ui/use-toast'
 
 
-import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
-import { toast } from '@/components/ui/use-toast'
-
 export default function Round2() {
   const router = useRouter();
   const [status, setStatus] = useState('incomplete')

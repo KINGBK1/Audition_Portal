@@ -127,6 +127,32 @@ model QuizAttempt {
   total     Int
   createdAt DateTime @default(now())
 }
+
+model RoundThree {
+  id          String    @id @default(uuid())
+  status      String
+  createdAt   DateTime  @default(now())
+  userId      Int       @unique
+  panel       Int       @default(0)
+  tags        String[]
+  updatedAt   DateTime  @default(now()) @updatedAt
+  user        User      @relation(fields: [userId], references: [id])
+  name                String
+  summary             String?
+  confidence          Int?
+  feedback            String?
+  roles               String?
+  inclusivity         Int?
+  initiative          Int?
+  creativity          Int?
+  practicality        Int?
+  overall             Int?
+  ratingGivenToOthers Int?
+  roleInGD            String?
+  flaws               String?
+  eventRating         Int?
+  finalStatus         String?
+}
 model RoundFour{
   id                  String       
   name                String
@@ -152,4 +178,3 @@ enum QuestionType {
   Descriptive
   Pictorial
 }
-

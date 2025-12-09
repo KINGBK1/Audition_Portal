@@ -125,9 +125,11 @@ const Dashboard = () => {
             <Popover>
               <PopoverTrigger>
                 <Avatar className="hover:brightness-75 w-12 h-12">
-                  <AvatarImage  alt="image" /> // dummy image
-                  <AvatarFallback>Pic</AvatarFallback>
-                </Avatar>
+                <AvatarImage src={userInfo?.picture || undefined} alt="image" />
+                <AvatarFallback>
+                  {userInfo?.username?.charAt(0).toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
               </PopoverTrigger>
 
               <PopoverContent className='dark'>

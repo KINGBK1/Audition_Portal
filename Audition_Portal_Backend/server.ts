@@ -2,8 +2,7 @@ import express from "express";
 import cors from "cors";
 import passport from "./passport/passport";
 import session from "express-session";
-import { PrismaClient } from "@prisma/client";
-import type { User } from "@prisma/client";
+import { PrismaClient, Prisma, User } from "@prisma/client"; // Added 'Prisma' for error handling
 import registerRouter from "./routes/register";
 import authRouter from "./routes/auth";
 import quizRouter from "./routes/quiz";
@@ -13,22 +12,22 @@ import { verifyAdmin, verifyJWT } from "./middleware/verifyJWT";
 import jwt from "jsonwebtoken";
 import { Request, Response } from "express";
 import round2Router from "./routes/round2";
-require('dotenv').config();
-const app = express();
+import adminRoundOneRouter from "./routes/adminRoundOne.route";
+require("dotenv").config();
 
-// interface AuthenticatedRequest extends Request {
-//   user?: User;
-// }
+const app = express();
 
 console.log("Prisma DB URL:", process.env.DATABASE_URL);
 
-
 const prisma = new PrismaClient();
+
 app.use(cookieParser());
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_HOME_URL,
+    origin: "http://localhost:3002",
+    methods: "GET,POST,PUT,DELETE",
+    allowedHeaders: "Content-Type,Authorization",
     credentials: true,
   })
 );
@@ -58,7 +57,7 @@ async function connectToDatabase() {
 app.get("/api/user", verifyJWT, async (req: Request, res: Response) => {
   try {
     const userWithId = (req as Request & { user?: User }).user;
-    
+
     if (!userWithId?.id) {
       return res.status(401).json({ error: "User not authenticated" });
     }
@@ -78,7 +77,6 @@ app.get("/api/user", verifyJWT, async (req: Request, res: Response) => {
   }
 });
 
-
 app.get("/api/verify-admin", verifyAdmin, (req, res) => {
   res.json({
     message: "Token is valid",
@@ -86,7 +84,11 @@ app.get("/api/verify-admin", verifyAdmin, (req, res) => {
   });
 });
 
-app.get("/");
+// Added a basic response for the root path
+app.get("/", (req, res) => {
+  res.send("API is running.");
+});
+
 app.get("/api/verify-token", verifyJWT, (req, res) => {
   // If the token is valid, the verifyJWT middleware will allow this function to run
   res.json({
@@ -104,7 +106,8 @@ app.put(
     try {
       // Get user ID from authenticated request
       if (req?.user) {
-        const userId = (req.user as any)?.id as User["id"];
+        // Use destructuring and type assertion for clarity
+        const { id: userId } = req.user as User;
 
         // Update user in database using Prisma
         const updatedUser = await prisma.user.update({
@@ -123,8 +126,8 @@ app.put(
         );
         res.cookie("token", newToken, {
           httpOnly: true,
-          sameSite: "strict",
-          secure: process.env.NODE_ENV === "production", 
+          sameSite: "lax",
+          secure: process.env.NODE_ENV === "production",
         });
 
         res.json(updatedUser);
@@ -133,38 +136,52 @@ app.put(
       }
     } catch (error) {
       console.error("Error updating user info:", error);
-      res.status(500).json({ error: "Failed to update user info" });
+
+      // --- IMPROVED ERROR HANDLING ---
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        // P2025: Record to update was not found
+        if (error.code === "P2025") {
+          return res
+            .status(404)
+            .json({ error: "User not found or session invalid." });
+        }
+        // P2002: Unique constraint failure (e.g., trying to set contact to an already existing number)
+        if (error.code === "P2002") {
+          return res
+            .status(400)
+            .json({
+              error: "Validation failed: A user with this data already exists.",
+            });
+        }
+        // General Prisma validation error (e.g., wrong type)
+        return res
+          .status(400)
+          .json({ error: "Invalid data provided for update." });
+      }
+
+      // 500 for all other, unexpected errors
+      res
+        .status(500)
+        .json({
+          error: "Failed to update user info due to an internal server issue.",
+        });
     }
   }
 );
-
-// app.get("/profile", (req, res) => {
-//   if (req.isAuthenticated() && req.user) {
-//     res.render("profile", { user: req.user });
-//   } else {
-//     res.redirect("/login");
-//   }
-// });
 
 app.get("/admin/profile", verifyAdmin, (req, res) => {
   res.redirect(process.env.FRONTEND_HOME_URL + "/admin/profile");
 });
 
-// app.set("view engine", "pug");
 app.use("/pic", picRouter);
 app.use("/auth", authRouter);
 app.use("/admin/login", registerRouter);
 app.use("/api/quiz", quizRouter);
 app.use("/api/round2", round2Router);
 
-import adminRoundOneRouter from "./routes/adminRoundOne.route"
-
-app.use("/api/admin/r1",adminRoundOneRouter)
-
+app.use("/api/admin/r1", adminRoundOneRouter);
 
 app.listen(8080, () => {
   connectToDatabase();
   console.log("Server is running on port 8080");
 });
-
-

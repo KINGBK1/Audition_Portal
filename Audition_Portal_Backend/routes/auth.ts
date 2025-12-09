@@ -39,17 +39,22 @@ router.get(
 );
 
 // LOGOUT
-router.get("/logout", (req: Request, res: Response) => {
-  res.clearCookie("token");
+router.get("/logout", (req, res) => {
+  req.logout((err) => {
+    if (err) {
+      return res.status(500).json({ success: false, message: "Logout failed" });
+    }
 
-  const reqWithSession = req as typeof req & { session?: any };
-  if (reqWithSession.session) {
-    reqWithSession.session.destroy(() => {
-      res.redirect(process.env.FRONTEND_HOME_URL || "/login");
+    // Clear the token cookie
+    res.clearCookie("token", {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: process.env.NODE_ENV === "production",
     });
-  } else {
-    res.redirect(process.env.FRONTEND_HOME_URL || "/login");
-  }
+
+    // DON'T redirect - return JSON instead
+    res.json({ success: true, message: "Logged out successfully" });
+  });
 });
 
 // VERIFY JWT

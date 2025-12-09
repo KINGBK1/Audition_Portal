@@ -92,6 +92,7 @@ const Dashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // console.log(userInfo);
 
   async function logout(): Promise<void> {
     try {
@@ -102,8 +103,10 @@ const Dashboard = () => {
 
       const data = await res.json();
 
-      if (data.redirectUrl) {
-        window.location.href = data.redirectUrl; 
+      if (data.success) {
+        push('/');
+      } else {
+        alert('Logout failed');
       }
     } catch (error) {
       console.error('Error logging out:', error);
@@ -122,7 +125,7 @@ const Dashboard = () => {
             <Popover>
               <PopoverTrigger>
                 <Avatar className="hover:brightness-75 w-12 h-12">
-                  <AvatarImage src={userInfo?.picture} alt="image" />
+                  <AvatarImage  alt="image" /> // dummy image
                   <AvatarFallback>Pic</AvatarFallback>
                 </Avatar>
               </PopoverTrigger>
@@ -211,7 +214,7 @@ const Dashboard = () => {
                             <Button variant="link">Rules</Button>
                           </PopoverTrigger>
                           <PopoverContent className='dark'>
-                            <p>1. You will have 30 minutes to complete the test</p>
+                            <p>1. You will have 45 minutes to complete the test</p>
                             <p>2. The test consists of 10 questions</p>
                             <p>3. Each question carries 1 mark</p>
                             <p>4. There is no negative marking</p>

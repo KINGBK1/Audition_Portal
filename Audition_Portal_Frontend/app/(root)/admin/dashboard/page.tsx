@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -113,60 +114,78 @@ export default function AdminDashboard() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [selectedPanel, setSelectedPanel] = useState<string>("")
   const [loadingScores, setLoadingScores] = useState<number[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   // Fetch initial data
-useEffect(() => {
-  async function fetchData() {
-    try {
-      const [usersRes, questionsRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/candidate`, {
-          method: "GET",
-          credentials: "include",
-        }),
-        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz`, {
-          method: "GET",
-          credentials: "include",
-        }),
-      ]);
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setIsLoading(true)
+        
+        const [usersRes, questionsRes] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/candidate`, {
+            method: "GET",
+            credentials: "include",
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz`, {
+            method: "GET",
+            credentials: "include",
+          }),
+        ]);
 
-      if (!usersRes.ok) {
-        console.error("Failed to fetch users:", usersRes.status, usersRes.statusText);
-        toast({ title: "Unauthorized: Please log in again", variant: "destructive" });
-        setUsers([]);
-        return;
+        if (!usersRes.ok) {
+          console.error("Failed to fetch users:", usersRes.status, usersRes.statusText);
+          toast({ title: "Error fetching users", variant: "destructive" });
+          setUsers([]);
+        } else {
+          const usersJson = await usersRes.json();
+          const usersData: User[] = Array.isArray(usersJson) ? usersJson : (usersJson.data || []);
+          setUsers(usersData);
+          
+          // Calculate scores if we have users who took the exam
+          if (usersData.length > 0) {
+            const examTakenUsers = usersData.filter((u) => u.hasGivenExam);
+            if (examTakenUsers.length > 0) {
+              // Wait for questions first
+              if (questionsRes.ok) {
+                const questionsJson = await questionsRes.json();
+                const questionsData: Question[] = Array.isArray(questionsJson) 
+                  ? questionsJson 
+                  : (questionsJson.data || []);
+                setQuestions(questionsData);
+                
+                // Now calculate scores
+                if (questionsData.length > 0) {
+                  calculateAllScores(examTakenUsers, questionsData);
+                }
+              }
+            }
+          }
+        }
+
+        if (!questionsRes.ok) {
+          console.error("Failed to fetch questions:", questionsRes.status, questionsRes.statusText);
+          toast({ title: "Error fetching questions", variant: "destructive" });
+          setQuestions([]);
+        } else if (questions.length === 0) {
+          // Only set questions if not already set
+          const questionsJson = await questionsRes.json();
+          const questionsData: Question[] = Array.isArray(questionsJson) 
+            ? questionsJson 
+            : (questionsJson.data || []);
+          setQuestions(questionsData);
+        }
+
+      } catch (err) {
+        console.error("Fetch error:", err);
+        toast({ title: "Error fetching data", variant: "destructive" });
+      } finally {
+        setIsLoading(false)
       }
-
-      if (!questionsRes.ok) {
-        console.error("Failed to fetch questions:", questionsRes.status, questionsRes.statusText);
-        toast({ title: "Error fetching questions", variant: "destructive" });
-        setQuestions([]);
-        return;
-      }
-
-      const usersJson = await usersRes.json();
-      const questionsJson = await questionsRes.json();
-
-      // ApiResponse always returns { statusCode, data, message }
-      const usersData: User[] = usersJson.data || [];
-      const questionsData: Question[] = questionsJson.data || [];
-
-      setUsers(usersData);
-      setQuestions(questionsData);
-
-      // Calculate scores for users who have taken the exam
-      const examTakenUsers = usersData.filter((u) => u.hasGivenExam);
-      if (examTakenUsers.length > 0) {
-        calculateAllScores(examTakenUsers, questionsData);
-      }
-    } catch (err) {
-      console.error("Fetch error:", err);
-      toast({ title: "Error fetching data", variant: "destructive" });
     }
-  }
 
-  fetchData();
-}, []);
-
+    fetchData();
+  }, []);
 
   // Calculate scores for all users who have taken the exam
   const calculateAllScores = async (examUsers: User[], questionsData: Question[]) => {
@@ -187,48 +206,63 @@ useEffect(() => {
     setUserScores(scores)
   }
 
-  // Calculate individual user score
   const calculateUserScore = async (userId: number, questionsData: Question[]): Promise<UserScore> => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/responses/${userId}`, {
-        method: "GET",
-        credentials: "include",
-      })
-
-      const json = await res.json()
-      const answers: Answer[] = json.data
-
-      let correct = 0
-      const total = questionsData.filter((q) => q.type === "MCQ" || q.type === "Pictorial").length
-
-      answers.forEach((ans) => {
-        const question = questionsData.find((q) => q.id === ans.questionId)
-        if (question && (question.type === "MCQ" || question.type === "Pictorial")) {
-          const correctOption = question.options.find((o) => o.isCorrect)
-          if (correctOption && ans.optionId === correctOption.id) {
-            correct++
-          }
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/responses/${userId}`,
+        {
+          method: "GET",
+          credentials: "include",
         }
-      })
+      );
 
-      const percentage = total > 0 ? Math.round((correct / total) * 100) : 0
+      const json = await res.json();
+      const answers: Answer[] = json.data || [];
+
+      const answerMap = new Map<number, Answer>();
+      for (const ans of answers) {
+        answerMap.set(ans.questionId, ans);
+      }
+
+      const mcqQuestions = questionsData.filter(
+        (q) => q.type === "MCQ" || q.type === "Pictorial"
+      );
+      const total = mcqQuestions.length;
+
+      let correct = 0;
+
+      for (const question of mcqQuestions) {
+        const userAnswer = answerMap.get(question.id);
+        if (!userAnswer || !userAnswer.optionId) continue;
+
+        const correctOption = question.options.find((o) => o.isCorrect);
+        if (correctOption && userAnswer.optionId === correctOption.id) {
+          correct++;
+        }
+      }
+
+      const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
 
       return {
         userId,
         correct,
         total,
         percentage,
-      }
+      };
     } catch (error) {
-      console.error(`Error fetching responses for user ${userId}:`, error)
+      console.error(`Error fetching responses for user ${userId}:`, error);
+      const total = questionsData.filter(
+        (q) => q.type === "MCQ" || q.type === "Pictorial"
+      ).length;
+
       return {
         userId,
         correct: 0,
-        total: questionsData.filter((q) => q.type === "MCQ" || q.type === "Pictorial").length,
+        total,
         percentage: 0,
-      }
+      };
     }
-  }
+  };
 
   // Filter logic
   useEffect(() => {
@@ -299,11 +333,9 @@ useEffect(() => {
       return <Badge variant="outline">Not Taken</Badge>
     }
 
-    // Check if user has any audition rounds
     const round1 = user.auditionRounds?.find((r) => r.round === 1)
 
     if (!round1) {
-      // If user has given exam but no audition round exists, they're pending review
       return <Badge variant="secondary">Pending Review</Badge>
     }
 
@@ -334,68 +366,70 @@ useEffect(() => {
         credentials: "include",
       })
       const json = await res.json()
-      setViewingResponses(json.data)
+      setViewingResponses(json.data || [])
       setIsResponsesDialogOpen(true)
     } catch {
       toast({ title: "Error fetching responses", variant: "destructive" })
     }
   }
 
-// Submit evaluation via API, fetching admin info first
+  // Submit evaluation via API
   const submitEvaluation = async (auditionRoundId: number, panel: number | null, finalSelection: boolean) => {
     try {
-      // Fetch current admin user to get email
       const adminRes = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
         { method: "GET", credentials: "include" }
       );
       if (!adminRes.ok) {
-        const errorText = await adminRes.text();
-        console.error("Failed to fetch admin user:", errorText);
         throw new Error("Could not retrieve admin user");
       }
       const adminJson = await adminRes.json();
       const adminEmail: string = adminJson.email;
 
-      // Submit evaluation
       const evalRes = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/evaluate`, {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ auditionRoundId, panel, finalSelection, remarks: finalSelection ? "Selected" : "Rejected", evaluatedBy: adminEmail }),
+          body: JSON.stringify({ 
+            auditionRoundId, 
+            panel, 
+            finalSelection, 
+            remarks: finalSelection ? "Selected" : "Rejected", 
+            evaluatedBy: adminEmail 
+          }),
         }
       );
-      const evalBody = await evalRes.text();
+      
       if (!evalRes.ok) {
-        console.error("Evaluation API error:", evalRes.status, evalBody);
         throw new Error(`Evaluation failed: ${evalRes.status}`);
       }
 
-      // Refresh users
       const updatedRes = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/candidate`,
         { method: "GET", credentials: "include" }
       );
-      if (!updatedRes.ok) {
-        console.error("Failed to refresh users:", await updatedRes.text());
-      } else {
+      
+      if (updatedRes.ok) {
         const updated: User[] = await updatedRes.json();
         setUsers(updated);
       }
+      
       toast({ title: "Evaluation submitted successfully" });
     } catch (err) {
       console.error(err);
-      toast({ title: `Error: ${err instanceof Error ? err.message : "Submitting evaluation"}`, variant: "destructive" });
+      toast({ 
+        title: `Error: ${err instanceof Error ? err.message : "Submitting evaluation"}`, 
+        variant: "destructive" 
+      });
     }
   };
 
-  // Handle random assignment with equal distribution
+  // Handle random assignment
   const handleRandomAssignment = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>): Promise<void> => {
     event.preventDefault()
 
     try {
-      // Get all qualified users who haven't been assigned a panel yet
       const qualifiedUsers = users.filter(
         (user) => user.auditionRounds?.some((r) => r.round === 1 && r.finalSelection === true) && !user.roundTwo,
       )
@@ -405,33 +439,24 @@ useEffect(() => {
         return
       }
 
-      // Calculate current panel counts
       const panelCounts = Array.from({ length: 6 }, (_, i) => ({
         panel: i + 1,
         count: users.filter((u) => u.roundTwo?.panel === i + 1).length,
       }))
 
-      // Shuffle the qualified users for random assignment
       const shuffledUsers = [...qualifiedUsers].sort(() => Math.random() - 0.5)
 
-      // Assign users to panels with equal distribution
       for (let i = 0; i < shuffledUsers.length; i++) {
         const user = shuffledUsers[i]
-
-        // Find the panel with the minimum count
         const minCount = Math.min(...panelCounts.map((p) => p.count))
         const availablePanels = panelCounts.filter((p) => p.count === minCount)
-
-        // Randomly select from panels with minimum count
         const selectedPanel = availablePanels[Math.floor(Math.random() * availablePanels.length)]
 
-        // Submit assignment
         const auditionRound = user.auditionRounds?.find((r) => r.round === 1)
         if (auditionRound) {
           await submitEvaluation(auditionRound.id, selectedPanel.panel, true)
         }
 
-        // Update local count
         const panelIndex = panelCounts.findIndex((p) => p.panel === selectedPanel.panel)
         panelCounts[panelIndex].count++
       }
@@ -459,7 +484,6 @@ useEffect(() => {
       const auditionRound = selectedUser.auditionRounds?.find((r) => r.round === 1)
 
       if (!auditionRound) {
-        // Create evaluation for user without existing audition round
         await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/evaluate`, {
           method: "POST",
           credentials: "include",
@@ -497,10 +521,7 @@ useEffect(() => {
 
       const auditionRound = user.auditionRounds?.find((r) => r.round === 1)
 
-      // If no audition round exists, create one first
       if (!auditionRound) {
-        // You might need to create an audition round first via API
-        // For now, we'll assume the API handles this
         await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/evaluate`, {
           method: "POST",
           credentials: "include",
@@ -539,11 +560,21 @@ useEffect(() => {
     u.auditionRounds?.some((r) => r.round === 1 && r.finalSelection === false),
   ).length
 
-  // Calculate panel counts for panels 1-6
   const panelCounts = Array.from({ length: 6 }, (_, i) => ({
     panel: i + 1,
     count: users.filter((u) => u.roundTwo?.panel === i + 1).length,
   }))
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 w-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 w-full">
@@ -613,7 +644,6 @@ useEffect(() => {
           </TabsList>
 
           <TabsContent value="users" className="space-y-6">
-            {/* Filters and Actions */}
             <Card>
               <CardHeader>
                 <CardTitle>User Management</CardTitle>
@@ -653,7 +683,6 @@ useEffect(() => {
                   </Button>
                 </div>
 
-                {/* Users Table */}
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
@@ -667,88 +696,94 @@ useEffect(() => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredUsers.map((user) => (
-                        <TableRow key={user.id}>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{user.username}</div>
-                              <div className="text-sm text-muted-foreground">{user.email}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <div className="text-sm">{user.contact}</div>
-                              <div className="text-sm text-muted-foreground">{user.gender}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{user.specialization}</TableCell>
-                          <TableCell>{getScoreBadge(user.id)}</TableCell>
-                          <TableCell>{getStatusBadge(user)}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              {user.hasGivenExam && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleViewResponses(user)}
-                                  className="flex items-center gap-1"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                  View
-                                </Button>
-                              )}
-
-                              {/* Show Accept/Reject buttons for users who have taken exam and are pending review */}
-                              {user.hasGivenExam &&
-                                (!user.auditionRounds?.some((round) => round.round === 1) ||
-                                  user.auditionRounds?.some(
-                                    (round) => round.round === 1 && round.finalSelection === null,
-                                  )) && (
-                                  <>
-                                    <Button
-                                      size="sm"
-                                      variant="default"
-                                      onClick={() => {
-                                        setSelectedUser(user)
-                                        setIsAssignDialogOpen(true)
-                                      }}
-                                    >
-                                      <CheckCircle className="h-4 w-4 mr-1" />
-                                      Accept
-                                    </Button>
-
-                                    <AlertDialog>
-                                      <AlertDialogTrigger asChild>
-                                        <Button size="sm" variant="destructive">
-                                          <XCircle className="h-4 w-4 mr-1" />
-                                          Reject
-                                        </Button>
-                                      </AlertDialogTrigger>
-                                      <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                          <AlertDialogTitle>Reject User</AlertDialogTitle>
-                                          <AlertDialogDescription>
-                                            Are you sure you want to reject {user.username}? This action cannot be
-                                            undone.
-                                          </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                          <AlertDialogAction
-                                            onClick={() => handleRejectUser(user.id)}
-                                            className="bg-red-600 hover:bg-red-700"
-                                          >
-                                            Reject
-                                          </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                      </AlertDialogContent>
-                                    </AlertDialog>
-                                  </>
-                                )}
-                            </div>
+                      {filteredUsers.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                            No users found
                           </TableCell>
                         </TableRow>
-                      ))}
+                      ) : (
+                        filteredUsers.map((user) => (
+                          <TableRow key={user.id}>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{user.username}</div>
+                                <div className="text-sm text-muted-foreground">{user.email}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <div className="text-sm">{user.contact}</div>
+                                <div className="text-sm text-muted-foreground">{user.gender}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell>{user.specialization}</TableCell>
+                            <TableCell>{getScoreBadge(user.id)}</TableCell>
+                            <TableCell>{getStatusBadge(user)}</TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                {user.hasGivenExam && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleViewResponses(user)}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                    View
+                                  </Button>
+                                )}
+
+                                {user.hasGivenExam &&
+                                  (!user.auditionRounds?.some((round) => round.round === 1) ||
+                                    user.auditionRounds?.some(
+                                      (round) => round.round === 1 && round.finalSelection === null,
+                                    )) && (
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        variant="default"
+                                        onClick={() => {
+                                          setSelectedUser(user)
+                                          setIsAssignDialogOpen(true)
+                                        }}
+                                      >
+                                        <CheckCircle className="h-4 w-4 mr-1" />
+                                        Accept
+                                      </Button>
+
+                                      <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                          <Button size="sm" variant="destructive">
+                                            <XCircle className="h-4 w-4 mr-1" />
+                                            Reject
+                                          </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                          <AlertDialogHeader>
+                                            <AlertDialogTitle>Reject User</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                              Are you sure you want to reject {user.username}? This action cannot be undone.
+                                            </AlertDialogDescription>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction
+                                              onClick={() => handleRejectUser(user.id)}
+                                              className="bg-red-600 hover:bg-red-700"
+                                            >
+                                              Reject
+                                            </AlertDialogAction>
+                                          </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                      </AlertDialog>
+                                    </>
+                                  )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -871,7 +906,7 @@ useEffect(() => {
                 Quiz Responses - {viewingUser?.username}
               </DialogTitle>
               <DialogDescription>
-                Review the user's quiz responses and performance before making a decision
+                Review the user&apos;s quiz responses and performance before making a decision
               </DialogDescription>
             </DialogHeader>
 
@@ -924,16 +959,18 @@ useEffect(() => {
                           </CardHeader>
                           <CardContent className="space-y-4">
                             <div>
-                              <p className="font-medium mb-2">{question.description}</p>
                               {question.picture && (
                                 <div className="mb-4">
-                                  <img
+                                  <Image
                                     src={question.picture || "/placeholder.svg"}
                                     alt="Question diagram"
+                                    width={384}
+                                    height={288}
                                     className="max-w-sm rounded border"
                                   />
                                 </div>
                               )}
+                              
                             </div>
 
                             {question.type === "MCQ" || question.type === "Pictorial" ? (
@@ -968,7 +1005,7 @@ useEffect(() => {
                                       )}
                                       {option.id === userAnswer?.optionId && !option.isCorrect && (
                                         <Badge variant="destructive" className="ml-auto">
-                                          User's Choice
+                                          User&apos;s Choice
                                         </Badge>
                                       )}
                                     </div>
@@ -977,7 +1014,7 @@ useEffect(() => {
                               </div>
                             ) : (
                               <div className="space-y-2">
-                                <p className="text-sm font-medium text-muted-foreground">User's Answer:</p>
+                                <p className="text-sm font-medium text-muted-foreground">User&apos;s Answer:</p>
                                 <div className="p-3 bg-gray-50 rounded border">
                                   <p className="text-sm">{userAnswer?.description || "No answer provided"}</p>
                                 </div>

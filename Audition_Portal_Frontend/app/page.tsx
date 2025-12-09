@@ -12,7 +12,12 @@ import Loader from "@/components/Loader";
 import { useAppDispatch } from "@/lib/hooks";
 import { verifyToken } from "@/lib/store/features/auth/authSlice";
 
-const slugs = [ "typescript","javascript","dart","java","react","flutter","android","html5","css3","nodedotjs","express","nextdotjs","prisma","amazonaws","postgresql","firebase","nginx","vercel","testinglibrary","jest","cypress","docker","git","jira","github","gitlab","visualstudiocode","androidstudio","sonarqube","figma", ];
+const slugs = [ 
+  "typescript","javascript","dart","java","react","flutter","android","html5","css3",
+  "nodedotjs","express","nextdotjs","prisma","amazonaws","postgresql","firebase","nginx",
+  "vercel","testinglibrary","jest","cypress","docker","git","jira","github","gitlab",
+  "visualstudiocode","androidstudio","sonarqube","figma", 
+];
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -25,26 +30,22 @@ export default function Home() {
       try {
         const user = await dispatch(verifyToken()).unwrap();
         console.log("Verified user:", user);
+        
         if (user.role === "ADMIN") {
+          console.log("Admin has logged in, redirecting to admin profile");
           router.push("/admin/profile");
-<<<<<<< Updated upstream
         } else {
-=======
-          console.log("admin has logged in !!!")
-        } 
-        else {
->>>>>>> Stashed changes
+          console.log("Regular user has logged in, redirecting to dashboard");
           router.push("/dashboard");
         }
       } catch (err) {
-        console.error("verifyToken failed", err);
+        console.error("verifyToken failed (user not logged in)", err);
         setLoading(false);
       }
     };
 
     checkAuth();
   }, [dispatch, router]);
-
 
   function Signin() {
     const oauthUrl = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_URL;

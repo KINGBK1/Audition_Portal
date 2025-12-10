@@ -2,7 +2,6 @@
 
 import type React from "react"
 import { useEffect, useState } from "react"
-import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -16,21 +15,11 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
-import {
-  AlertDialog,
-  AlertDialogTrigger,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
-} from "@/components/ui/alert-dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/components/ui/use-toast"
 import {
   Users,
@@ -38,9 +27,6 @@ import {
   Clock,
   UserCheck,
   UserX,
-  Shuffle,
-  Eye,
-  XCircle,
   Search,
   Filter,
   FileText,
@@ -48,35 +34,48 @@ import {
   Calculator,
 } from "lucide-react"
 
-// Types
-interface QuestionOption {
-  id: number
-  text: string
-  isCorrect: boolean
-}
-
-export interface Question {
-  id: number
-  type: string
-  description: string
-  picture?: string | null
-  options: QuestionOption[]
-}
-
-interface Answer {
-  questionId: number
-  optionId?: number
-  description?: string
-  option?: QuestionOption
-  question?: Question
-}
+// ========= Types for ROUND 2 ==========
 
 interface AuditionRound {
   id: number
   round: number
   finalSelection: boolean | null
-  panel?: number
-  reviews?: any[]
+  panel: number | null
+  reviews?: Array<{
+    id: number
+    remarks: string
+    evaluatedBy: string
+    createdAt: string
+  }>
+}
+
+interface RoundTwoReview {
+  id: string
+  attendance: boolean
+  reviewedBy: string
+  taskgiven: string
+  clubPrefer: string
+  subDomain: string
+  hs_place: string
+  reviews: string[]
+  remarks: string
+  rating: number
+  gd: boolean
+  general: boolean
+  forwarded: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+interface RoundTwo {
+  id: string
+  taskAlloted: string
+  taskLink: string
+  status: string
+  addOns: string[]
+  panel: number
+  tags: string[]
+  review?: RoundTwoReview | null
 }
 
 interface User {
@@ -86,185 +85,103 @@ interface User {
   contact: string
   gender?: string
   specialization?: string
-  hasGivenExam: boolean
+  round: number
   createdAt: string
+  roundTwo?: RoundTwo | null
   auditionRounds?: AuditionRound[]
-  roundTwo?: { panel: number; status: string } | null
 }
 
-interface UserScore {
-  userId: number
-  correct: number
-  total: number
-  percentage: number
+interface ReviewFormState {
+  attendance: string
+  taskgiven: string
+  clubPrefer: string
+  subDomain: string
+  hs_place: string
+  reviewsText: string
+  remarks: string
+  rating: string
+  gd: string
+  general: string
+  forwarded: string
 }
 
-export default function AdminDashboard() {
-  // State
+export default function AdminRoundTwoDashboard() {
   const [users, setUsers] = useState<User[]>([])
-  const [questions, setQuestions] = useState<Question[]>([])
   const [filteredUsers, setFilteredUsers] = useState<User[]>([])
-  const [userScores, setUserScores] = useState<UserScore[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
-  const [viewingUser, setViewingUser] = useState<User | null>(null)
-  const [viewingResponses, setViewingResponses] = useState<Answer[]>([])
-  const [isResponsesDialogOpen, setIsResponsesDialogOpen] = useState(false)
-  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const [selectedPanel, setSelectedPanel] = useState<string>("")
-  const [loadingScores, setLoadingScores] = useState<number[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [statistics, setStatistics] = useState({
+    totalAccepted: 0,
+    totalRound2: 0,
+    totalReviewed: 0,
+    totalAttended: 0,
+  })
 
-  // Fetch initial data
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setIsLoading(true)
+  const [viewingUser, setViewingUser] = useState<User | null>(null)
+  const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false)
+  const [reviewForm, setReviewForm] = useState<ReviewFormState>({
+    attendance: "no",
+    taskgiven: "",
+    clubPrefer: "",
+    subDomain: "",
+    hs_place: "",
+    reviewsText: "",
+    remarks: "",
+    rating: "",
+    gd: "no",
+    general: "no",
+    forwarded: "no",
+  })
+
+  const fetchCandidates = async () => {
+    try {
+      setIsLoading(true)
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r2/candidate`, {
+        method: "GET",
+        credentials: "include",
+      })
+
+      if (!res.ok) {
+        console.error("Failed to fetch round 2 candidates:", res.status, res.statusText)
+        toast({ title: "Error fetching Round 2 candidates", variant: "destructive" })
+        setUsers([])
+        return
+      }
+
+      const json = await res.json()
+      const usersData: User[] = Array.isArray(json) ? json : json.data || []
+      setUsers(usersData)
+
+      const statsRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r2/statistics`, {
+        method: "GET",
+        credentials: "include",
+      })
+
+      if (statsRes.ok) {
+        const statsJson = await statsRes.json()
+        const statsData = statsJson.data || {}
         
-        const [usersRes, questionsRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/candidate`, {
-            method: "GET",
-            credentials: "include",
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz`, {
-            method: "GET",
-            credentials: "include",
-          }),
-        ]);
-
-        if (!usersRes.ok) {
-          console.error("Failed to fetch users:", usersRes.status, usersRes.statusText);
-          toast({ title: "Error fetching users", variant: "destructive" });
-          setUsers([]);
-        } else {
-          const usersJson = await usersRes.json();
-          const usersData: User[] = Array.isArray(usersJson) ? usersJson : (usersJson.data || []);
-          setUsers(usersData);
-          
-          // Calculate scores if we have users who took the exam
-          if (usersData.length > 0) {
-            const examTakenUsers = usersData.filter((u) => u.hasGivenExam);
-            if (examTakenUsers.length > 0) {
-              // Wait for questions first
-              if (questionsRes.ok) {
-                const questionsJson = await questionsRes.json();
-                const questionsData: Question[] = Array.isArray(questionsJson) 
-                  ? questionsJson 
-                  : (questionsJson.data || []);
-                setQuestions(questionsData);
-                
-                // Now calculate scores
-                if (questionsData.length > 0) {
-                  calculateAllScores(examTakenUsers, questionsData);
-                }
-              }
-            }
-          }
-        }
-
-        if (!questionsRes.ok) {
-          console.error("Failed to fetch questions:", questionsRes.status, questionsRes.statusText);
-          toast({ title: "Error fetching questions", variant: "destructive" });
-          setQuestions([]);
-        } else if (questions.length === 0) {
-          // Only set questions if not already set
-          const questionsJson = await questionsRes.json();
-          const questionsData: Question[] = Array.isArray(questionsJson) 
-            ? questionsJson 
-            : (questionsJson.data || []);
-          setQuestions(questionsData);
-        }
-
-      } catch (err) {
-        console.error("Fetch error:", err);
-        toast({ title: "Error fetching data", variant: "destructive" });
-      } finally {
-        setIsLoading(false)
+        setStatistics({
+          totalAccepted: statsData.totalAccepted || 0,
+          totalRound2: statsData.totalRound2 || 0,
+          totalReviewed: statsData.totalReviewed || 0,
+          totalAttended: statsData.totalAttended || 0,
+        })
       }
+    } catch (err) {
+      console.error("Fetch error:", err)
+      toast({ title: "Error fetching data", variant: "destructive" })
+    } finally {
+      setIsLoading(false)
     }
-
-    fetchData();
-  }, []);
-
-  // Calculate scores for all users who have taken the exam
-  const calculateAllScores = async (examUsers: User[], questionsData: Question[]) => {
-    const scores: UserScore[] = []
-
-    for (const user of examUsers) {
-      try {
-        setLoadingScores((prev) => [...prev, user.id])
-        const score = await calculateUserScore(user.id, questionsData)
-        scores.push(score)
-      } catch (error) {
-        console.error(`Error calculating score for user ${user.id}:`, error)
-      } finally {
-        setLoadingScores((prev) => prev.filter((id) => id !== user.id))
-      }
-    }
-
-    setUserScores(scores)
   }
 
-  const calculateUserScore = async (userId: number, questionsData: Question[]): Promise<UserScore> => {
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/responses/${userId}`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
+  useEffect(() => {
+    fetchCandidates()
+  }, [])
 
-      const json = await res.json();
-      const answers: Answer[] = json.data || [];
-
-      const answerMap = new Map<number, Answer>();
-      for (const ans of answers) {
-        answerMap.set(ans.questionId, ans);
-      }
-
-      const mcqQuestions = questionsData.filter(
-        (q) => q.type === "MCQ" || q.type === "Pictorial"
-      );
-      const total = mcqQuestions.length;
-
-      let correct = 0;
-
-      for (const question of mcqQuestions) {
-        const userAnswer = answerMap.get(question.id);
-        if (!userAnswer || !userAnswer.optionId) continue;
-
-        const correctOption = question.options.find((o) => o.isCorrect);
-        if (correctOption && userAnswer.optionId === correctOption.id) {
-          correct++;
-        }
-      }
-
-      const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
-
-      return {
-        userId,
-        correct,
-        total,
-        percentage,
-      };
-    } catch (error) {
-      console.error(`Error fetching responses for user ${userId}:`, error);
-      const total = questionsData.filter(
-        (q) => q.type === "MCQ" || q.type === "Pictorial"
-      ).length;
-
-      return {
-        userId,
-        correct: 0,
-        total,
-        percentage: 0,
-      };
-    }
-  };
-
-  // Filter logic
   useEffect(() => {
     let list = [...users]
 
@@ -279,16 +196,20 @@ export default function AdminDashboard() {
 
     if (filterStatus !== "all") {
       list = list.filter((user) => {
-        const round1 = user.auditionRounds?.find((r) => r.round === 1)
+        const review = user.roundTwo?.review
+        const round2Audition = user.auditionRounds?.find((r) => r.round === 2)
+        
         switch (filterStatus) {
-          case "pending":
-            return user.hasGivenExam && (!round1 || round1.finalSelection === null)
-          case "qualified":
-            return round1?.finalSelection === true
-          case "rejected":
-            return round1?.finalSelection === false
-          case "assigned":
-            return !!user.roundTwo
+          case "attended":
+            return review?.attendance === true
+          case "notAttended":
+            return review?.attendance === false || !review
+          case "forwarded":
+            return user.round === 3 && round2Audition?.finalSelection === true && review !== null
+          case "notForwarded":
+            return review?.forwarded === false || !review
+          case "rated":
+            return typeof review?.rating === "number"
           default:
             return true
         }
@@ -298,267 +219,242 @@ export default function AdminDashboard() {
     setFilteredUsers(list)
   }, [users, searchTerm, filterStatus])
 
-  // Get score badge for a user
-  const getScoreBadge = (userId: number): React.ReactNode => {
-    const user = users.find((u) => u.id === userId)
-    if (!user || !user.hasGivenExam) {
-      return <Badge variant="outline">Not Taken</Badge>
+  const getEvaluationStatus = (user: User): { evaluated: boolean; accepted: boolean | null } => {
+    const round2Audition = user.auditionRounds?.find((r) => r.round === 2)
+    if (!round2Audition) return { evaluated: false, accepted: null }
+    
+    if (round2Audition.finalSelection !== null) {
+      return {
+        evaluated: true,
+        accepted: round2Audition.finalSelection
+      }
     }
+    
+    return { evaluated: false, accepted: null }
+  }
 
-    if (loadingScores.includes(userId)) {
-      return <Badge variant="secondary">Calculating...</Badge>
-    }
+  const getRatingBadge = (user: User): React.ReactNode => {
+    const rating = user.roundTwo?.review?.rating
+    if (rating == null) return <Badge variant="outline" className="border-gray-600 text-gray-300">Not Rated</Badge>
 
-    const userScore = userScores.find((s) => s.userId === userId)
-    if (!userScore) {
-      return <Badge variant="secondary">Loading...</Badge>
-    }
-
-    const { correct, total, percentage } = userScore
-    const variant = percentage >= 70 ? "default" : percentage >= 50 ? "secondary" : "destructive"
+    let variant: "default" | "secondary" | "destructive"
+    if (rating >= 8) variant = "default"
+    else if (rating >= 5) variant = "secondary"
+    else variant = "destructive"
 
     return (
       <div className="flex flex-col items-center gap-1">
-        <Badge variant={variant}>{percentage}%</Badge>
-        <span className="text-xs text-muted-foreground">
-          {correct}/{total}
-        </span>
+        <Badge variant={variant} className="bg-gray-700 text-gray-100 border-gray-600">{rating}/10</Badge>
       </div>
     )
   }
 
-  // Get status badge for a user
-  const getStatusBadge = (user: User): React.ReactNode => {
-    if (!user.hasGivenExam) {
-      return <Badge variant="outline">Not Taken</Badge>
+  const getRoundTwoStatusBadge = (user: User): React.ReactNode => {
+    const r2 = user.roundTwo
+    const review = r2?.review
+    const evaluation = getEvaluationStatus(user)
+
+    if (!r2) {
+      return <Badge variant="outline" className="border-gray-600 text-gray-300">No Round 2</Badge>
     }
 
-    const round1 = user.auditionRounds?.find((r) => r.round === 1)
-
-    if (!round1) {
-      return <Badge variant="secondary">Pending Review</Badge>
-    }
-
-    if (round1.finalSelection === null) {
-      return <Badge variant="secondary">Pending Review</Badge>
-    }
-
-    if (round1.finalSelection === true) {
-      if (user.roundTwo) {
-        return <Badge variant="default">Panel {user.roundTwo.panel}</Badge>
+    if (evaluation.evaluated) {
+      if (evaluation.accepted) {
+        return <Badge className="bg-emerald-600 text-white">Accepted</Badge>
+      } else {
+        return <Badge variant="destructive" className="bg-red-600 text-white">Rejected</Badge>
       }
-      return <Badge variant="default">Qualified</Badge>
     }
 
-    if (round1.finalSelection === false) {
-      return <Badge variant="destructive">Rejected</Badge>
+    if (!review) {
+      return <Badge variant="secondary" className="bg-gray-700 text-gray-200">Pending Review</Badge>
     }
 
-    return <Badge variant="secondary">Pending Review</Badge>
+    if (!review.attendance) {
+      return <Badge variant="destructive" className="bg-red-600 text-white">Absent</Badge>
+    }
+
+    return <Badge variant="secondary" className="bg-gray-700 text-gray-200">Reviewed</Badge>
   }
 
-  // Open response dialog and fetch answers
-  const handleViewResponses = async (user: User) => {
-    setViewingUser(user)
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/responses/${user.id}`, {
-        method: "GET",
-        credentials: "include",
-      })
-      const json = await res.json()
-      setViewingResponses(json.data || [])
-      setIsResponsesDialogOpen(true)
-    } catch {
-      toast({ title: "Error fetching responses", variant: "destructive" })
-    }
-  }
-
-  // Submit evaluation via API
-  const submitEvaluation = async (auditionRoundId: number, panel: number | null, finalSelection: boolean) => {
-    try {
-      const adminRes = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
-        { method: "GET", credentials: "include" }
-      );
-      if (!adminRes.ok) {
-        throw new Error("Could not retrieve admin user");
-      }
-      const adminJson = await adminRes.json();
-      const adminEmail: string = adminJson.email;
-
-      const evalRes = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/evaluate`, {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            auditionRoundId, 
-            panel, 
-            finalSelection, 
-            remarks: finalSelection ? "Selected" : "Rejected", 
-            evaluatedBy: adminEmail 
-          }),
-        }
-      );
-      
-      if (!evalRes.ok) {
-        throw new Error(`Evaluation failed: ${evalRes.status}`);
-      }
-
-      const updatedRes = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/candidate`,
-        { method: "GET", credentials: "include" }
-      );
-      
-      if (updatedRes.ok) {
-        const updated: User[] = await updatedRes.json();
-        setUsers(updated);
-      }
-      
-      toast({ title: "Evaluation submitted successfully" });
-    } catch (err) {
-      console.error(err);
-      toast({ 
-        title: `Error: ${err instanceof Error ? err.message : "Submitting evaluation"}`, 
-        variant: "destructive" 
-      });
-    }
-  };
-
-  // Handle random assignment
-  const handleRandomAssignment = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>): Promise<void> => {
-    event.preventDefault()
-
-    try {
-      const qualifiedUsers = users.filter(
-        (user) => user.auditionRounds?.some((r) => r.round === 1 && r.finalSelection === true) && !user.roundTwo,
-      )
-
-      if (qualifiedUsers.length === 0) {
-        toast({ title: "No qualified users to assign", variant: "destructive" })
-        return
-      }
-
-      const panelCounts = Array.from({ length: 6 }, (_, i) => ({
-        panel: i + 1,
-        count: users.filter((u) => u.roundTwo?.panel === i + 1).length,
-      }))
-
-      const shuffledUsers = [...qualifiedUsers].sort(() => Math.random() - 0.5)
-
-      for (let i = 0; i < shuffledUsers.length; i++) {
-        const user = shuffledUsers[i]
-        const minCount = Math.min(...panelCounts.map((p) => p.count))
-        const availablePanels = panelCounts.filter((p) => p.count === minCount)
-        const selectedPanel = availablePanels[Math.floor(Math.random() * availablePanels.length)]
-
-        const auditionRound = user.auditionRounds?.find((r) => r.round === 1)
-        if (auditionRound) {
-          await submitEvaluation(auditionRound.id, selectedPanel.panel, true)
-        }
-
-        const panelIndex = panelCounts.findIndex((p) => p.panel === selectedPanel.panel)
-        panelCounts[panelIndex].count++
-      }
-
-      toast({
-        title: "Random assignment completed",
-        description: `Assigned ${shuffledUsers.length} users across panels with equal distribution`,
-      })
-    } catch (error) {
-      console.error("Random assignment error:", error)
-      toast({ title: "Error during random assignment", variant: "destructive" })
-    }
-  }
-
-  // Handle manual panel assignment
-  const handleAssignPanel = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>): Promise<void> => {
-    event.preventDefault()
-
-    if (!selectedUser || !selectedPanel) {
-      toast({ title: "Please select a user and a panel", variant: "destructive" })
+  const handleAcceptCandidate = async (user: User) => {
+    if (!user.roundTwo) {
+      toast({ title: "User does not have Round 2 data", variant: "destructive" })
       return
     }
 
-    try {
-      const auditionRound = selectedUser.auditionRounds?.find((r) => r.round === 1)
+    const confirmed = window.confirm(
+      `Are you sure you want to ACCEPT ${user.username} and move them to Round 3?`
+    )
+    if (!confirmed) return
 
-      if (!auditionRound) {
-        await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/evaluate`, {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: selectedUser.id,
-            panel: Number.parseInt(selectedPanel, 10),
-            finalSelection: true,
-            remarks: "Selected",
-            evaluatedBy: "admin@domain.com",
-          }),
-        })
-      } else {
-        await submitEvaluation(auditionRound.id, Number.parseInt(selectedPanel, 10), true)
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r2/evaluate`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          finalSelection: true,
+          remarks: "Accepted for Round 3",
+        }),
+      })
+
+      if (!res.ok) {
+        const text = await res.text()
+        console.error("Accept error:", res.status, text)
+        throw new Error("Failed to accept candidate")
       }
 
-      setIsAssignDialogOpen(false)
-      setSelectedUser(null)
-      setSelectedPanel("")
+      toast({
+        title: "Candidate Accepted",
+        description: `${user.username} has been moved to Round 3`,
+      })
 
-      toast({ title: `Successfully assigned to Panel ${selectedPanel}` })
-    } catch {
-      toast({ title: "Error assigning panel", variant: "destructive" })
+      await fetchCandidates()
+    } catch (err) {
+      console.error(err)
+      toast({
+        title: "Error accepting candidate",
+        description: err instanceof Error ? err.message : "Unexpected error",
+        variant: "destructive",
+      })
     }
   }
 
-  // Handle user rejection
-  const handleRejectUser = async (userId: number): Promise<void> => {
+  const handleRejectCandidate = async (user: User) => {
+    if (!user.roundTwo) {
+      toast({ title: "User does not have Round 2 data", variant: "destructive" })
+      return
+    }
+
+    const confirmed = window.confirm(
+      `Are you sure you want to REJECT ${user.username}? They will remain in Round 2.`
+    )
+    if (!confirmed) return
+
     try {
-      const user = users.find((u) => u.id === userId)
-      if (!user) {
-        toast({ title: "User not found", variant: "destructive" })
-        return
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r2/evaluate`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          finalSelection: false,
+          remarks: "Rejected in Round 2",
+        }),
+      })
+
+      if (!res.ok) {
+        const text = await res.text()
+        console.error("Reject error:", res.status, text)
+        throw new Error("Failed to reject candidate")
       }
 
-      const auditionRound = user.auditionRounds?.find((r) => r.round === 1)
+      toast({
+        title: "Candidate Rejected",
+        description: `${user.username} has been rejected and will remain in Round 2`,
+      })
 
-      if (!auditionRound) {
-        await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/evaluate`, {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: userId,
-            panel: null,
-            finalSelection: false,
-            remarks: "Rejected",
-            evaluatedBy: "admin@domain.com",
-          }),
-        })
-      } else {
-        await submitEvaluation(auditionRound.id, null, false)
-      }
-
-      toast({ title: "User rejected successfully" })
-    } catch {
-      toast({ title: "Error rejecting user", variant: "destructive" })
+      await fetchCandidates()
+    } catch (err) {
+      console.error(err)
+      toast({
+        title: "Error rejecting candidate",
+        description: err instanceof Error ? err.message : "Unexpected error",
+        variant: "destructive",
+      })
     }
   }
 
-  // Statistics calculations
-  const totalRegistered = users.length
-  const hasGivenExam = users.filter((u) => u.hasGivenExam).length
-  const pendingReview = users.filter(
-    (u) =>
-      u.hasGivenExam &&
-      (!u.auditionRounds?.some((r) => r.round === 1) ||
-        u.auditionRounds?.some((r) => r.round === 1 && r.finalSelection === null)),
-  ).length
-  const qualifiedRound2 = users.filter((u) =>
-    u.auditionRounds?.some((r) => r.round === 1 && r.finalSelection === true),
-  ).length
-  const rejected = users.filter((u) =>
-    u.auditionRounds?.some((r) => r.round === 1 && r.finalSelection === false),
-  ).length
+  const openReviewDialog = (user: User) => {
+    setViewingUser(user)
+    const r2 = user.roundTwo
+    const review = r2?.review
+
+    setReviewForm({
+      attendance: review?.attendance ? "yes" : "no",
+      taskgiven: review?.taskgiven || r2?.taskAlloted || "",
+      clubPrefer: review?.clubPrefer || "",
+      subDomain: review?.subDomain || "",
+      hs_place: review?.hs_place || "",
+      reviewsText: review?.reviews?.join("\n") || "",
+      remarks: review?.remarks || "",
+      rating: review?.rating != null ? String(review.rating) : "",
+      gd: review?.gd ? "yes" : "no",
+      general: review?.general ? "yes" : "no",
+      forwarded: review?.forwarded ? "yes" : "no",
+    })
+
+    setIsReviewDialogOpen(true)
+  }
+
+  const updateReviewField = (field: keyof ReviewFormState, value: string) => {
+    setReviewForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }
+
+  const handleSaveReview = async () => {
+    if (!viewingUser || !viewingUser.roundTwo) {
+      toast({ title: "Missing Round 2 data for this user", variant: "destructive" })
+      return
+    }
+
+    const ratingNumber = Number(reviewForm.rating || "0")
+    if (Number.isNaN(ratingNumber) || ratingNumber < 0 || ratingNumber > 10) {
+      toast({ title: "Rating must be a number between 0 and 10", variant: "destructive" })
+      return
+    }
+
+    const payload = {
+      userId: viewingUser.id,
+      roundTwoId: viewingUser.roundTwo.id,
+      attendance: reviewForm.attendance === "yes",
+      taskgiven: reviewForm.taskgiven.trim(),
+      clubPrefer: reviewForm.clubPrefer.trim(),
+      subDomain: reviewForm.subDomain.trim(),
+      hs_place: reviewForm.hs_place.trim(),
+      reviews: reviewForm.reviewsText
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      remarks: reviewForm.remarks.trim(),
+      rating: ratingNumber,
+      gd: reviewForm.gd === "yes",
+      general: reviewForm.general === "yes",
+      forwarded: reviewForm.forwarded === "yes",
+    }
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r2/review`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+
+      if (!res.ok) {
+        const text = await res.text()
+        console.error("Save review error:", res.status, text)
+        throw new Error("Failed to save Round 2 review")
+      }
+
+      toast({ title: "Round 2 review saved successfully" })
+      setIsReviewDialogOpen(false)
+      setViewingUser(null)
+
+      await fetchCandidates()
+    } catch (err) {
+      console.error(err)
+      toast({
+        title: "Error saving review",
+        description: err instanceof Error ? err.message : "Unexpected error",
+        variant: "destructive",
+      })
+    }
+  }
 
   const panelCounts = Array.from({ length: 6 }, (_, i) => ({
     panel: i + 1,
@@ -567,222 +463,205 @@ export default function AdminDashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 w-full flex items-center justify-center">
+      <div className="min-h-screen bg-gray-950 w-full flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-gray-100 mx-auto"></div>
+          <p className="mt-4 text-gray-400">Loading Round 2 dashboard...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 w-full">
+    <div className="min-h-screen bg-gray-950 w-full">
       <div className="container mx-auto p-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600 mt-2">Manage quiz participants and panel assignments</p>
+          <h1 className="text-3xl font-bold text-gray-100">Admin Dashboard – Round 2</h1>
+          <p className="text-gray-400 mt-2">
+            Review Round 2 tasks, evaluations, and forward candidates for selection
+          </p>
         </div>
 
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-          <Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-gray-900 border-gray-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Registered</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-gray-200">Total in Round 2</CardTitle>
+              <Users className="h-4 w-4 text-gray-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalRegistered}</div>
+              <div className="text-2xl font-bold text-gray-100">{statistics.totalRound2}</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-gray-900 border-gray-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Exam Taken</CardTitle>
-              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-gray-200">Reviewed</CardTitle>
+              <CheckCircle className="h-4 w-4 text-gray-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{hasGivenExam}</div>
+              <div className="text-2xl font-bold text-gray-100">{statistics.totalReviewed}</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-gray-900 border-gray-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-gray-200">Attended</CardTitle>
+              <Clock className="h-4 w-4 text-gray-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{pendingReview}</div>
+              <div className="text-2xl font-bold text-emerald-400">{statistics.totalAttended}</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-gray-900 border-gray-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Qualified</CardTitle>
-              <UserCheck className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-gray-200">Accepted to Round 3</CardTitle>
+              <CheckCircle className="h-4 w-4 text-emerald-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{qualifiedRound2}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Rejected</CardTitle>
-              <UserX className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">{rejected}</div>
+              <div className="text-2xl font-bold text-emerald-400">{statistics.totalAccepted}</div>
             </CardContent>
           </Card>
         </div>
 
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="users">User Management</TabsTrigger>
-            <TabsTrigger value="panels">Panel Distribution</TabsTrigger>
+          <TabsList className="bg-gray-900 border border-gray-800">
+            <TabsTrigger value="users" className="data-[state=active]:bg-gray-800 data-[state=active]:text-gray-100 text-gray-400">Round 2 Candidates</TabsTrigger>
+            <TabsTrigger value="panels" className="data-[state=active]:bg-gray-800 data-[state=active]:text-gray-100 text-gray-400">Panel Distribution</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users" className="space-y-6">
-            <Card>
+            <Card className="bg-gray-900 border-gray-800">
               <CardHeader>
-                <CardTitle>User Management</CardTitle>
-                <CardDescription>Review quiz responses and manage participants</CardDescription>
+                <CardTitle className="text-gray-100">Round 2 Management</CardTitle>
+                <CardDescription className="text-gray-400">Review Round 2 submissions and evaluations</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col sm:flex-row gap-4 mb-6">
                   <div className="flex-1">
                     <div className="relative">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
                         placeholder="Search users..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10"
+                        className="pl-10 bg-gray-800 border-gray-700 text-gray-200 placeholder:text-gray-500"
                       />
                     </div>
                   </div>
 
                   <Select value={filterStatus} onValueChange={setFilterStatus}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-[220px] bg-gray-800 border-gray-700 text-gray-200">
                       <Filter className="h-4 w-4 mr-2" />
                       <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Users</SelectItem>
-                      <SelectItem value="pending">Pending Review</SelectItem>
-                      <SelectItem value="qualified">Qualified</SelectItem>
-                      <SelectItem value="rejected">Rejected</SelectItem>
-                      <SelectItem value="assigned">Panel Assigned</SelectItem>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectItem value="all" className="text-gray-200 focus:bg-gray-700">All Candidates</SelectItem>
+                      <SelectItem value="attended" className="text-gray-200 focus:bg-gray-700">Attended</SelectItem>
+                      <SelectItem value="notAttended" className="text-gray-200 focus:bg-gray-700">Not Attended / No Review</SelectItem>
+                      <SelectItem value="forwarded" className="text-gray-200 focus:bg-gray-700">Forwarded</SelectItem>
+                      <SelectItem value="notForwarded" className="text-gray-200 focus:bg-gray-700">Not Forwarded</SelectItem>
+                      <SelectItem value="rated" className="text-gray-200 focus:bg-gray-700">Rated</SelectItem>
                     </SelectContent>
                   </Select>
-
-                  <Button onClick={handleRandomAssignment} className="flex items-center gap-2">
-                    <Shuffle className="h-4 w-4" />
-                    Random Assignment
-                  </Button>
                 </div>
 
-                <div className="rounded-md border">
+                <div className="rounded-md border border-gray-800">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>User</TableHead>
-                        <TableHead>Contact</TableHead>
-                        <TableHead>Specialization</TableHead>
-                        <TableHead>Score</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
+                      <TableRow className="border-gray-800 hover:bg-gray-800/50">
+                        <TableHead className="text-gray-300">User</TableHead>
+                        <TableHead className="text-gray-300">Contact</TableHead>
+                        <TableHead className="text-gray-300">Panel</TableHead>
+                        <TableHead className="text-gray-300">Rating</TableHead>
+                        <TableHead className="text-gray-300">Status</TableHead>
+                        <TableHead className="text-gray-300">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredUsers.length === 0 ? (
-                        <TableRow>
+                        <TableRow className="border-gray-800">
                           <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                            No users found
+                            No Round 2 candidates found
                           </TableCell>
                         </TableRow>
                       ) : (
-                        filteredUsers.map((user) => (
-                          <TableRow key={user.id}>
+                        filteredUsers.map((user) => {
+                          const evaluation = getEvaluationStatus(user)
+                          
+                          return (
+                          <TableRow key={user.id} className="border-gray-800 hover:bg-gray-800/50">
                             <TableCell>
-                              <div>
-                                <div className="font-medium">{user.username}</div>
-                                <div className="text-sm text-muted-foreground">{user.email}</div>
+                              <div className="flex items-center gap-2">
+                                <div>
+                                  <div className="font-medium text-gray-200">{user.username}</div>
+                                  <div className="text-sm text-gray-400">{user.email}</div>
+                                </div>
+                                {evaluation.evaluated && (
+                                  <Badge 
+                                    variant={evaluation.accepted ? "default" : "destructive"}
+                                    className={evaluation.accepted ? "bg-emerald-600 text-white" : "bg-red-600 text-white"}
+                                  >
+                                    {evaluation.accepted ? "✓ Accepted" : "✗ Rejected"}
+                                  </Badge>
+                                )}
                               </div>
                             </TableCell>
                             <TableCell>
                               <div>
-                                <div className="text-sm">{user.contact}</div>
-                                <div className="text-sm text-muted-foreground">{user.gender}</div>
+                                <div className="text-sm text-gray-200">{user.contact}</div>
+                                <div className="text-sm text-gray-400">{user.gender}</div>
                               </div>
                             </TableCell>
-                            <TableCell>{user.specialization}</TableCell>
-                            <TableCell>{getScoreBadge(user.id)}</TableCell>
-                            <TableCell>{getStatusBadge(user)}</TableCell>
+                            <TableCell>
+                              {user.roundTwo ? (
+                                <Badge variant="outline" className="border-gray-600 text-gray-200">Panel {user.roundTwo.panel}</Badge>
+                              ) : (
+                                <span className="text-xs text-gray-400">N/A</span>
+                              )}
+                            </TableCell>
+                            <TableCell>{getRatingBadge(user)}</TableCell>
+                            <TableCell>{getRoundTwoStatusBadge(user)}</TableCell>
                             <TableCell>
                               <div className="flex gap-2">
-                                {user.hasGivenExam && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleViewResponses(user)}
-                                    className="flex items-center gap-1"
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                    View
-                                  </Button>
+                                {user.roundTwo && (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => openReviewDialog(user)}
+                                      className="flex items-center gap-1 bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700"
+                                    >
+                                      <FileText className="h-4 w-4" />
+                                      Review
+                                    </Button>
+                                    {!evaluation.evaluated && (
+                                      <>
+                                        <Button
+                                          size="sm"
+                                          onClick={() => handleAcceptCandidate(user)}
+                                          className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                        >
+                                          <UserCheck className="h-4 w-4" />
+                                          Accept
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="destructive"
+                                          onClick={() => handleRejectCandidate(user)}
+                                          className="flex items-center gap-1"
+                                        >
+                                          <UserX className="h-4 w-4" />
+                                          Reject
+                                        </Button>
+                                      </>
+                                    )}
+                                  </>
                                 )}
-
-                                {user.hasGivenExam &&
-                                  (!user.auditionRounds?.some((round) => round.round === 1) ||
-                                    user.auditionRounds?.some(
-                                      (round) => round.round === 1 && round.finalSelection === null,
-                                    )) && (
-                                    <>
-                                      <Button
-                                        size="sm"
-                                        variant="default"
-                                        onClick={() => {
-                                          setSelectedUser(user)
-                                          setIsAssignDialogOpen(true)
-                                        }}
-                                      >
-                                        <CheckCircle className="h-4 w-4 mr-1" />
-                                        Accept
-                                      </Button>
-
-                                      <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                          <Button size="sm" variant="destructive">
-                                            <XCircle className="h-4 w-4 mr-1" />
-                                            Reject
-                                          </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                          <AlertDialogHeader>
-                                            <AlertDialogTitle>Reject User</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                              Are you sure you want to reject {user.username}? This action cannot be undone.
-                                            </AlertDialogDescription>
-                                          </AlertDialogHeader>
-                                          <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction
-                                              onClick={() => handleRejectUser(user.id)}
-                                              className="bg-red-600 hover:bg-red-700"
-                                            >
-                                              Reject
-                                            </AlertDialogAction>
-                                          </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                      </AlertDialog>
-                                    </>
-                                  )}
                               </div>
                             </TableCell>
                           </TableRow>
-                        ))
+                        )})
                       )}
                     </TableBody>
                   </Table>
@@ -792,37 +671,37 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="panels" className="space-y-6">
-            <Card>
+            <Card className="bg-gray-900 border-gray-800">
               <CardHeader>
-                <CardTitle>Panel Distribution</CardTitle>
-                <CardDescription>Overview of candidates assigned to each panel</CardDescription>
+                <CardTitle className="text-gray-100">Panel Distribution – Round 2</CardTitle>
+                <CardDescription className="text-gray-400">Overview of candidates assigned to each panel</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                   {panelCounts.map((panel) => (
-                    <Card key={panel.panel}>
+                    <Card key={panel.panel} className="bg-gray-800 border-gray-700">
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Panel {panel.panel}</CardTitle>
-                        <Trophy className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-sm font-medium text-gray-200">Panel {panel.panel}</CardTitle>
+                        <Trophy className="h-4 w-4 text-gray-400" />
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold">{panel.count}</div>
-                        <p className="text-xs text-muted-foreground">candidates assigned</p>
+                        <div className="text-2xl font-bold text-gray-100">{panel.count}</div>
+                        <p className="text-xs text-gray-400">candidates in Round 2</p>
                       </CardContent>
                     </Card>
                   ))}
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Panel Members</h3>
+                  <h3 className="text-lg font-semibold text-gray-100">Panel Members</h3>
                   {Array.from({ length: 6 }, (_, i) => {
                     const panelNum = i + 1
                     const panelMembers = users.filter((user) => user.roundTwo?.panel === panelNum)
 
                     return (
-                      <Card key={panelNum}>
+                      <Card key={panelNum} className="bg-gray-800 border-gray-700">
                         <CardHeader>
-                          <CardTitle className="text-base">
+                          <CardTitle className="text-base text-gray-100">
                             Panel {panelNum} ({panelMembers.length} members)
                           </CardTitle>
                         </CardHeader>
@@ -830,27 +709,35 @@ export default function AdminDashboard() {
                           {panelMembers.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                               {panelMembers.map((user) => {
-                                const userScore = userScores.find((s) => s.userId === user.id)
+                                const rating = user.roundTwo?.review?.rating
+                                const forwarded = user.roundTwo?.review?.forwarded
                                 return (
                                   <div
                                     key={user.id}
-                                    className="flex items-center justify-between p-3 bg-gray-50 rounded"
+                                    className="flex items-center justify-between p-3 bg-gray-900 border border-gray-700 rounded hover:bg-gray-800/50 transition-colors"
                                   >
                                     <div className="flex-1">
-                                      <div className="text-sm font-medium">{user.username}</div>
-                                      <div className="text-xs text-muted-foreground">{user.specialization}</div>
+                                      <div className="text-sm font-medium text-gray-200">{user.username}</div>
+                                      <div className="text-xs text-gray-400">{user.specialization}</div>
                                     </div>
-                                    {userScore && (
-                                      <Badge variant="outline" className="ml-2">
-                                        {userScore.percentage}%
-                                      </Badge>
-                                    )}
+                                    <div className="flex flex-col items-end gap-1">
+                                      {rating != null && (
+                                        <Badge variant="outline" className="ml-2 border-gray-600 text-gray-200">
+                                          {rating}/10
+                                        </Badge>
+                                      )}
+                                      {forwarded && (
+                                        <Badge className="ml-2 text-[10px] bg-blue-600 text-white">
+                                          Forwarded
+                                        </Badge>
+                                      )}
+                                    </div>
                                   </div>
                                 )
                               })}
                             </div>
                           ) : (
-                            <p className="text-sm text-muted-foreground">No members assigned yet</p>
+                            <p className="text-sm text-gray-400">No members assigned yet</p>
                           )}
                         </CardContent>
                       </Card>
@@ -862,198 +749,209 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
 
-        {/* Panel Assignment Dialog */}
-        <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
-          <DialogContent>
+        <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
+          <DialogContent className="max-w-3xl max-h-[80vh] bg-gray-900 border-gray-800 text-gray-100">
             <DialogHeader>
-              <DialogTitle>Assign Panel</DialogTitle>
-              <DialogDescription>Select a panel for {selectedUser?.username} in Round 2</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="panel" className="text-right">
-                  Panel
-                </Label>
-                <Select value={selectedPanel} onValueChange={setSelectedPanel}>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select panel (1-6)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 6 }, (_, i) => (
-                      <SelectItem key={i + 1} value={(i + 1).toString()}>
-                        Panel {i + 1} ({panelCounts[i].count} members)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAssignDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleAssignPanel}>Assign Panel</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Quiz Responses Dialog */}
-        <Dialog open={isResponsesDialogOpen} onOpenChange={setIsResponsesDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[80vh]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Quiz Responses - {viewingUser?.username}
+              <DialogTitle className="flex items-center gap-2 text-gray-100">
+                <Calculator className="h-5 w-5" />
+                Round 2 Review – {viewingUser?.username}
               </DialogTitle>
-              <DialogDescription>
-                Review the user&apos;s quiz responses and performance before making a decision
+              <DialogDescription className="text-gray-400">
+                Fill in the Round 2 evaluation fields for this candidate.
               </DialogDescription>
             </DialogHeader>
 
-            {viewingUser && (
-              <div className="space-y-4">
-                {/* Score Summary */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Calculator className="h-5 w-5" />
-                      Performance Summary
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Overall Score</p>
-                        <div className="text-2xl font-bold">{getScoreBadge(viewingUser.id)}</div>
+            {viewingUser && viewingUser.roundTwo && (
+              <ScrollArea className="h-[420px] w-full pr-2">
+                <div className="space-y-6">
+                  <Card className="bg-gray-800 border-gray-700">
+                    <CardHeader>
+                      <CardTitle className="text-base text-gray-100">Task Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2 text-sm text-gray-300">
+                      <p>
+                        <span className="font-medium text-gray-200">Task Allotted:</span> {viewingUser.roundTwo.taskAlloted}
+                      </p>
+                      <p>
+                        <span className="font-medium text-gray-200">Task Link:</span>{" "}
+                        {viewingUser.roundTwo.taskLink ? (
+                          <a
+                            href={viewingUser.roundTwo.taskLink}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-blue-400 hover:underline"
+                          >
+                            {viewingUser.roundTwo.taskLink}
+                          </a>
+                        ) : (
+                          "N/A"
+                        )}
+                      </p>
+                      <p>
+                        <span className="font-medium text-gray-200">Status:</span> {viewingUser.roundTwo.status || "N/A"}
+                      </p>
+                      {viewingUser.roundTwo.tags?.length > 0 && (
+                        <p>
+                          <span className="font-medium text-gray-200">Tags:</span>{" "}
+                          {viewingUser.roundTwo.tags.join(", ")}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-gray-800 border-gray-700">
+                    <CardHeader>
+                      <CardTitle className="text-base text-gray-100">Evaluation</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-gray-200">Attendance</Label>
+                          <Select
+                            value={reviewForm.attendance}
+                            onValueChange={(v) => updateReviewField("attendance", v)}
+                          >
+                            <SelectTrigger className="bg-gray-900 border-gray-700 text-gray-200">
+                              <SelectValue placeholder="Select attendance" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-gray-800 border-gray-700">
+                              <SelectItem value="yes" className="text-gray-200 focus:bg-gray-700">Present</SelectItem>
+                              <SelectItem value="no" className="text-gray-200 focus:bg-gray-700">Absent</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-gray-200">Rating (0–10)</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={10}
+                            value={reviewForm.rating}
+                            onChange={(e) => updateReviewField("rating", e.target.value)}
+                            placeholder="e.g. 8"
+                            className="bg-gray-900 border-gray-700 text-gray-200 placeholder:text-gray-500"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-gray-200">GD Round</Label>
+                          <Select value={reviewForm.gd} onValueChange={(v) => updateReviewField("gd", v)}>
+                            <SelectTrigger className="bg-gray-900 border-gray-700 text-gray-200">
+                              <SelectValue placeholder="GD participated?" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-gray-800 border-gray-700">
+                              <SelectItem value="yes" className="text-gray-200 focus:bg-gray-700">Yes</SelectItem>
+                              <SelectItem value="no" className="text-gray-200 focus:bg-gray-700">No</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-gray-200">General Round</Label>
+                          <Select
+                            value={reviewForm.general}
+                            onValueChange={(v) => updateReviewField("general", v)}
+                          >
+                            <SelectTrigger className="bg-gray-900 border-gray-700 text-gray-200">
+                              <SelectValue placeholder="General round?" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-gray-800 border-gray-700">
+                              <SelectItem value="yes" className="text-gray-200 focus:bg-gray-700">Yes</SelectItem>
+                              <SelectItem value="no" className="text-gray-200 focus:bg-gray-700">No</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground">Submitted</p>
-                        <p className="text-sm font-medium">{new Date(viewingUser.createdAt).toLocaleString()}</p>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-gray-200">Preferred Club</Label>
+                          <Input
+                            value={reviewForm.clubPrefer}
+                            onChange={(e) => updateReviewField("clubPrefer", e.target.value)}
+                            placeholder="e.g. GLUG, CodeClub..."
+                            className="bg-gray-900 border-gray-700 text-gray-200 placeholder:text-gray-500"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-gray-200">Sub-domain</Label>
+                          <Input
+                            value={reviewForm.subDomain}
+                            onChange={(e) => updateReviewField("subDomain", e.target.value)}
+                            placeholder="e.g. Dev, ML, Web, Ops..."
+                            className="bg-gray-900 border-gray-700 text-gray-200 placeholder:text-gray-500"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-gray-200">HS Place</Label>
+                          <Input
+                            value={reviewForm.hs_place}
+                            onChange={(e) => updateReviewField("hs_place", e.target.value)}
+                            placeholder="High school / hometown / other"
+                            className="bg-gray-900 border-gray-700 text-gray-200 placeholder:text-gray-500"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-gray-200">Task Given (for record)</Label>
+                          <Input
+                            value={reviewForm.taskgiven}
+                            onChange={(e) => updateReviewField("taskgiven", e.target.value)}
+                            placeholder="Task title / summary"
+                            className="bg-gray-900 border-gray-700 text-gray-200 placeholder:text-gray-500"
+                          />
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
 
-                {/* Questions and Answers */}
-                <ScrollArea className="h-[400px] w-full">
-                  <div className="space-y-6 pr-4">
-                    {questions.map((question, index) => {
-                      const userAnswer = viewingResponses.find((answer) => answer.questionId === question.id)
-                      const isCorrect =
-                        question.type === "MCQ" || question.type === "Pictorial"
-                          ? question.options.find((opt) => opt.id === userAnswer?.optionId)?.isCorrect
-                          : null
+                      <div className="space-y-2">
+                        <Label className="text-gray-200">Review Points (one per line)</Label>
+                        <Textarea
+                          rows={4}
+                          value={reviewForm.reviewsText}
+                          onChange={(e) => updateReviewField("reviewsText", e.target.value)}
+                          placeholder={"Strong fundamentals\nGood communication\nNeeds improvement in Git"}
+                          className="bg-gray-900 border-gray-700 text-gray-200 placeholder:text-gray-500"
+                        />
+                      </div>
 
-                      return (
-                        <Card key={question.id}>
-                          <CardHeader>
-                            <CardTitle className="text-base flex items-center gap-2">
-                              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">Q{index + 1}</span>
-                              <Badge variant="outline">{question.type}</Badge>
-                              {isCorrect !== null && (
-                                <Badge variant={isCorrect ? "default" : "destructive"}>
-                                  {isCorrect ? "Correct" : "Incorrect"}
-                                </Badge>
-                              )}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-4">
-                            <div>
-                              {question.picture && (
-                                <div className="mb-4">
-                                  <Image
-                                    src={question.picture || "/placeholder.svg"}
-                                    alt="Question diagram"
-                                    width={384}
-                                    height={288}
-                                    className="max-w-sm rounded border"
-                                  />
-                                </div>
-                              )}
-                              
-                            </div>
+                      <div className="space-y-2">
+                        <Label className="text-gray-200">Remarks</Label>
+                        <Textarea
+                          rows={3}
+                          value={reviewForm.remarks}
+                          onChange={(e) => updateReviewField("remarks", e.target.value)}
+                          placeholder="Final thoughts / summary for core team"
+                          className="bg-gray-900 border-gray-700 text-gray-200 placeholder:text-gray-500"
+                        />
+                      </div>
 
-                            {question.type === "MCQ" || question.type === "Pictorial" ? (
-                              <div className="space-y-2">
-                                <p className="text-sm font-medium text-muted-foreground">Options:</p>
-                                {question.options.map((option) => (
-                                  <div
-                                    key={option.id}
-                                    className={`p-2 rounded border ${
-                                      option.id === userAnswer?.optionId
-                                        ? option.isCorrect
-                                          ? "bg-green-50 border-green-200"
-                                          : "bg-red-50 border-red-200"
-                                        : option.isCorrect
-                                          ? "bg-green-50 border-green-200"
-                                          : "bg-gray-50"
-                                    }`}
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      <div
-                                        className={`w-4 h-4 rounded-full border-2 ${
-                                          option.id === userAnswer?.optionId
-                                            ? "bg-blue-500 border-blue-500"
-                                            : "border-gray-300"
-                                        }`}
-                                      />
-                                      <span className={option.isCorrect ? "font-medium" : ""}>{option.text}</span>
-                                      {option.isCorrect && (
-                                        <Badge variant="default" className="ml-auto">
-                                          Correct Answer
-                                        </Badge>
-                                      )}
-                                      {option.id === userAnswer?.optionId && !option.isCorrect && (
-                                        <Badge variant="destructive" className="ml-auto">
-                                          User&apos;s Choice
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="space-y-2">
-                                <p className="text-sm font-medium text-muted-foreground">User&apos;s Answer:</p>
-                                <div className="p-3 bg-gray-50 rounded border">
-                                  <p className="text-sm">{userAnswer?.description || "No answer provided"}</p>
-                                </div>
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      )
-                    })}
-                  </div>
-                </ScrollArea>
-
-                {/* Action Buttons */}
-                {viewingUser.auditionRounds?.some((round) => round.round === 1 && round.finalSelection === null) && (
-                  <div className="flex justify-end gap-2 pt-4 border-t">
-                    <Button
-                      variant="destructive"
-                      onClick={() => {
-                        handleRejectUser(viewingUser.id)
-                        setIsResponsesDialogOpen(false)
-                      }}
-                    >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Reject User
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setSelectedUser(viewingUser)
-                        setIsResponsesDialogOpen(false)
-                        setIsAssignDialogOpen(true)
-                      }}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Accept & Assign Panel
-                    </Button>
-                  </div>
-                )}
-              </div>
+                      <div className="space-y-2">
+                        <Label className="text-gray-200">Forward to Core Team?</Label>
+                        <Select
+                          value={reviewForm.forwarded}
+                          onValueChange={(v) => updateReviewField("forwarded", v)}
+                        >
+                          <SelectTrigger className="bg-gray-900 border-gray-700 text-gray-200">
+                            <SelectValue placeholder="Forward candidate?" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-gray-800 border-gray-700">
+                            <SelectItem value="yes" className="text-gray-200 focus:bg-gray-700">Yes, forward</SelectItem>
+                            <SelectItem value="no" className="text-gray-200 focus:bg-gray-700">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </ScrollArea>
             )}
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsReviewDialogOpen(false)} className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700">
+                Cancel
+              </Button>
+              <Button onClick={handleSaveReview} className="bg-blue-600 hover:bg-blue-700 text-white">Save Review</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

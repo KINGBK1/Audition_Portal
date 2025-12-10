@@ -77,6 +77,14 @@ const Dashboard = () => {
         }, 500);
       });
   }, [dispatch, push]);
+  useEffect(() => {
+    if (!isLoading && userInfo) {
+      if (userInfo.round === 2) {
+        push("/exam/round2");
+      }
+    }
+  }, [isLoading, userInfo, push]);
+
 
   useEffect(() => {
     const timer = setInterval(() => {

@@ -28,6 +28,12 @@ export default function Round2() {
         })
       const user = await res.json()
 
+      //new logic
+      if (user.round == 2) {
+        router.push("/exam/round2");
+        return;
+      }
+
       if (!user.hasGivenExam || user.round < 2) {
         router.push("/dashboard")
       }

@@ -14,6 +14,18 @@ export const CreateUpdateTask = async (req: Request, res: Response): Promise<Res
     return res.status(400).json({ error: 'Missing or invalid required fields' });
   }
 
+  // if pannel is missing, then fetch pannel from roundTwo entry if exists
+  if (!panel) {
+    const existingEntry = await prisma.roundTwo.findUnique({
+      where: { userId: user.id },
+    });
+    if (existingEntry && existingEntry.panel) {
+      req.body.panel = existingEntry.panel;
+    } else {
+      return res.status(400).json({ error: 'Panel is required for new entries' });
+    }
+  }
+
   try {
     const existingEntry = await prisma.roundTwo.findUnique({
       where: { userId: user.id },

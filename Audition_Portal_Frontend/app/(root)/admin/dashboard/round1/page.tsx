@@ -482,10 +482,23 @@ export default function AdminDashboard() {
     }
 
     try {
+      // Fetch admin email from authenticated session
+      const adminRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`, {
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      })
+      
+      if (!adminRes.ok) {
+        throw new Error("Failed to fetch admin details")
+      }
+      
+      const adminJson = await adminRes.json()
+      const adminEmail = adminJson.email
+
       const auditionRound = selectedUser.auditionRounds?.find((r) => r.round === 1)
 
       if (!auditionRound) {
-        await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/evaluate`, {
+        const evalRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/evaluate`, {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -494,11 +507,31 @@ export default function AdminDashboard() {
             panel: Number.parseInt(selectedPanel, 10),
             finalSelection: true,
             remarks: "Selected",
-            evaluatedBy: "admin@domain.com",
+            evaluatedBy: adminEmail,
           }),
         })
+        
+        if (!evalRes.ok) {
+          throw new Error(`Evaluation failed: ${evalRes.status}`)
+        }
       } else {
         await submitEvaluation(auditionRound.id, Number.parseInt(selectedPanel, 10), true)
+      }
+
+      // Refetch updated user data to reflect round column changes
+      const updatedRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/candidate`, {
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      })
+      
+      if (updatedRes.ok) {
+        const updatedData = await updatedRes.json()
+        const round1Users = updatedData.filter((u: User) => {
+          const hasRound1 = u.auditionRounds && u.auditionRounds.some((r: AuditionRound) => r.round === 1)
+          const noRounds = !u.auditionRounds || u.auditionRounds.length === 0
+          return hasRound1 || noRounds
+        })
+        setUsers(round1Users)
       }
 
       setIsAssignDialogOpen(false)
@@ -506,7 +539,8 @@ export default function AdminDashboard() {
       setSelectedPanel("")
 
       toast({ title: `Successfully assigned to Panel ${selectedPanel}` })
-    } catch {
+    } catch (error) {
+      console.error("Error assigning panel:", error)
       toast({ title: "Error assigning panel", variant: "destructive" })
     }
   }
@@ -520,10 +554,23 @@ export default function AdminDashboard() {
         return
       }
 
+      // Fetch admin email from authenticated session
+      const adminRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`, {
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      })
+      
+      if (!adminRes.ok) {
+        throw new Error("Failed to fetch admin details")
+      }
+      
+      const adminJson = await adminRes.json()
+      const adminEmail = adminJson.email
+
       const auditionRound = user.auditionRounds?.find((r) => r.round === 1)
 
       if (!auditionRound) {
-        await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/evaluate`, {
+        const evalRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/evaluate`, {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -532,15 +579,36 @@ export default function AdminDashboard() {
             panel: null,
             finalSelection: false,
             remarks: "Rejected",
-            evaluatedBy: "admin@domain.com",
+            evaluatedBy: adminEmail,
           }),
         })
+        
+        if (!evalRes.ok) {
+          throw new Error(`Evaluation failed: ${evalRes.status}`)
+        }
       } else {
         await submitEvaluation(auditionRound.id, null, false)
       }
 
+      // Refetch updated user data
+      const updatedRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/candidate`, {
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      })
+      
+      if (updatedRes.ok) {
+        const updatedData = await updatedRes.json()
+        const round1Users = updatedData.filter((u: User) => {
+          const hasRound1 = u.auditionRounds && u.auditionRounds.some((r: AuditionRound) => r.round === 1)
+          const noRounds = !u.auditionRounds || u.auditionRounds.length === 0
+          return hasRound1 || noRounds
+        })
+        setUsers(round1Users)
+      }
+
       toast({ title: "User rejected successfully" })
-    } catch {
+    } catch (error) {
+      console.error("Error rejecting user:", error)
       toast({ title: "Error rejecting user", variant: "destructive" })
     }
   }

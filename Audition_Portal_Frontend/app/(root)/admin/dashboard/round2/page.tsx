@@ -35,7 +35,6 @@ import {
 } from "lucide-react"
 
 // ========= Types for ROUND 2 ==========
-
 interface AuditionRound {
   id: number
   round: number
@@ -162,12 +161,20 @@ export default function AdminRoundTwoDashboard() {
       if (statsRes.ok) {
         const statsJson = await statsRes.json()
         const statsData = statsJson.data || {}
-        
+
         setStatistics({
           totalAccepted: statsData.totalAccepted || 0,
           totalRound2: statsData.totalRound2 || 0,
           totalReviewed: statsData.totalReviewed || 0,
           totalAttended: statsData.totalAttended || 0,
+        })
+      } else {
+        // safe fallback compute local stats if endpoint not provided
+        setStatistics({
+          totalAccepted: usersData.filter(u => u.round === 3).length,
+          totalRound2: usersData.length,
+          totalReviewed: usersData.filter(u => !!u.roundTwo?.review).length,
+          totalAttended: usersData.filter(u => u.roundTwo?.review?.attendance).length,
         })
       }
     } catch (err) {
@@ -180,6 +187,7 @@ export default function AdminRoundTwoDashboard() {
 
   useEffect(() => {
     fetchCandidates()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -198,14 +206,15 @@ export default function AdminRoundTwoDashboard() {
       list = list.filter((user) => {
         const review = user.roundTwo?.review
         const round2Audition = user.auditionRounds?.find((r) => r.round === 2)
-        
+
         switch (filterStatus) {
           case "attended":
             return review?.attendance === true
           case "notAttended":
             return review?.attendance === false || !review
           case "forwarded":
-            return user.round === 3 && round2Audition?.finalSelection === true && review !== null
+            // forwarded means they were accepted (moved to round 3) OR review.forwarded true
+            return (user.round === 3) || (review?.forwarded === true)
           case "notForwarded":
             return review?.forwarded === false || !review
           case "rated":
@@ -219,21 +228,18 @@ export default function AdminRoundTwoDashboard() {
     setFilteredUsers(list)
   }, [users, searchTerm, filterStatus])
 
-  const getEvaluationStatus = (user: User): { evaluated: boolean; accepted: boolean | null; hasReview: boolean } => {
+  const getEvaluationStatus = (user: User): { evaluated: boolean; accepted: boolean | null } => {
     const round2Audition = user.auditionRounds?.find((r) => r.round === 2)
-    const hasReview = user.roundTwo?.review !== null && user.roundTwo?.review !== undefined
-    
-    if (!round2Audition) return { evaluated: false, accepted: null, hasReview }
-    
+    if (!round2Audition) return { evaluated: false, accepted: null }
+
     if (round2Audition.finalSelection !== null) {
       return {
         evaluated: true,
-        accepted: round2Audition.finalSelection,
-        hasReview
+        accepted: round2Audition.finalSelection
       }
     }
-    
-    return { evaluated: false, accepted: null, hasReview }
+
+    return { evaluated: false, accepted: null }
   }
 
   const getRatingBadge = (user: User): React.ReactNode => {
@@ -448,6 +454,7 @@ export default function AdminRoundTwoDashboard() {
       setIsReviewDialogOpen(false)
       setViewingUser(null)
 
+      // Re-fetch users so UI shows that review exists — only then Accept/Reject will show
       await fetchCandidates()
     } catch (err) {
       console.error(err)
@@ -591,80 +598,83 @@ export default function AdminRoundTwoDashboard() {
                       ) : (
                         filteredUsers.map((user) => {
                           const evaluation = getEvaluationStatus(user)
-                          
+
                           return (
-                          <TableRow key={user.id} className="border-gray-800 hover:bg-gray-800/50">
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <div>
-                                  <div className="font-medium text-gray-200">{user.username}</div>
-                                  <div className="text-sm text-gray-400">{user.email}</div>
-                                </div>
-                                {evaluation.evaluated && (
-                                  <Badge 
-                                    variant={evaluation.accepted ? "default" : "destructive"}
-                                    className={evaluation.accepted ? "bg-emerald-600 text-white" : "bg-red-600 text-white"}
-                                  >
-                                    {evaluation.accepted ? "✓ Accepted" : "✗ Rejected"}
-                                  </Badge>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div>
-                                <div className="text-sm text-gray-200">{user.contact}</div>
-                                <div className="text-sm text-gray-400">{user.gender}</div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              {user.roundTwo ? (
-                                <Badge variant="outline" className="border-gray-600 text-gray-200">Panel {user.roundTwo.panel}</Badge>
-                              ) : (
-                                <span className="text-xs text-gray-400">N/A</span>
-                              )}
-                            </TableCell>
-                            <TableCell>{getRatingBadge(user)}</TableCell>
-                            <TableCell>{getRoundTwoStatusBadge(user)}</TableCell>
-                            <TableCell>
-                              <div className="flex gap-2">
-                                {user.roundTwo && (
-                                  <>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => openReviewDialog(user)}
-                                      className="flex items-center gap-1 bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700"
+                            <TableRow key={user.id} className="border-gray-800 hover:bg-gray-800/50">
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <div>
+                                    <div className="font-medium text-gray-200">{user.username}</div>
+                                    <div className="text-sm text-gray-400">{user.email}</div>
+                                  </div>
+                                  {evaluation.evaluated && (
+                                    <Badge
+                                      variant={evaluation.accepted ? "default" : "destructive"}
+                                      className={evaluation.accepted ? "bg-emerald-600 text-white" : "bg-red-600 text-white"}
                                     >
-                                      <FileText className="h-4 w-4" />
-                                      Review
-                                    </Button>
-                                    {evaluation.hasReview && !evaluation.evaluated && (
-                                      <>
-                                        <Button
-                                          size="sm"
-                                          onClick={() => handleAcceptCandidate(user)}
-                                          className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white"
-                                        >
-                                          <UserCheck className="h-4 w-4" />
-                                          Accept
-                                        </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="destructive"
-                                          onClick={() => handleRejectCandidate(user)}
-                                          className="flex items-center gap-1"
-                                        >
-                                          <UserX className="h-4 w-4" />
-                                          Reject
-                                        </Button>
-                                      </>
-                                    )}
-                                  </>
+                                      {evaluation.accepted ? "✓ Accepted" : "✗ Rejected"}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div>
+                                  <div className="text-sm text-gray-200">{user.contact}</div>
+                                  <div className="text-sm text-gray-400">{user.gender}</div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {user.roundTwo ? (
+                                  <Badge variant="outline" className="border-gray-600 text-gray-200">Panel {user.roundTwo.panel}</Badge>
+                                ) : (
+                                  <span className="text-xs text-gray-400">N/A</span>
                                 )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )})
+                              </TableCell>
+                              <TableCell>{getRatingBadge(user)}</TableCell>
+                              <TableCell>{getRoundTwoStatusBadge(user)}</TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  {user.roundTwo && (
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => openReviewDialog(user)}
+                                        className="flex items-center gap-1 bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700"
+                                      >
+                                        <FileText className="h-4 w-4" />
+                                        Review
+                                      </Button>
+
+                                      {/* === show Accept/Reject only AFTER a review exists and user.round === 2 and not evaluated === */}
+                                      {user.round === 2 && user.roundTwo.review && !evaluation.evaluated && (
+                                        <>
+                                          <Button
+                                            size="sm"
+                                            onClick={() => handleAcceptCandidate(user)}
+                                            className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                          >
+                                            <UserCheck className="h-4 w-4" />
+                                            Accept
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="destructive"
+                                            onClick={() => handleRejectCandidate(user)}
+                                            className="flex items-center gap-1"
+                                          >
+                                            <UserX className="h-4 w-4" />
+                                            Reject
+                                          </Button>
+                                        </>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })
                       )}
                     </TableBody>
                   </Table>

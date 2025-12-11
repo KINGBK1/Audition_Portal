@@ -27,7 +27,7 @@ model User {
   contact        String?          @unique
   gender         String?
   specialization String?
-  round          Int?             @default(0)
+  round          Int?             @default(1)
   role           Role             @default(USER)
   hasGivenExam   Boolean          @default(false)
   auditionRounds AuditionRound[]

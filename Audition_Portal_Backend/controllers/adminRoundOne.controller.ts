@@ -200,6 +200,11 @@ export const submitEvaluation = asyncHandler(async (req: Request, res: Response)
           tags: [],
         },
       });
+      // update user's round to 2
+      await prisma.user.update({
+        where: { id: Number(userId) },
+        data: { round: 2 },
+      });
     }
   }
 

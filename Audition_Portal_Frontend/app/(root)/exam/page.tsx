@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { RocketIcon, Brain, Timer, AlertTriangle, CheckCircle, ImageIcon } from "lucide-react"
 import { QuestionType, type QuestionWithOptions } from "@/lib/types"
+import Loader from "@/components/Loader"
 
 const Exam = () => {
   const [rulesAccepted, setRulesAccepted] = useState(false)
@@ -27,7 +28,7 @@ const Exam = () => {
   const router = useRouter()
 
   const [questions, setQuestions] = useState<QuestionWithOptions[]>([])
-  const [isLoadingQuestions, setIsLoadingQuestions] = useState(false)
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true)
 
   // Fetch questions and options and user from the server
   useEffect(() => {
@@ -75,7 +76,7 @@ const Exam = () => {
     }
     fetchUser()
     fetchQuestions()
-  }, [])
+  }, [router])
 
 
   const handleAutoSubmit = async () => {
@@ -366,18 +367,7 @@ const Exam = () => {
   }
 
   if (isLoadingQuestions) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-[#020817]">
-        <div className="text-center">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-            className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"
-          />
-          <p className="text-blue-400 text-lg">Loading questions...</p>
-        </div>
-      </div>
-    )
+    return <Loader />
   }
   
 

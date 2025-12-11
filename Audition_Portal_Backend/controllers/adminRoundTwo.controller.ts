@@ -185,7 +185,7 @@ export const submitRoundTwoReview = asyncHandler(async (req: Request, res: Respo
     rating,
     gd,
     general,
-    // forwarded, // ignore forwarded from client — computed server-side
+    forwarded, // optional: accept forwarded flag from client but do NOT treat it as final decision
   } = req.body as {
     userId: number;
     roundTwoId: string;
@@ -199,6 +199,7 @@ export const submitRoundTwoReview = asyncHandler(async (req: Request, res: Respo
     rating: number;
     gd: boolean;
     general: boolean;
+    forwarded?: boolean;
   };
 
   // Validate required fields
@@ -232,10 +233,12 @@ export const submitRoundTwoReview = asyncHandler(async (req: Request, res: Respo
     throw new ApiError(400, "User does not have Round 2 data");
   }
 
-  // Compute forwarded from gd (server-side truth)
-  const isForwarded = !!gd;
+  // Determine forwarded flag to store in review record.
+  // NOTE: storing this flag is OK for tracking, but it does NOT imply acceptance.
+  const forwardedFlag = typeof forwarded === "boolean" ? forwarded : false;
 
-  // Transaction: upsert review, update roundTwo status, upsert auditionRound, optionally promote user
+  // Transaction: upsert review and ensure auditionRound exists for round 2.
+  // IMPORTANT: Do NOT change user.round here or mark finalSelection for acceptance automatically.
   const result = await prisma.$transaction(async (tx) => {
     // 1) upsert RoundTwoReview
     const review = await tx.roundTwoReview.upsert({
@@ -252,7 +255,7 @@ export const submitRoundTwoReview = asyncHandler(async (req: Request, res: Respo
         rating,
         gd,
         general,
-        forwarded: isForwarded,
+        forwarded: forwardedFlag,
       },
       create: {
         userId: Number(userId),
@@ -268,19 +271,19 @@ export const submitRoundTwoReview = asyncHandler(async (req: Request, res: Respo
         rating,
         gd,
         general,
-        forwarded: isForwarded,
+        forwarded: forwardedFlag,
       },
     });
 
-    // 2) update RoundTwo.status
+    // 2) update RoundTwo.status -> mark as REVIEWED (do NOT decide acceptance here)
     const roundTwo = await tx.roundTwo.update({
       where: { id: roundTwoId },
       data: {
-        status: isForwarded ? "FORWARDED" : "REJECTED",
+        status: "REVIEWED",
       },
     });
 
-    // 3) upsert AuditionRound for round = 2
+    // 3) upsert AuditionRound for round = 2, but keep finalSelection null so accept/reject remains explicit
     const auditionRound = await tx.auditionRound.upsert({
       where: {
         userId_round: {
@@ -290,27 +293,18 @@ export const submitRoundTwoReview = asyncHandler(async (req: Request, res: Respo
       },
       update: {
         panel: roundTwo.panel ?? null,
-        finalSelection: isForwarded ? true : false,
+        finalSelection: null, // explicitly leave as null until evaluation endpoint is used
       },
       create: {
         userId: Number(userId),
         round: 2,
         panel: roundTwo.panel ?? null,
-        finalSelection: isForwarded ? true : false,
+        finalSelection: null,
       },
     });
 
-    // 4) If forwarded, promote user.round => 3
-    let updatedUser = null;
-    if (isForwarded) {
-      updatedUser = await tx.user.update({
-        where: { id: Number(userId) },
-        data: { round: 3 },
-        select: { id: true, round: true },
-      });
-    }
-
-    return { review, roundTwo, auditionRound, updatedUser };
+    // DO NOT update user.round here. Promotion to round 3 happens in evaluateRoundTwoCandidate when admin clicks Accept.
+    return { review, roundTwo, auditionRound };
   });
 
   return res
@@ -318,7 +312,7 @@ export const submitRoundTwoReview = asyncHandler(async (req: Request, res: Respo
     .json(
       new ApiResponse(
         200,
-        { ...result, forwarded: isForwarded },
+        { ...result, forwarded: forwardedFlag },
         "Round 2 review submitted successfully"
       )
     );

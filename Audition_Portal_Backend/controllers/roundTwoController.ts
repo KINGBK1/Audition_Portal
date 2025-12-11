@@ -6,12 +6,24 @@ const prisma = new PrismaClient();
 // USER SIDE
 //Create or Update Round 2 Entry
 export const CreateUpdateTask = async (req: Request, res: Response): Promise<Response> => {
-  (req as any).user = { id: 1 };
+  // (req as any).user = { id: 1 };
     const { taskAlloted, taskLink, addOns, status, panel } = req.body;
   const user = req.user as { id: number };
 
   if (!taskAlloted || !taskLink || !status || !Array.isArray(addOns)) {
     return res.status(400).json({ error: 'Missing or invalid required fields' });
+  }
+
+  // if pannel is missing, then fetch pannel from roundTwo entry if exists
+  if (!panel) {
+    const existingEntry = await prisma.roundTwo.findUnique({
+      where: { userId: user.id },
+    });
+    if (existingEntry && existingEntry.panel) {
+      req.body.panel = existingEntry.panel;
+    } else {
+      return res.status(400).json({ error: 'Panel is required for new entries' });
+    }
   }
 
   try {

@@ -13,6 +13,7 @@ import jwt from "jsonwebtoken";
 import { Request, Response } from "express";
 import round2Router from "./routes/round2";
 import adminRoundOneRouter from "./routes/adminRoundOne.route";
+import adminRoundTwoRouter from "./routes/adminRoundTwo.route";
 require("dotenv").config();
 
 const app = express();
@@ -25,7 +26,7 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: "http://localhost:3002",
+    origin: "http://localhost:3000",
     methods: "GET,POST,PUT,DELETE",
     allowedHeaders: "Content-Type,Authorization",
     credentials: true,
@@ -180,6 +181,7 @@ app.use("/api/quiz", quizRouter);
 app.use("/api/round2", round2Router);
 
 app.use("/api/admin/r1", adminRoundOneRouter);
+app.use("/api/admin/r2", adminRoundTwoRouter);
 
 app.listen(8080, () => {
   connectToDatabase();

@@ -24,28 +24,44 @@ export default function Home() {
   const dispatch = useAppDispatch();
   const router = useRouter();
 
-  useEffect(() => {
-    console.log("Home mounted");
-    const checkAuth = async () => {
-      try {
-        const user = await dispatch(verifyToken()).unwrap();
-        console.log("Verified user:", user);
-        
-        if (user.role === "ADMIN") {
-          console.log("Admin has logged in, redirecting to admin profile");
-          router.push("/admin/profile");
-        } else {
-          console.log("Regular user has logged in, redirecting to dashboard");
-          router.push("/dashboard");
-        }
-      } catch (err) {
-        console.error("verifyToken failed (user not logged in)", err);
-        setLoading(false);
-      }
-    };
+useEffect(() => {
+  const checkAuth = async () => {
+    try {
+      //Verify token
+      const verified = await dispatch(verifyToken()).unwrap();
 
-    checkAuth();
-  }, [dispatch, router]);
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+      const user = await res.json();
+
+      // Redirect logic
+      if (verified.role === "ADMIN") {
+        router.push("/admin/profile");
+        return;
+      }
+
+      // round-based redirect
+      if (user.round >= 2) {
+        console.log(user.round);
+        router.replace("/exam/round2");
+        return;
+      }
+
+      router.push("/dashboard");
+    } catch (err) {
+      console.error("Auth failed:", err);
+      setLoading(false);
+    }
+  };
+
+  checkAuth();
+}, [dispatch, router]);
+
 
   function Signin() {
     const oauthUrl = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_URL;

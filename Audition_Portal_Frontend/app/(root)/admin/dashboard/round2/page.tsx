@@ -219,18 +219,21 @@ export default function AdminRoundTwoDashboard() {
     setFilteredUsers(list)
   }, [users, searchTerm, filterStatus])
 
-  const getEvaluationStatus = (user: User): { evaluated: boolean; accepted: boolean | null } => {
+  const getEvaluationStatus = (user: User): { evaluated: boolean; accepted: boolean | null; hasReview: boolean } => {
     const round2Audition = user.auditionRounds?.find((r) => r.round === 2)
-    if (!round2Audition) return { evaluated: false, accepted: null }
+    const hasReview = user.roundTwo?.review !== null && user.roundTwo?.review !== undefined
+    
+    if (!round2Audition) return { evaluated: false, accepted: null, hasReview }
     
     if (round2Audition.finalSelection !== null) {
       return {
         evaluated: true,
-        accepted: round2Audition.finalSelection
+        accepted: round2Audition.finalSelection,
+        hasReview
       }
     }
     
-    return { evaluated: false, accepted: null }
+    return { evaluated: false, accepted: null, hasReview }
   }
 
   const getRatingBadge = (user: User): React.ReactNode => {
@@ -635,7 +638,7 @@ export default function AdminRoundTwoDashboard() {
                                       <FileText className="h-4 w-4" />
                                       Review
                                     </Button>
-                                    {!evaluation.evaluated && (
+                                    {evaluation.hasReview && !evaluation.evaluated && (
                                       <>
                                         <Button
                                           size="sm"

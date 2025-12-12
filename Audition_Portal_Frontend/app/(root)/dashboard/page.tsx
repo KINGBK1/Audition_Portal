@@ -85,6 +85,14 @@ const Dashboard = () => {
 
     // Cleanup is not strictly necessary here, but good practice if you added event listeners
   }, [dispatch, push]);
+  // useEffect(() => {
+  //   if (!isLoading && userInfo) {
+  //     if (userInfo.round === 2) {
+  //       push("/exam/round2");
+  //     }
+  //   }
+  // }, [isLoading, userInfo, push]);
+
 
   useEffect(() => {
     const timer = setInterval(() => {

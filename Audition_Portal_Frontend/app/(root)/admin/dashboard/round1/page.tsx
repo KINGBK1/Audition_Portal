@@ -47,6 +47,8 @@ import {
   Trophy,
   Calculator,
 } from "lucide-react"
+import { ThemeToggle } from "@/components/theme-toggle"
+import { fetchUserData } from "@/lib/store/features/auth/authSlice"
 
 // Types
 interface QuestionOption {
@@ -116,76 +118,84 @@ export default function AdminDashboard() {
   const [loadingScores, setLoadingScores] = useState<number[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // Fetch initial data
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setIsLoading(true)
-        
-        const [usersRes, questionsRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/candidate`, {
-            method: "GET",
-            credentials: "include",
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz`, {
-            method: "GET",
-            credentials: "include",
-          }),
-        ]);
+  const fetchData = async()=> {
+    try {
+      setIsLoading(true);
 
-        if (!usersRes.ok) {
-          console.error("Failed to fetch users:", usersRes.status, usersRes.statusText);
-          toast({ title: "Error fetching users", variant: "destructive" });
-          setUsers([]);
-        } else {
-          const usersJson = await usersRes.json();
-          const usersData: User[] = Array.isArray(usersJson) ? usersJson : (usersJson.data || []);
-          setUsers(usersData);
-          
-          // Calculate scores if we have users who took the exam
-          if (usersData.length > 0) {
-            const examTakenUsers = usersData.filter((u) => u.hasGivenExam);
-            if (examTakenUsers.length > 0) {
-              // Wait for questions first
-              if (questionsRes.ok) {
-                const questionsJson = await questionsRes.json();
-                const questionsData: Question[] = Array.isArray(questionsJson) 
-                  ? questionsJson 
-                  : (questionsJson.data || []);
-                setQuestions(questionsData);
-                
-                // Now calculate scores
-                if (questionsData.length > 0) {
-                  calculateAllScores(examTakenUsers, questionsData);
-                }
+      const [usersRes, questionsRes] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/candidate`, {
+          method: "GET",
+          credentials: "include",
+        }),
+        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz`, {
+          method: "GET",
+          credentials: "include",
+        }),
+      ]);
+
+      if (!usersRes.ok) {
+        console.error(
+          "Failed to fetch users:",
+          usersRes.status,
+          usersRes.statusText
+        );
+        toast({ title: "Error fetching users", variant: "destructive" });
+        setUsers([]);
+      } else {
+        const usersJson = await usersRes.json();
+        const usersData: User[] = Array.isArray(usersJson)
+          ? usersJson
+          : usersJson.data || [];
+        setUsers(usersData);
+
+        // Calculate scores if we have users who took the exam
+        if (usersData.length > 0) {
+          const examTakenUsers = usersData.filter((u) => u.hasGivenExam);
+          if (examTakenUsers.length > 0) {
+            // Wait for questions first
+            if (questionsRes.ok) {
+              const questionsJson = await questionsRes.json();
+              const questionsData: Question[] = Array.isArray(questionsJson)
+                ? questionsJson
+                : questionsJson.data || [];
+              setQuestions(questionsData);
+
+              // Now calculate scores
+              if (questionsData.length > 0) {
+                calculateAllScores(examTakenUsers, questionsData);
               }
             }
           }
         }
-
-        if (!questionsRes.ok) {
-          console.error("Failed to fetch questions:", questionsRes.status, questionsRes.statusText);
-          toast({ title: "Error fetching questions", variant: "destructive" });
-          setQuestions([]);
-        } else if (questions.length === 0) {
-          // Only set questions if not already set
-          const questionsJson = await questionsRes.json();
-          const questionsData: Question[] = Array.isArray(questionsJson) 
-            ? questionsJson 
-            : (questionsJson.data || []);
-          setQuestions(questionsData);
-        }
-
-      } catch (err) {
-        console.error("Fetch error:", err);
-        toast({ title: "Error fetching data", variant: "destructive" });
-      } finally {
-        setIsLoading(false)
       }
-    }
 
-    fetchData();
-  }, []);
+      if (!questionsRes.ok) {
+        console.error(
+          "Failed to fetch questions:",
+          questionsRes.status,
+          questionsRes.statusText
+        );
+        toast({ title: "Error fetching questions", variant: "destructive" });
+        setQuestions([]);
+      } else if (questions.length === 0) {
+        // Only set questions if not already set
+        const questionsJson = await questionsRes.json();
+        const questionsData: Question[] = Array.isArray(questionsJson)
+          ? questionsJson
+          : questionsJson.data || [];
+        setQuestions(questionsData);
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+      toast({ title: "Error fetching data", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+  useEffect(() => {
+  fetchData()
+}, []);
+
 
   // Calculate scores for all users who have taken the exam
   const calculateAllScores = async (examUsers: User[], questionsData: Question[]) => {
@@ -496,6 +506,7 @@ export default function AdminDashboard() {
             evaluatedBy: "admin@domain.com",
           }),
         })
+        
       } else {
         await submitEvaluation(auditionRound.id, Number.parseInt(selectedPanel, 10), true)
       }
@@ -504,7 +515,8 @@ export default function AdminDashboard() {
       setSelectedUser(null)
       setSelectedPanel("")
 
-      toast({ title: `Successfully assigned to Panel ${selectedPanel}` })
+      toast({ title: `Successfully assigned to Panel ${selectedPanel}` });
+      await fetchData();
     } catch {
       toast({ title: "Error assigning panel", variant: "destructive" })
     }
@@ -538,7 +550,8 @@ export default function AdminDashboard() {
         await submitEvaluation(auditionRound.id, null, false)
       }
 
-      toast({ title: "User rejected successfully" })
+      toast({ title: "User rejected successfully" });
+      await fetchData();
     } catch {
       toast({ title: "Error rejecting user", variant: "destructive" })
     }
@@ -577,18 +590,26 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 w-full">
+    <div className="min-h-screen bg-background w-full">
       <div className="container mx-auto p-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600 mt-2">Manage quiz participants and panel assignments</p>
+        <div className="flex justify-between items-start mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">
+              Admin Dashboard
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Manage quiz participants and panel assignments
+            </p>
+          </div>
+          <ThemeToggle />
         </div>
-
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Registered</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Registered
+              </CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -608,11 +629,15 @@ export default function AdminDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Pending Review
+              </CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{pendingReview}</div>
+              <div className="text-2xl font-bold text-orange-600">
+                {pendingReview}
+              </div>
             </CardContent>
           </Card>
 
@@ -622,7 +647,9 @@ export default function AdminDashboard() {
               <UserCheck className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{qualifiedRound2}</div>
+              <div className="text-2xl font-bold text-green-600">
+                {qualifiedRound2}
+              </div>
             </CardContent>
           </Card>
 
@@ -647,7 +674,9 @@ export default function AdminDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>User Management</CardTitle>
-                <CardDescription>Review quiz responses and manage participants</CardDescription>
+                <CardDescription>
+                  Review quiz responses and manage participants
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -677,7 +706,10 @@ export default function AdminDashboard() {
                     </SelectContent>
                   </Select>
 
-                  <Button onClick={handleRandomAssignment} className="flex items-center gap-2">
+                  <Button
+                    onClick={handleRandomAssignment}
+                    className="flex items-center gap-2"
+                  >
                     <Shuffle className="h-4 w-4" />
                     Random Assignment
                   </Button>
@@ -698,7 +730,10 @@ export default function AdminDashboard() {
                     <TableBody>
                       {filteredUsers.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                          <TableCell
+                            colSpan={6}
+                            className="text-center py-8 text-gray-500"
+                          >
                             No users found
                           </TableCell>
                         </TableRow>
@@ -707,14 +742,20 @@ export default function AdminDashboard() {
                           <TableRow key={user.id}>
                             <TableCell>
                               <div>
-                                <div className="font-medium">{user.username}</div>
-                                <div className="text-sm text-muted-foreground">{user.email}</div>
+                                <div className="font-medium">
+                                  {user.username}
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  {user.email}
+                                </div>
                               </div>
                             </TableCell>
                             <TableCell>
                               <div>
                                 <div className="text-sm">{user.contact}</div>
-                                <div className="text-sm text-muted-foreground">{user.gender}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  {user.gender}
+                                </div>
                               </div>
                             </TableCell>
                             <TableCell>{user.specialization}</TableCell>
@@ -735,17 +776,22 @@ export default function AdminDashboard() {
                                 )}
 
                                 {user.hasGivenExam &&
-                                  (!user.auditionRounds?.some((round) => round.round === 1) ||
+                                  (!user.auditionRounds?.some(
+                                    (round) => round.round === 1
+                                  ) ||
                                     user.auditionRounds?.some(
-                                      (round) => round.round === 1 && round.finalSelection === null,
+                                      (round) =>
+                                        round.round === 1 &&
+                                        round.finalSelection === null
                                     )) && (
                                     <>
                                       <Button
                                         size="sm"
                                         variant="default"
                                         onClick={() => {
-                                          setSelectedUser(user)
-                                          setIsAssignDialogOpen(true)
+                                          setSelectedUser(user);
+                                          setIsAssignDialogOpen(true);
+                                          
                                         }}
                                       >
                                         <CheckCircle className="h-4 w-4 mr-1" />
@@ -754,22 +800,33 @@ export default function AdminDashboard() {
 
                                       <AlertDialog>
                                         <AlertDialogTrigger asChild>
-                                          <Button size="sm" variant="destructive">
+                                          <Button
+                                            size="sm"
+                                            variant="destructive"
+                                          >
                                             <XCircle className="h-4 w-4 mr-1" />
                                             Reject
                                           </Button>
                                         </AlertDialogTrigger>
                                         <AlertDialogContent>
                                           <AlertDialogHeader>
-                                            <AlertDialogTitle>Reject User</AlertDialogTitle>
+                                            <AlertDialogTitle>
+                                              Reject User
+                                            </AlertDialogTitle>
                                             <AlertDialogDescription>
-                                              Are you sure you want to reject {user.username}? This action cannot be undone.
+                                              Are you sure you want to reject{" "}
+                                              {user.username}? This action
+                                              cannot be undone.
                                             </AlertDialogDescription>
                                           </AlertDialogHeader>
                                           <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogCancel>
+                                              Cancel
+                                            </AlertDialogCancel>
                                             <AlertDialogAction
-                                              onClick={() => handleRejectUser(user.id)}
+                                              onClick={() =>
+                                                handleRejectUser(user.id)
+                                              }
                                               className="bg-red-600 hover:bg-red-700"
                                             >
                                               Reject
@@ -795,19 +852,25 @@ export default function AdminDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>Panel Distribution</CardTitle>
-                <CardDescription>Overview of candidates assigned to each panel</CardDescription>
+                <CardDescription>
+                  Overview of candidates assigned to each panel
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                   {panelCounts.map((panel) => (
                     <Card key={panel.panel}>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Panel {panel.panel}</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                          Panel {panel.panel}
+                        </CardTitle>
                         <Trophy className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
                         <div className="text-2xl font-bold">{panel.count}</div>
-                        <p className="text-xs text-muted-foreground">candidates assigned</p>
+                        <p className="text-xs text-muted-foreground">
+                          candidates assigned
+                        </p>
                       </CardContent>
                     </Card>
                   ))}
@@ -816,8 +879,10 @@ export default function AdminDashboard() {
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Panel Members</h3>
                   {Array.from({ length: 6 }, (_, i) => {
-                    const panelNum = i + 1
-                    const panelMembers = users.filter((user) => user.roundTwo?.panel === panelNum)
+                    const panelNum = i + 1;
+                    const panelMembers = users.filter(
+                      (user) => user.roundTwo?.panel === panelNum
+                    );
 
                     return (
                       <Card key={panelNum}>
@@ -830,15 +895,21 @@ export default function AdminDashboard() {
                           {panelMembers.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                               {panelMembers.map((user) => {
-                                const userScore = userScores.find((s) => s.userId === user.id)
+                                const userScore = userScores.find(
+                                  (s) => s.userId === user.id
+                                );
                                 return (
                                   <div
                                     key={user.id}
-                                    className="flex items-center justify-between p-3 bg-gray-50 rounded"
+                                    className="flex items-center justify-between p-3 bg-muted rounded"
                                   >
                                     <div className="flex-1">
-                                      <div className="text-sm font-medium">{user.username}</div>
-                                      <div className="text-xs text-muted-foreground">{user.specialization}</div>
+                                      <div className="text-sm font-medium">
+                                        {user.username}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">
+                                        {user.specialization}
+                                      </div>
                                     </div>
                                     {userScore && (
                                       <Badge variant="outline" className="ml-2">
@@ -846,15 +917,17 @@ export default function AdminDashboard() {
                                       </Badge>
                                     )}
                                   </div>
-                                )
+                                );
                               })}
                             </div>
                           ) : (
-                            <p className="text-sm text-muted-foreground">No members assigned yet</p>
+                            <p className="text-sm text-muted-foreground">
+                              No members assigned yet
+                            </p>
                           )}
                         </CardContent>
                       </Card>
-                    )
+                    );
                   })}
                 </div>
               </CardContent>
@@ -867,7 +940,9 @@ export default function AdminDashboard() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Assign Panel</DialogTitle>
-              <DialogDescription>Select a panel for {selectedUser?.username} in Round 2</DialogDescription>
+              <DialogDescription>
+                Select a panel for {selectedUser?.username} in Round 2
+              </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
@@ -889,7 +964,10 @@ export default function AdminDashboard() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAssignDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsAssignDialogOpen(false)}
+              >
                 Cancel
               </Button>
               <Button onClick={handleAssignPanel}>Assign Panel</Button>
@@ -898,7 +976,10 @@ export default function AdminDashboard() {
         </Dialog>
 
         {/* Quiz Responses Dialog */}
-        <Dialog open={isResponsesDialogOpen} onOpenChange={setIsResponsesDialogOpen}>
+        <Dialog
+          open={isResponsesDialogOpen}
+          onOpenChange={setIsResponsesDialogOpen}
+        >
           <DialogContent className="max-w-4xl max-h-[80vh]">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -906,7 +987,8 @@ export default function AdminDashboard() {
                 Quiz Responses - {viewingUser?.username}
               </DialogTitle>
               <DialogDescription>
-                Review the user&apos;s quiz responses and performance before making a decision
+                Review the user&apos;s quiz responses and performance before
+                making a decision
               </DialogDescription>
             </DialogHeader>
 
@@ -923,12 +1005,20 @@ export default function AdminDashboard() {
                   <CardContent>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-muted-foreground">Overall Score</p>
-                        <div className="text-2xl font-bold">{getScoreBadge(viewingUser.id)}</div>
+                        <p className="text-sm text-muted-foreground">
+                          Overall Score
+                        </p>
+                        <div className="text-2xl font-bold">
+                          {getScoreBadge(viewingUser.id)}
+                        </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm text-muted-foreground">Submitted</p>
-                        <p className="text-sm font-medium">{new Date(viewingUser.createdAt).toLocaleString()}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Submitted
+                        </p>
+                        <p className="text-sm font-medium">
+                          {new Date(viewingUser.createdAt).toLocaleString()}
+                        </p>
                       </div>
                     </div>
                   </CardContent>
@@ -938,20 +1028,30 @@ export default function AdminDashboard() {
                 <ScrollArea className="h-[400px] w-full">
                   <div className="space-y-6 pr-4">
                     {questions.map((question, index) => {
-                      const userAnswer = viewingResponses.find((answer) => answer.questionId === question.id)
+                      const userAnswer = viewingResponses.find(
+                        (answer) => answer.questionId === question.id
+                      );
                       const isCorrect =
                         question.type === "MCQ" || question.type === "Pictorial"
-                          ? question.options.find((opt) => opt.id === userAnswer?.optionId)?.isCorrect
-                          : null
+                          ? question.options.find(
+                              (opt) => opt.id === userAnswer?.optionId
+                            )?.isCorrect
+                          : null;
 
                       return (
                         <Card key={question.id}>
                           <CardHeader>
                             <CardTitle className="text-base flex items-center gap-2">
-                              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">Q{index + 1}</span>
+                              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
+                                Q{index + 1}
+                              </span>
                               <Badge variant="outline">{question.type}</Badge>
                               {isCorrect !== null && (
-                                <Badge variant={isCorrect ? "default" : "destructive"}>
+                                <Badge
+                                  variant={
+                                    isCorrect ? "default" : "destructive"
+                                  }
+                                >
                                   {isCorrect ? "Correct" : "Incorrect"}
                                 </Badge>
                               )}
@@ -970,23 +1070,26 @@ export default function AdminDashboard() {
                                   />
                                 </div>
                               )}
-                              
                             </div>
 
-                            {question.type === "MCQ" || question.type === "Pictorial" ? (
+                            {question.type === "MCQ" ||
+                            question.type === "Pictorial" ? (
                               <div className="space-y-2">
-                                <p className="text-sm font-medium text-muted-foreground">Options:</p>
+                                <p className="text-sm font-medium text-muted-foreground">
+                                  Options:
+                                </p>
                                 {question.options.map((option) => (
                                   <div
                                     key={option.id}
-                                    className={`p-2 rounded border ${
-                                      option.id === userAnswer?.optionId
-                                        ? option.isCorrect
-                                          ? "bg-green-50 border-green-200"
-                                          : "bg-red-50 border-red-200"
-                                        : option.isCorrect
-                                          ? "bg-green-50 border-green-200"
-                                          : "bg-gray-50"
+                                    className={`p-2 rounded border text-foreground ${
+                                      // Added text-foreground for safety
+                                      option.id === userAnswer?.optionId // User's choice
+                                        ? option.isCorrect // Correct choice
+                                          ? "bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-600"
+                                          : "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-600"
+                                        : option.isCorrect // Correct answer (but not user's choice)
+                                        ? "bg-green-50 dark:bg-green-950/10 border-green-200 dark:border-green-800"
+                                        : "bg-muted dark:bg-muted/50" // Neutral option
                                     }`}
                                   >
                                     <div className="flex items-center gap-2">
@@ -997,44 +1100,64 @@ export default function AdminDashboard() {
                                             : "border-gray-300"
                                         }`}
                                       />
-                                      <span className={option.isCorrect ? "font-medium" : ""}>{option.text}</span>
+                                      <span
+                                        className={
+                                          option.isCorrect ? "font-medium" : ""
+                                        }
+                                      >
+                                        {option.text}
+                                      </span>
                                       {option.isCorrect && (
-                                        <Badge variant="default" className="ml-auto">
+                                        <Badge
+                                          variant="default"
+                                          className="ml-auto"
+                                        >
                                           Correct Answer
                                         </Badge>
                                       )}
-                                      {option.id === userAnswer?.optionId && !option.isCorrect && (
-                                        <Badge variant="destructive" className="ml-auto">
-                                          User&apos;s Choice
-                                        </Badge>
-                                      )}
+                                      {option.id === userAnswer?.optionId &&
+                                        !option.isCorrect && (
+                                          <Badge
+                                            variant="destructive"
+                                            className="ml-auto"
+                                          >
+                                            User&apos;s Choice
+                                          </Badge>
+                                        )}
                                     </div>
                                   </div>
                                 ))}
                               </div>
                             ) : (
                               <div className="space-y-2">
-                                <p className="text-sm font-medium text-muted-foreground">User&apos;s Answer:</p>
+                                <p className="text-sm font-medium text-muted-foreground">
+                                  User&apos;s Answer:
+                                </p>
                                 <div className="p-3 bg-gray-50 rounded border">
-                                  <p className="text-sm">{userAnswer?.description || "No answer provided"}</p>
+                                  <p className="text-sm">
+                                    {userAnswer?.description ||
+                                      "No answer provided"}
+                                  </p>
                                 </div>
                               </div>
                             )}
                           </CardContent>
                         </Card>
-                      )
+                      );
                     })}
                   </div>
                 </ScrollArea>
 
                 {/* Action Buttons */}
-                {viewingUser.auditionRounds?.some((round) => round.round === 1 && round.finalSelection === null) && (
+                {viewingUser.auditionRounds?.some(
+                  (round) => round.round === 1 && round.finalSelection === null
+                ) && (
                   <div className="flex justify-end gap-2 pt-4 border-t">
                     <Button
                       variant="destructive"
                       onClick={() => {
-                        handleRejectUser(viewingUser.id)
-                        setIsResponsesDialogOpen(false)
+                        handleRejectUser(viewingUser.id);
+                        setIsResponsesDialogOpen(false);
                       }}
                     >
                       <XCircle className="h-4 w-4 mr-2" />
@@ -1042,9 +1165,9 @@ export default function AdminDashboard() {
                     </Button>
                     <Button
                       onClick={() => {
-                        setSelectedUser(viewingUser)
-                        setIsResponsesDialogOpen(false)
-                        setIsAssignDialogOpen(true)
+                        setSelectedUser(viewingUser);
+                        setIsResponsesDialogOpen(false);
+                        setIsAssignDialogOpen(true);
                       }}
                     >
                       <CheckCircle className="h-4 w-4 mr-2" />
@@ -1058,5 +1181,5 @@ export default function AdminDashboard() {
         </Dialog>
       </div>
     </div>
-  )
+  );
 }

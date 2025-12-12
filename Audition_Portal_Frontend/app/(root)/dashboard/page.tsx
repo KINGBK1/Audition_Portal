@@ -23,7 +23,7 @@ import { CheckCircle2, ArrowRight, Trophy, Sparkles, Star } from 'lucide-react';
 
 const Dashboard = () => {
   const calculateTimeLeft = () => {
-    const targetDate = '2026-01-01';
+    const targetDate = "2026-01-01"; // Your actual round end date
     const difference = +new Date(targetDate) - +new Date();
     let timeLeft = {
       days: 0,
@@ -39,9 +39,8 @@ const Dashboard = () => {
         minutes: Math.floor((difference / 1000 / 60) % 60),
         seconds: Math.floor((difference / 1000) % 60),
       };
-    } else {
-      onComplete();
     }
+    // Removed the 'else { onComplete(); }' block
 
     return timeLeft;
   };
@@ -62,20 +61,29 @@ const Dashboard = () => {
   const { push } = useRouter();
   const [isLoading, setIsLoading] = useState(true);
 
+  // Dashboard.tsx (Revised useEffect)
+
   useEffect(() => {
-    dispatch(verifyToken())
-      .unwrap()
-      .then(() => {
-        dispatch(fetchUserData())
-          .unwrap()
-          .finally(() => setIsLoading(false));
-      })
-      .catch(() => {
+    const initializeDashboard = async () => {
+      setIsLoading(true);
+      try {
+        // 1. Verify token
+        await dispatch(verifyToken()).unwrap();
+
+        // 2. Fetch the absolute latest user data from the server
+        await dispatch(fetchUserData()).unwrap();
+      } catch (error) {
+        // If verifyToken or fetchUserData fails, redirect to login page
         push("/");
-        setTimeout(() => {
-          setIsLoading(false);
-        }, 500);
-      });
+      } finally {
+        // Ensure loading screen is dismissed
+        setIsLoading(false);
+      }
+    };
+
+    initializeDashboard();
+
+    // Cleanup is not strictly necessary here, but good practice if you added event listeners
   }, [dispatch, push]);
   // useEffect(() => {
   //   if (!isLoading && userInfo) {
@@ -96,25 +104,28 @@ const Dashboard = () => {
 
   async function logout(): Promise<void> {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
-        method: 'GET',
-        credentials: 'include',
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
 
       const data = await res.json();
 
       if (data.success) {
-        push('/');
+        push("/");
       } else {
-        alert('Logout failed');
+        alert("Logout failed");
       }
     } catch (error) {
-      console.error('Error logging out:', error);
-      alert('Error logging out');
+      console.error("Error logging out:", error);
+      alert("Error logging out");
     }
   }
 
-  const hasCompletedQuiz = userInfo?.hasGivenExam && userInfo?.round === 1;
+  const hasCompletedQuiz = userInfo?.hasGivenExam && userInfo?.round === 0;
   const isRoundTwo = userInfo?.round === 2;
   const isRoundThreeOrHigher = userInfo?.round && userInfo.round >= 3;
 
@@ -129,31 +140,36 @@ const Dashboard = () => {
       {isLoading ? (
         <Loader />
       ) : (
-        <div className='relative h-screen w-screen overflow-hidden'>
+        <div className="relative h-screen w-screen overflow-hidden">
           <div className="fixed top-6 right-6 z-50">
             <Popover>
               <PopoverTrigger>
                 <Avatar className="hover:brightness-75 w-11 h-11 cursor-pointer">
-                  <AvatarImage src={userInfo?.picture || undefined} alt="image" />
+                  <AvatarImage
+                    src={userInfo?.picture || undefined}
+                    alt="image"
+                  />
                   <AvatarFallback>
-                    {userInfo?.username?.charAt(0).toUpperCase() || 'U'}
+                    {userInfo?.username?.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
               </PopoverTrigger>
 
-              <PopoverContent className='dark'>
-                <div className='flex flex-col p-4'>
-                  <p className='text-slate-400 text-sm'>Signed in as</p>
-                  <p className='text-slate-100 font-semibold'>{userInfo?.username}</p>
+              <PopoverContent className="dark">
+                <div className="flex flex-col p-4">
+                  <p className="text-slate-400 text-sm">Signed in as</p>
+                  <p className="text-slate-100 font-semibold">
+                    {userInfo?.username}
+                  </p>
                   <Button
-                    className='mt-4 dark'
-                    onClick={() => push('/profile')}
+                    className="mt-4 dark"
+                    onClick={() => push("/profile")}
                   >
                     View Profile
                   </Button>
                   <Button
-                    variant={'outline'}
-                    className='mt-2 dark'
+                    variant={"outline"}
+                    className="mt-2 dark"
                     onClick={() => logout()}
                   >
                     Logout
@@ -168,7 +184,7 @@ const Dashboard = () => {
           </div>
 
           {hasCompletedQuiz ? (
-            <div className='flex items-center justify-center h-full flex-col space-y-12'>
+            <div className="flex items-center justify-center h-full flex-col space-y-12">
               {/* Timer */}
               <div className="flex items-center justify-center flex-col space-y-6">
                 <span className="text-slate-300 text-xl md:text-3xl font-light">
@@ -176,45 +192,70 @@ const Dashboard = () => {
                 </span>
                 <div className="flex justify-center gap-3 md:gap-5">
                   <div className="flex w-16 md:w-20 flex-col items-center">
-                    <p className="font-bold text-3xl md:text-5xl text-slate-200">{timeLeft.days}</p>
-                    <div className="text-xs md:text-sm text-slate-400 mt-1">Days</div>
+                    <p className="font-bold text-3xl md:text-5xl text-slate-200">
+                      {timeLeft.days}
+                    </p>
+                    <div className="text-xs md:text-sm text-slate-400 mt-1">
+                      Days
+                    </div>
                   </div>
-                  <p className="font-bold text-3xl md:text-5xl text-slate-400">:</p>
+                  <p className="font-bold text-3xl md:text-5xl text-slate-400">
+                    :
+                  </p>
                   <div className="flex w-16 md:w-20 flex-col items-center">
-                    <p className="font-bold text-3xl md:text-5xl text-slate-200">{timeLeft.hours}</p>
-                    <div className="text-xs md:text-sm text-slate-400 mt-1">Hours</div>
+                    <p className="font-bold text-3xl md:text-5xl text-slate-200">
+                      {timeLeft.hours}
+                    </p>
+                    <div className="text-xs md:text-sm text-slate-400 mt-1">
+                      Hours
+                    </div>
                   </div>
-                  <p className="font-bold text-3xl md:text-5xl text-slate-400">:</p>
+                  <p className="font-bold text-3xl md:text-5xl text-slate-400">
+                    :
+                  </p>
                   <div className="flex w-16 md:w-20 flex-col items-center">
-                    <p className="font-bold text-3xl md:text-5xl text-slate-200">{timeLeft.minutes}</p>
-                    <div className="text-xs md:text-sm text-slate-400 mt-1">Min</div>
+                    <p className="font-bold text-3xl md:text-5xl text-slate-200">
+                      {timeLeft.minutes}
+                    </p>
+                    <div className="text-xs md:text-sm text-slate-400 mt-1">
+                      Min
+                    </div>
                   </div>
-                  <p className="font-bold text-3xl md:text-5xl text-slate-400">:</p>
+                  <p className="font-bold text-3xl md:text-5xl text-slate-400">
+                    :
+                  </p>
                   <div className="flex w-16 md:w-20 flex-col items-center">
-                    <p className="font-bold text-3xl md:text-5xl text-slate-200">{timeLeft.seconds}</p>
-                    <div className="text-xs md:text-sm text-slate-400 mt-1">Sec</div>
+                    <p className="font-bold text-3xl md:text-5xl text-slate-200">
+                      {timeLeft.seconds}
+                    </p>
+                    <div className="text-xs md:text-sm text-slate-400 mt-1">
+                      Sec
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Completion Card */}
-              <Card className='dark border-slate-800 w-[85vw] md:w-[32vw]'>
+              <Card className="dark border-slate-800 w-[85vw] md:w-[32vw]">
                 <CardHeader className="text-center pb-6">
                   <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                  <CardTitle className="text-2xl text-white">Quiz Completed</CardTitle>
+                  <CardTitle className="text-2xl text-white">
+                    Quiz Completed
+                  </CardTitle>
                   <CardDescription className="text-base text-slate-400 mt-2">
                     Submitted successfully
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="text-center pb-6">
                   <p className="text-slate-400 text-sm leading-relaxed">
-                    Your submission is under review. You&apos;ll be notified about the next round.
+                    Your submission is under review. You&apos;ll be notified
+                    about the next round.
                   </p>
                 </CardContent>
               </Card>
             </div>
           ) : isRoundTwo ? (
-            <div className='flex items-center justify-center h-full'>
+            <div className="flex items-center justify-center h-full">
               {/* Round 2 Card with Button */}
               <div className="relative">
                 {/* Decorative elements */}
@@ -225,7 +266,7 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                <Card className='dark border-emerald-500/50 w-[85vw] md:w-[42vw] bg-slate-900 shadow-2xl shadow-emerald-500/20'>
+                <Card className="dark border-emerald-500/50 w-[85vw] md:w-[42vw] bg-slate-900 shadow-2xl shadow-emerald-500/20">
                   <CardHeader className="pb-6 pt-12">
                     <div className="flex items-center justify-center mb-4">
                       <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
@@ -239,30 +280,39 @@ const Dashboard = () => {
                       You&apos;ve successfully advanced to the next stage
                     </CardDescription>
                   </CardHeader>
-                  
+
                   <CardContent className="space-y-6 pb-8">
                     {/* Achievement Stats */}
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-slate-800 rounded-lg p-4 text-center border border-slate-600">
-                        <div className="text-2xl font-bold text-emerald-400">2</div>
-                        <div className="text-xs text-slate-400 mt-1">Current Round</div>
+                        <div className="text-2xl font-bold text-emerald-400">
+                          2
+                        </div>
+                        <div className="text-xs text-slate-400 mt-1">
+                          Current Round
+                        </div>
                       </div>
                       <div className="bg-slate-800 rounded-lg p-4 text-center border border-slate-600">
-                        <div className="text-2xl font-bold text-blue-400">1</div>
-                        <div className="text-xs text-slate-400 mt-1">Rounds Cleared</div>
+                        <div className="text-2xl font-bold text-blue-400">
+                          1
+                        </div>
+                        <div className="text-xs text-slate-400 mt-1">
+                          Rounds Cleared
+                        </div>
                       </div>
                     </div>
 
                     {/* Motivational Message */}
                     <div className="bg-emerald-900/40 border border-emerald-500/50 rounded-lg p-4">
                       <p className="text-slate-200 text-sm text-center leading-relaxed">
-                        You&apos;re doing great! Ready to take on the next challenge and prove your skills?
+                        You&apos;re doing great! Ready to take on the next
+                        challenge and prove your skills?
                       </p>
                     </div>
 
                     {/* Action Button */}
-                    <button 
-                      onClick={handleRoundNavigation} 
+                    <button
+                      onClick={handleRoundNavigation}
                       className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold text-base py-6 rounded-md flex items-center justify-center gap-2 shadow-lg shadow-green-500/30 transition-all duration-300 hover:shadow-green-500/50 hover:scale-[1.02]"
                     >
                       <span>Begin Round 2</span>
@@ -281,7 +331,7 @@ const Dashboard = () => {
               </div>
             </div>
           ) : isRoundThreeOrHigher ? (
-            <div className='flex items-center justify-center h-full'>
+            <div className="flex items-center justify-center h-full">
               {/* Round 3+ Congratulations Card - No Button */}
               <div className="relative">
                 {/* Decorative elements */}
@@ -292,7 +342,7 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                <Card className='dark border-yellow-500/50 w-[85vw] md:w-[42vw] bg-slate-900 shadow-2xl shadow-yellow-500/20'>
+                <Card className="dark border-yellow-500/50 w-[85vw] md:w-[42vw] bg-slate-900 shadow-2xl shadow-yellow-500/20">
                   <CardHeader className="pb-6 pt-12 text-center">
                     <div className="flex items-center justify-center mb-4">
                       <div className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
@@ -306,24 +356,33 @@ const Dashboard = () => {
                       Congratulations on clearing Round {userInfo?.round}
                     </CardDescription>
                   </CardHeader>
-                  
+
                   <CardContent className="space-y-6 pb-8">
                     {/* Achievement Stats */}
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-slate-800 rounded-lg p-4 text-center border border-slate-600">
-                        <div className="text-2xl font-bold text-yellow-400">{userInfo?.round}</div>
-                        <div className="text-xs text-slate-400 mt-1">Current Round</div>
+                        <div className="text-2xl font-bold text-yellow-400">
+                          {userInfo?.round}
+                        </div>
+                        <div className="text-xs text-slate-400 mt-1">
+                          Current Round
+                        </div>
                       </div>
                       <div className="bg-slate-800 rounded-lg p-4 text-center border border-slate-600">
-                        <div className="text-2xl font-bold text-amber-400">{userInfo?.round - 1}</div>
-                        <div className="text-xs text-slate-400 mt-1">Rounds Cleared</div>
+                        <div className="text-2xl font-bold text-amber-400">
+                          {userInfo?.round - 1}
+                        </div>
+                        <div className="text-xs text-slate-400 mt-1">
+                          Rounds Cleared
+                        </div>
                       </div>
                     </div>
 
                     {/* Success Message */}
                     <div className="bg-yellow-900/40 border border-yellow-500/50 rounded-lg p-6">
                       <p className="text-slate-200 text-base text-center leading-relaxed font-medium">
-                        You&apos;ve successfully completed Round {userInfo?.round}! 🎉
+                        You&apos;ve successfully completed Round{" "}
+                        {userInfo?.round}! 🎉
                       </p>
                       <p className="text-slate-300 text-sm text-center mt-3">
                         Wait for further instructions from the team.
@@ -344,7 +403,7 @@ const Dashboard = () => {
               </div>
             </div>
           ) : (
-            <div className='flex items-center justify-center h-full flex-col space-y-14'>
+            <div className="flex items-center justify-center h-full flex-col space-y-14">
               {/* Timer */}
               <div className="flex items-center justify-center flex-col space-y-7">
                 <span className="text-slate-300 text-3xl md:text-5xl font-light">
@@ -352,57 +411,89 @@ const Dashboard = () => {
                 </span>
                 <div className="flex justify-center gap-4 md:gap-6">
                   <div className="flex w-16 md:w-24 flex-col items-center">
-                    <p className="font-bold text-4xl md:text-6xl text-slate-200">{timeLeft.days}</p>
-                    <div className="text-sm md:text-base text-slate-400 mt-2">Days</div>
+                    <p className="font-bold text-4xl md:text-6xl text-slate-200">
+                      {timeLeft.days}
+                    </p>
+                    <div className="text-sm md:text-base text-slate-400 mt-2">
+                      Days
+                    </div>
                   </div>
-                  <p className="font-bold text-4xl md:text-6xl text-slate-400">:</p>
+                  <p className="font-bold text-4xl md:text-6xl text-slate-400">
+                    :
+                  </p>
                   <div className="flex w-16 md:w-24 flex-col items-center">
-                    <p className="font-bold text-4xl md:text-6xl text-slate-200">{timeLeft.hours}</p>
-                    <div className="text-sm md:text-base text-slate-400 mt-2">Hours</div>
+                    <p className="font-bold text-4xl md:text-6xl text-slate-200">
+                      {timeLeft.hours}
+                    </p>
+                    <div className="text-sm md:text-base text-slate-400 mt-2">
+                      Hours
+                    </div>
                   </div>
-                  <p className="font-bold text-4xl md:text-6xl text-slate-400">:</p>
+                  <p className="font-bold text-4xl md:text-6xl text-slate-400">
+                    :
+                  </p>
                   <div className="flex w-16 md:w-24 flex-col items-center">
-                    <p className="font-bold text-4xl md:text-6xl text-slate-200">{timeLeft.minutes}</p>
-                    <div className="text-sm md:text-base text-slate-400 mt-2">Min</div>
+                    <p className="font-bold text-4xl md:text-6xl text-slate-200">
+                      {timeLeft.minutes}
+                    </p>
+                    <div className="text-sm md:text-base text-slate-400 mt-2">
+                      Min
+                    </div>
                   </div>
-                  <p className="font-bold text-4xl md:text-6xl text-slate-400">:</p>
+                  <p className="font-bold text-4xl md:text-6xl text-slate-400">
+                    :
+                  </p>
                   <div className="flex w-16 md:w-24 flex-col items-center">
-                    <p className="font-bold text-4xl md:text-6xl text-slate-200">{timeLeft.seconds}</p>
-                    <div className="text-sm md:text-base text-slate-400 mt-2">Sec</div>
+                    <p className="font-bold text-4xl md:text-6xl text-slate-200">
+                      {timeLeft.seconds}
+                    </p>
+                    <div className="text-sm md:text-base text-slate-400 mt-2">
+                      Sec
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Quiz Card */}
-              <Card className='dark border-slate-800 w-[85vw] md:w-[38vw]'>
+              <Card className="dark border-slate-800 w-[85vw] md:w-[38vw]">
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-xl text-white">General Round</CardTitle>
+                  <CardTitle className="text-xl text-white">
+                    General Round
+                  </CardTitle>
                   <CardDescription className="text-base text-slate-400">
                     Time to put your skills to the test
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-slate-300 text-base">
-                    Please go through the{' '}
+                    Please go through the{" "}
                     <Popover>
                       <PopoverTrigger>
                         <span className="text-blue-400 hover:text-blue-300 cursor-pointer underline">
                           rules
                         </span>
                       </PopoverTrigger>
-                      <PopoverContent className='dark border-slate-800'>
+                      <PopoverContent className="dark border-slate-800">
                         <div className="space-y-2">
-                          <p className="text-slate-300 text-sm">• 45 minutes to complete</p>
-                          <p className="text-slate-300 text-sm">• 10 questions total</p>
-                          <p className="text-slate-300 text-sm">• 1 mark per question</p>
-                          <p className="text-slate-300 text-sm">• No negative marking</p>
+                          <p className="text-slate-300 text-sm">
+                            • 45 minutes to complete
+                          </p>
+                          <p className="text-slate-300 text-sm">
+                            • 10 questions total
+                          </p>
+                          <p className="text-slate-300 text-sm">
+                            • 1 mark per question
+                          </p>
+                          <p className="text-slate-300 text-sm">
+                            • No negative marking
+                          </p>
                         </div>
                       </PopoverContent>
-                    </Popover>
-                    {' '}before attempting
+                    </Popover>{" "}
+                    before attempting
                   </p>
-                  <Button 
-                    onClick={() => push('/exam')} 
+                  <Button
+                    onClick={() => push("/exam")}
                     className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-base py-5"
                   >
                     Start Test
@@ -419,14 +510,14 @@ const Dashboard = () => {
             repeatDelay={1}
             className={cn(
               "[mask-image:radial-gradient(1024px_circle_at_center,white,transparent)]",
-              " h-[94%] overflow-hidden skew-y-3",
+              " h-[94%] overflow-hidden skew-y-3"
             )}
           />
           <Meteors number={20} />
         </div>
       )}
     </div>
-  )
+  );
 }
 
 export default Dashboard

@@ -48,6 +48,7 @@ import {
   Calculator,
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { fetchUserData } from "@/lib/store/features/auth/authSlice"
 
 // Types
 interface QuestionOption {
@@ -117,76 +118,84 @@ export default function AdminDashboard() {
   const [loadingScores, setLoadingScores] = useState<number[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // Fetch initial data
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setIsLoading(true)
-        
-        const [usersRes, questionsRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/candidate`, {
-            method: "GET",
-            credentials: "include",
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz`, {
-            method: "GET",
-            credentials: "include",
-          }),
-        ]);
+  const fetchData = async()=> {
+    try {
+      setIsLoading(true);
 
-        if (!usersRes.ok) {
-          console.error("Failed to fetch users:", usersRes.status, usersRes.statusText);
-          toast({ title: "Error fetching users", variant: "destructive" });
-          setUsers([]);
-        } else {
-          const usersJson = await usersRes.json();
-          const usersData: User[] = Array.isArray(usersJson) ? usersJson : (usersJson.data || []);
-          setUsers(usersData);
-          
-          // Calculate scores if we have users who took the exam
-          if (usersData.length > 0) {
-            const examTakenUsers = usersData.filter((u) => u.hasGivenExam);
-            if (examTakenUsers.length > 0) {
-              // Wait for questions first
-              if (questionsRes.ok) {
-                const questionsJson = await questionsRes.json();
-                const questionsData: Question[] = Array.isArray(questionsJson) 
-                  ? questionsJson 
-                  : (questionsJson.data || []);
-                setQuestions(questionsData);
-                
-                // Now calculate scores
-                if (questionsData.length > 0) {
-                  calculateAllScores(examTakenUsers, questionsData);
-                }
+      const [usersRes, questionsRes] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/candidate`, {
+          method: "GET",
+          credentials: "include",
+        }),
+        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz`, {
+          method: "GET",
+          credentials: "include",
+        }),
+      ]);
+
+      if (!usersRes.ok) {
+        console.error(
+          "Failed to fetch users:",
+          usersRes.status,
+          usersRes.statusText
+        );
+        toast({ title: "Error fetching users", variant: "destructive" });
+        setUsers([]);
+      } else {
+        const usersJson = await usersRes.json();
+        const usersData: User[] = Array.isArray(usersJson)
+          ? usersJson
+          : usersJson.data || [];
+        setUsers(usersData);
+
+        // Calculate scores if we have users who took the exam
+        if (usersData.length > 0) {
+          const examTakenUsers = usersData.filter((u) => u.hasGivenExam);
+          if (examTakenUsers.length > 0) {
+            // Wait for questions first
+            if (questionsRes.ok) {
+              const questionsJson = await questionsRes.json();
+              const questionsData: Question[] = Array.isArray(questionsJson)
+                ? questionsJson
+                : questionsJson.data || [];
+              setQuestions(questionsData);
+
+              // Now calculate scores
+              if (questionsData.length > 0) {
+                calculateAllScores(examTakenUsers, questionsData);
               }
             }
           }
         }
-
-        if (!questionsRes.ok) {
-          console.error("Failed to fetch questions:", questionsRes.status, questionsRes.statusText);
-          toast({ title: "Error fetching questions", variant: "destructive" });
-          setQuestions([]);
-        } else if (questions.length === 0) {
-          // Only set questions if not already set
-          const questionsJson = await questionsRes.json();
-          const questionsData: Question[] = Array.isArray(questionsJson) 
-            ? questionsJson 
-            : (questionsJson.data || []);
-          setQuestions(questionsData);
-        }
-
-      } catch (err) {
-        console.error("Fetch error:", err);
-        toast({ title: "Error fetching data", variant: "destructive" });
-      } finally {
-        setIsLoading(false)
       }
-    }
 
-    fetchData();
-  }, []);
+      if (!questionsRes.ok) {
+        console.error(
+          "Failed to fetch questions:",
+          questionsRes.status,
+          questionsRes.statusText
+        );
+        toast({ title: "Error fetching questions", variant: "destructive" });
+        setQuestions([]);
+      } else if (questions.length === 0) {
+        // Only set questions if not already set
+        const questionsJson = await questionsRes.json();
+        const questionsData: Question[] = Array.isArray(questionsJson)
+          ? questionsJson
+          : questionsJson.data || [];
+        setQuestions(questionsData);
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+      toast({ title: "Error fetching data", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+  useEffect(() => {
+  fetchData()
+}, []);
+
 
   // Calculate scores for all users who have taken the exam
   const calculateAllScores = async (examUsers: User[], questionsData: Question[]) => {
@@ -538,9 +547,9 @@ export default function AdminDashboard() {
       setSelectedUser(null)
       setSelectedPanel("")
 
-      toast({ title: `Successfully assigned to Panel ${selectedPanel}` })
-    } catch (error) {
-      console.error("Error assigning panel:", error)
+      toast({ title: `Successfully assigned to Panel ${selectedPanel}` });
+      await fetchData();
+    } catch {
       toast({ title: "Error assigning panel", variant: "destructive" })
     }
   }
@@ -590,25 +599,9 @@ export default function AdminDashboard() {
         await submitEvaluation(auditionRound.id, null, false)
       }
 
-      // Refetch updated user data
-      const updatedRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/candidate`, {
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-      })
-      
-      if (updatedRes.ok) {
-        const updatedData = await updatedRes.json()
-        const round1Users = updatedData.filter((u: User) => {
-          const hasRound1 = u.auditionRounds && u.auditionRounds.some((r: AuditionRound) => r.round === 1)
-          const noRounds = !u.auditionRounds || u.auditionRounds.length === 0
-          return hasRound1 || noRounds
-        })
-        setUsers(round1Users)
-      }
-
-      toast({ title: "User rejected successfully" })
-    } catch (error) {
-      console.error("Error rejecting user:", error)
+      toast({ title: "User rejected successfully" });
+      await fetchData();
+    } catch {
       toast({ title: "Error rejecting user", variant: "destructive" })
     }
   }
@@ -647,7 +640,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background w-full">
-      {/* toggle position */}
       <div className="container mx-auto p-6">
         <div className="flex justify-between items-start mb-8">
           <div>
@@ -660,7 +652,6 @@ export default function AdminDashboard() {
           </div>
           <ThemeToggle />
         </div>
-
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <Card>
@@ -849,6 +840,7 @@ export default function AdminDashboard() {
                                         onClick={() => {
                                           setSelectedUser(user);
                                           setIsAssignDialogOpen(true);
+                                          
                                         }}
                                       >
                                         <CheckCircle className="h-4 w-4 mr-1" />
@@ -958,7 +950,7 @@ export default function AdminDashboard() {
                                 return (
                                   <div
                                     key={user.id}
-                                    className="flex items-center justify-between p-3 bg-gray-50 rounded"
+                                    className="flex items-center justify-between p-3 bg-muted rounded"
                                   >
                                     <div className="flex-1">
                                       <div className="text-sm font-medium">
@@ -1138,14 +1130,15 @@ export default function AdminDashboard() {
                                 {question.options.map((option) => (
                                   <div
                                     key={option.id}
-                                    className={`p-2 rounded border ${
-                                      option.id === userAnswer?.optionId
-                                        ? option.isCorrect
-                                          ? "bg-green-50 border-green-200"
-                                          : "bg-red-50 border-red-200"
-                                        : option.isCorrect
-                                        ? "bg-green-50 border-green-200"
-                                        : "bg-gray-50"
+                                    className={`p-2 rounded border text-foreground ${
+                                      // Added text-foreground for safety
+                                      option.id === userAnswer?.optionId // User's choice
+                                        ? option.isCorrect // Correct choice
+                                          ? "bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-600"
+                                          : "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-600"
+                                        : option.isCorrect // Correct answer (but not user's choice)
+                                        ? "bg-green-50 dark:bg-green-950/10 border-green-200 dark:border-green-800"
+                                        : "bg-muted dark:bg-muted/50" // Neutral option
                                     }`}
                                   >
                                     <div className="flex items-center gap-2">

@@ -13,7 +13,9 @@ export const verifyEmail = (email: string) => {
   const isAdmin = email === process.env.ADMIN_EMAIL;
 
   // TEMPORARY: allow Gmail for testing
-  const isDevUser = email.endsWith("@gmail.com");
+  const isDevUser = ["@gmail.com", "@nitdgp.ac.in"].some((domain) =>
+    email.endsWith(domain)
+  );
 
   return isNIT || isAdmin || isDevUser;
 };

@@ -1,165 +1,206 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useEffect, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { toast } from "@/components/ui/use-toast"
-import { motion, AnimatePresence } from "framer-motion"
-import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
-import { Card } from "@/components/ui/card"
-import { RocketIcon, Brain, Timer, AlertTriangle, CheckCircle, ImageIcon } from "lucide-react"
-import { QuestionType, type QuestionWithOptions } from "@/lib/types"
-import Loader from "@/components/Loader"
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/use-toast";
+import { motion, AnimatePresence } from "framer-motion";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import {
+  RocketIcon,
+  Brain,
+  Timer,
+  AlertTriangle,
+  CheckCircle,
+  ImageIcon,
+} from "lucide-react";
+import { QuestionType, type QuestionWithOptions } from "@/lib/types";
+import Loader from "@/components/Loader";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+// --- NEW REDUX IMPORTS ADDED ---
+import { useAppDispatch } from "@/lib/hooks";
+import { fetchUserData } from "@/lib/store/features/auth/authSlice";
+// --------------------------------
 
 const Exam = () => {
-  const [rulesAccepted, setRulesAccepted] = useState(false)
-  const [isExamStarted, setIsExamStarted] = useState(false)
-  const [timeLeft, setTimeLeft] = useState(2700) // 45:00 in seconds
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  const [answers, setAnswers] = useState<{ [key: number]: { optionId?: number; description?: string } }>({})
-  const [progress, setProgress] = useState(0)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const router = useRouter()
+  const [rulesAccepted, setRulesAccepted] = useState(false);
+  const [isExamStarted, setIsExamStarted] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(2700); // 45:00 in seconds
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [answers, setAnswers] = useState<{
+    [key: number]: { optionId?: number; description?: string };
+  }>({});
+  const [progress, setProgress] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const router = useRouter();
+  // --- DISPATCH HOOK INITIALIZED ---
+  const dispatch = useAppDispatch();
+  // ---------------------------------
 
-  const [questions, setQuestions] = useState<QuestionWithOptions[]>([])
-  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true)
+  const [questions, setQuestions] = useState<QuestionWithOptions[]>([]);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
 
   // Fetch questions and options and user from the server
   useEffect(() => {
     const fetchQuestions = async () => {
-      setIsLoadingQuestions(true)
+      setIsLoadingQuestions(true);
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz`, {
-          method: "GET",
-          credentials: "include"
-        });
-        
-        const data: any = await res.json()
-        setQuestions(data)
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
+
+        const data: any = await res.json();
+        setQuestions(data);
       } catch (e) {
         toast({
           variant: "destructive",
           description: "Failed to load questions, please refresh.",
-        })
+        });
       } finally {
-        setIsLoadingQuestions(false)
+        setIsLoadingQuestions(false);
       }
-    }
+    };
     const fetchUser = async () => {
       try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
-        {
-          method: "GET",
-          credentials: "include"
-        })
-        const user = await res.json()
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
+        const user = await res.json();
         // console.log(user)
-      if (user.hasGivenExam) {
-        toast({
-          variant: "destructive",
-          description: "You have already given the exam.",
-        })
-        router.push("/dashboard")
-      }
-      
-    } catch (e) {
+        if (user.hasGivenExam) {
+          toast({
+            variant: "destructive",
+            description: "You have already given the exam.",
+          });
+          router.push("/dashboard");
+        }
+      } catch (e) {
         toast({
           variant: "destructive",
           description: "Failed to fetch user data, please refresh.",
-        })  }
-    }
-    fetchUser()
-    fetchQuestions()
-  }, [router])
+        });
+      }
+    };
+    fetchUser();
+    fetchQuestions();
+  }, [router]);
 
+  const handleFinalSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      const formattedAnswers = Object.entries(answers).map(
+        ([questionId, answer]) => ({
+          questionId: Number(questionId),
+          option: answer.optionId ? { id: answer.optionId } : undefined,
+          ans: answer.description || "",
+        })
+      );
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/answer`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ answers: formattedAnswers }),
+        }
+      );
+
+      const data = await response.json();
+      console.log("submit response:", response.status, data);
+
+      if (!response.ok) {
+        throw new Error(data?.message || "Failed to submit exam");
+      }
+
+      toast({
+        className: "dark",
+        variant: "default",
+        description: "Exam submitted successfully.",
+      });
+
+      setIsExamStarted(false);
+
+      // This line is now functional due to the added imports/hook
+      await dispatch(fetchUserData()).unwrap();
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // This immediately navigates and shows the "Quiz Completed" screen on the dashboard.
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Error submitting exam:", error);
+      toast({
+        className: "dark",
+        variant: "destructive",
+        description: "Failed to submit answers. Please try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleAutoSubmit = async () => {
-  if (isSubmitting) return;
-  setIsSubmitting(true);
-
-  try {
-    const formattedAnswers = Object.entries(answers).map(([questionId, answer]) => ({
-      questionId: Number(questionId),
-      option: answer.optionId ? { id: answer.optionId } : undefined,
-      ans: answer.description || "",
-    }));
-
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/answer`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ answers: formattedAnswers }),
-      }
-    );
-
-    const data = await response.json();
-    console.log("submit response:", response.status, data);
-
-    if (!response.ok) {
-      throw new Error(data?.message || "Failed to submit exam");
+    if (isExamStarted) {
+      await handleFinalSubmit();
     }
-
-    toast({
-      className: "dark",
-      variant: "default",
-      description: "Exam submitted successfully.",
-    });
-
-    setIsExamStarted(false);
-
-    router.push("/dashboard");
-  } catch (error) {
-    console.error("Error submitting exam:", error);
-    toast({
-      className: "dark",
-      variant: "destructive",
-      description: "Failed to submit answers. Please try again.",
-    });
-  } finally {
-    setIsSubmitting(false);
-  }
-};
-
-
-
-
+  };
 
   useEffect(() => {
     // Update progress based on answered questions
     if (questions.length > 0) {
-      const answeredQuestions = Object.keys(answers).length
-      setProgress((answeredQuestions / questions.length) * 100)
+      const answeredQuestions = Object.keys(answers).length;
+      setProgress((answeredQuestions / questions.length) * 100);
     }
-  }, [answers, questions.length])
+  }, [answers, questions.length]);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout | null = null
+    let timer: NodeJS.Timeout | null = null;
 
     if (isExamStarted) {
       timer = setInterval(() => {
         setTimeLeft((prevTime) => {
           if (prevTime <= 1) {
-            clearInterval(timer!) // Stop timer when time is up
-            handleAutoSubmit()
-            return 0
+            clearInterval(timer!); // Stop timer when time is up
+            handleAutoSubmit();
+            return 0;
           }
-          return prevTime - 1
-        })
-      }, 1000)
+          return prevTime - 1;
+        });
+      }, 1000);
     }
 
     return () => {
-      if (timer) clearInterval(timer) // Clear the interval when component unmounts
-    }
-  }, [isExamStarted])
+      if (timer) clearInterval(timer); // Clear the interval when component unmounts
+    };
+  }, [isExamStarted]);
 
   // Security handlers
   const handleVisibilityChange = () => {
@@ -168,19 +209,19 @@ const Exam = () => {
         className: "dark",
         variant: "destructive",
         description: "Switching tabs will submit your answers.",
-      })
-      handleAutoSubmit()
+      });
+      handleAutoSubmit();
     }
-  }
+  };
 
   const handleContextMenu = (e: MouseEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     toast({
       className: "dark",
       variant: "destructive",
       description: "Right-click is disabled during the exam.",
-    })
-  }
+    });
+  };
 
   const handleKeyDown = (e: KeyboardEvent) => {
     if (
@@ -195,14 +236,15 @@ const Exam = () => {
           e.key === "J")) ||
       e.key === "F12"
     ) {
-      e.preventDefault()
+      e.preventDefault();
       toast({
         className: "dark",
         variant: "destructive",
-        description: "Inspect element and other shortcuts are disabled during the exam.",
-      })
+        description:
+          "Inspect element and other shortcuts are disabled during the exam.",
+      });
     }
-  }
+  };
 
   const handleWindowBlur = () => {
     if (isExamStarted) {
@@ -210,21 +252,21 @@ const Exam = () => {
         className: "dark",
         variant: "destructive",
         description: "Leaving the exam window will submit your answers.",
-      })
-      handleAutoSubmit()
+      });
+      handleAutoSubmit();
     }
-  }
+  };
 
   const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-    e.preventDefault()
-    handleAutoSubmit()
-  }
+    e.preventDefault();
+    handleAutoSubmit();
+  };
 
   const handleMouseMove = (e: MouseEvent) => {
-    const x = e.clientX
-    const y = e.clientY
-    const w = window.innerWidth
-    const h = window.innerHeight
+    const x = e.clientX;
+    const y = e.clientY;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
 
     if (x < 0 || x > w || y < 0 || y > h) {
       if (isExamStarted) {
@@ -232,33 +274,35 @@ const Exam = () => {
           className: "dark",
           variant: "destructive",
           description: "Switching workspaces will submit your answers.",
-        })
-        handleAutoSubmit()
+        });
+        handleAutoSubmit();
       }
     }
-  }
+  };
 
   const handleCopyPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    e.preventDefault()
+    e.preventDefault();
     toast({
       className: "dark",
       variant: "destructive",
       description: "Copy and paste is disabled.",
-    })
-  }
+    });
+  };
 
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
-  }
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs
+      .toString()
+      .padStart(2, "0")}`;
+  };
 
   const startExam = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     // Simulate loading
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    setIsExamStarted(true)
-    setIsLoading(false)
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    setIsExamStarted(true);
+    setIsLoading(false);
 
     // Add event listeners for security
     // document.addEventListener("visibilitychange", handleVisibilityChange)
@@ -267,74 +311,72 @@ const Exam = () => {
     // window.addEventListener("blur", handleWindowBlur)
     // window.addEventListener("beforeunload", handleBeforeUnload)
     // document.addEventListener("mousemove", handleMouseMove)
-  }
-
-
-
+  };
 
   const submitAnswer = async (questionId: number) => {
-    const answer = answers[questionId]
-    if (!answer) return
+    const answer = answers[questionId];
+    if (!answer) return;
 
-    const currentQuestion = questions.find((q) => q.id === questionId)
-    if (!currentQuestion) return
+    const currentQuestion = questions.find((q) => q.id === questionId);
+    if (!currentQuestion) return;
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/answer`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          questionId,
-          option: answer.optionId ? { id: answer.optionId } : undefined,
-          ans: answer.description || "",
-        }),
-        credentials: "include",
-      })
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/answer`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            questionId,
+            option: answer.optionId ? { id: answer.optionId } : undefined,
+            ans: answer.description || "",
+          }),
+          credentials: "include",
+        }
+      );
 
       if (!response.ok) {
-        throw new Error("Failed to submit answer")
+        throw new Error("Failed to submit answer");
       }
 
-      return await response.json()
+      return await response.json();
     } catch (error) {
-      console.error("Error submitting answer:", error)
-      throw error
+      console.error("Error submitting answer:", error);
+      throw error;
     }
-  }
-
-  
+  };
 
   const handleOptionSelect = (questionId: number, optionId: number) => {
     setAnswers((prev) => ({
       ...prev,
       [questionId]: { ...prev[questionId], optionId },
-    }))
-  }
+    }));
+  };
 
   const handleDescriptiveAnswer = (questionId: number, description: string) => {
     setAnswers((prev) => ({
       ...prev,
       [questionId]: { ...prev[questionId], description },
-    }))
-  }
+    }));
+  };
 
   const isQuestionAnswered = (questionId: number) => {
-    const answer = answers[questionId]
-    if (!answer) return false
+    const answer = answers[questionId];
+    if (!answer) return false;
 
-    const question = questions.find((q) => q.id === questionId)
-    if (!question) return false
+    const question = questions.find((q) => q.id === questionId);
+    if (!question) return false;
 
     // For multiple choice, check if option is selected
     if (question.type === QuestionType.MCQ) {
-      return !!answer.optionId
+      return !!answer.optionId;
     }
 
     // For descriptive or pictorial, check if description is not empty
-    return !!answer.description && answer.description.trim() !== ""
-  }
+    return !!answer.description && answer.description.trim() !== "";
+  };
 
   const getQuestionTypeBadge = (type: QuestionType) => {
     switch (type) {
@@ -343,33 +385,35 @@ const Exam = () => {
           <Badge variant="outline" className="text-blue-400 border-blue-400">
             Multiple Choice
           </Badge>
-        )
+        );
       case QuestionType.Descriptive:
         return (
           <Badge variant="outline" className="text-green-400 border-green-400">
             Descriptive
           </Badge>
-        )
+        );
       case QuestionType.Pictorial:
         return (
-          <Badge variant="outline" className="text-purple-400 border-purple-400 flex items-center gap-1">
+          <Badge
+            variant="outline"
+            className="text-purple-400 border-purple-400 flex items-center gap-1"
+          >
             <ImageIcon className="w-3 h-3" />
             Pictorial
           </Badge>
-        )
+        );
       default:
         return (
           <Badge variant="outline" className="text-gray-400 border-gray-400">
             Unknown
           </Badge>
-        )
+        );
     }
-  }
+  };
 
   if (isLoadingQuestions) {
-    return <Loader />
+    return <Loader />;
   }
-  
 
   return (
     <div className="exam-container w-full">
@@ -399,9 +443,12 @@ const Exam = () => {
                   className="p-6 rounded-xl bg-blue-500/10 border border-blue-500/20"
                 >
                   <Brain className="w-8 h-8 text-blue-400 mb-4" />
-                  <h3 className="text-xl font-semibold text-blue-400 mb-2">Challenge Your Mind</h3>
+                  <h3 className="text-xl font-semibold text-blue-400 mb-2">
+                    Challenge Your Mind
+                  </h3>
                   <p className="text-gray-300">
-                    Prepare to showcase your knowledge and problem-solving skills in this exciting journey.
+                    Prepare to showcase your knowledge and problem-solving
+                    skills in this exciting journey.
                   </p>
                 </motion.div>
 
@@ -410,8 +457,12 @@ const Exam = () => {
                   className="p-6 rounded-xl bg-purple-500/10 border border-purple-500/20"
                 >
                   <Timer className="w-8 h-8 text-purple-400 mb-4" />
-                  <h3 className="text-xl font-semibold text-purple-400 mb-2">Race Against Time</h3>
-                  <p className="text-gray-300">45 minutes to prove your expertise. Every second counts!</p>
+                  <h3 className="text-xl font-semibold text-purple-400 mb-2">
+                    Race Against Time
+                  </h3>
+                  <p className="text-gray-300">
+                    45 minutes to prove your expertise. Every second counts!
+                  </p>
                 </motion.div>
               </div>
 
@@ -451,11 +502,15 @@ const Exam = () => {
                     type="text"
                     placeholder="Type 'start' to begin"
                     className="w-full px-4 py-2 bg-[#1a2739] rounded-lg text-white border border-blue-500/20 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                    onChange={(e) => setRulesAccepted(e.target.value.toLowerCase() === "start")}
+                    onChange={(e) =>
+                      setRulesAccepted(e.target.value.toLowerCase() === "start")
+                    }
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                     <RocketIcon
-                      className={`w-4 h-4 transition-colors ${rulesAccepted ? "text-blue-500" : "text-gray-500"}`}
+                      className={`w-4 h-4 transition-colors ${
+                        rulesAccepted ? "text-blue-500" : "text-gray-500"
+                      }`}
                     />
                   </div>
                 </div>
@@ -468,7 +523,11 @@ const Exam = () => {
                   {isLoading ? (
                     <motion.div
                       animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                      transition={{
+                        duration: 1,
+                        repeat: Number.POSITIVE_INFINITY,
+                        ease: "linear",
+                      }}
                       className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
                     />
                   ) : (
@@ -494,13 +553,18 @@ const Exam = () => {
               >
                 <div className="flex items-center gap-4">
                   <h1 className="text-2xl font-bold text-white">ROUND-1</h1>
-                  <Badge variant="secondary" className="bg-blue-500/20 text-blue-400">
+                  <Badge
+                    variant="secondary"
+                    className="bg-blue-500/20 text-blue-400"
+                  >
                     Progress: {Math.round(progress)}%
                   </Badge>
                 </div>
                 <div className="flex items-center gap-4">
                   <Progress value={progress} className="w-[100px]" />
-                  <div className="text-2xl font-mono text-blue-400">{formatTime(timeLeft)}</div>
+                  <div className="text-2xl font-mono text-blue-400">
+                    {formatTime(timeLeft)}
+                  </div>
                 </div>
               </motion.div>
 
@@ -523,12 +587,20 @@ const Exam = () => {
                           currentQuestionIndex === index
                             ? "bg-blue-600 text-white"
                             : "text-gray-300 hover:bg-[#1a2739] border border-blue-500/20"
-                        } ${isQuestionAnswered(q.id) ? "ring-2 ring-green-500/50" : ""}`}
+                        } ${
+                          isQuestionAnswered(q.id)
+                            ? "ring-2 ring-green-500/50"
+                            : ""
+                        }`}
                       >
                         <div className="flex items-center justify-center md:justify-between">
                           <span className="md:hidden">Q{index + 1}</span>
-                          <span className="hidden md:inline">Question {index + 1}</span>
-                          {isQuestionAnswered(q.id) && <CheckCircle className="w-4 h-4 text-green-500 ml-2" />}
+                          <span className="hidden md:inline">
+                            Question {index + 1}
+                          </span>
+                          {isQuestionAnswered(q.id) && (
+                            <CheckCircle className="w-4 h-4 text-green-500 ml-2" />
+                          )}
                         </div>
                       </motion.button>
                     ))}
@@ -541,130 +613,220 @@ const Exam = () => {
                   animate={{ x: 0 }}
                   className="md:col-span-10 bg-[#0a1729] p-6 rounded-lg border border-blue-500/20"
                 >
-                  {questions.length > 0 && currentQuestionIndex < questions.length && (
-                    <motion.div
-                      key={currentQuestionIndex}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="mb-6"
-                    >
-                      <Card className="p-6 mb-6 bg-[#0f2136] border-blue-500/20">
-                        <div className="flex items-center justify-between mb-4">
-                          <Badge variant="outline" className="text-blue-400 border-blue-400">
-                            Question {currentQuestionIndex + 1}
-                          </Badge>
-                          {getQuestionTypeBadge(questions[currentQuestionIndex].type)}
-                        </div>
-                        <h2 className="text-xl text-white mb-4">{questions[currentQuestionIndex].description}</h2>
-
-                        {/* Pictorial Question Image */}
-                        {questions[currentQuestionIndex].type === QuestionType.Pictorial &&
-                          questions[currentQuestionIndex].picture && (
-                            <div className="mt-4 flex justify-center">
-                              <div className="relative w-full max-w-md h-64 overflow-hidden rounded-lg border border-blue-500/20">
-                                <Image
-                                  src={questions[currentQuestionIndex].picture || "/placeholder.svg"}
-                                  alt="Question image"
-                                  fill
-                                  className="object-contain"
-                                  sizes="(max-width: 768px) 100vw, 500px"
-                                />
-                              </div>
-                            </div>
-                          )}
-                      </Card>
-
-                      {/* Answer Section */}
-                      {questions[currentQuestionIndex].type === QuestionType.MCQ ? (
-                        <div className="space-y-3 mb-6">
-                          {questions[currentQuestionIndex].options.map((option) => (
-                            <motion.div key={option.id} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
-                              <label
-                                className={`flex items-center p-4 rounded-lg cursor-pointer transition-all ${
-                                  answers[questions[currentQuestionIndex].id]?.optionId === option.id
-                                    ? "bg-blue-500/20 border border-blue-500"
-                                    : "bg-[#1a2739] border border-blue-500/10 hover:border-blue-500/30"
-                                }`}
-                              >
-                                <input
-                                  type="radio"
-                                  name={`question-${questions[currentQuestionIndex].id}`}
-                                  value={option.id}
-                                  checked={answers[questions[currentQuestionIndex].id]?.optionId === option.id}
-                                 onChange={() => handleOptionSelect(questions[currentQuestionIndex].id, Number(option.id))}
-
-                                  className="mr-3 h-4 w-4 text-blue-500 focus:ring-blue-500"
-                                />
-                                <span className="text-white">{option.text}</span>
-                              </label>
-                            </motion.div>
-                          ))}
-                        </div>
-                      ) : (
-                        // Descriptive or Pictorial questions use textarea
-                        <div className="mb-6">
-                          <textarea
-                            ref={textareaRef}
-                            className="w-full h-[200px] p-4 bg-[#1a2739] text-white rounded-lg border border-blue-500/20 resize-none focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                            placeholder="Write your answer here..."
-                            value={answers[questions[currentQuestionIndex].id]?.description || ""}
-                            onChange={(e) =>
-                              handleDescriptiveAnswer(questions[currentQuestionIndex].id, e.target.value)
-                            }
-                            onCopy={handleCopyPaste}
-                            onPaste={handleCopyPaste}
-                          />
-                        </div>
-                      )}
-
+                  {questions.length > 0 &&
+                    currentQuestionIndex < questions.length && (
                       <motion.div
-                        className="flex justify-between items-center"
+                        key={currentQuestionIndex}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
+                        className="mb-6"
                       >
-                        <div className="flex gap-4">
-                          <Button
-                            variant="outline"
-                            onClick={() => setCurrentQuestionIndex((prev) => Math.max(0, prev - 1))}
-                            disabled={currentQuestionIndex === 0}
-                            className="border-blue-500/20 hover:bg-blue-500/10"
-                          >
-                            Previous
-                          </Button>
-                          <Button
-                            variant="outline"
-                            onClick={() => setCurrentQuestionIndex((prev) => Math.min(questions.length - 1, prev + 1))}
-                            disabled={currentQuestionIndex === questions.length - 1}
-                            className="border-blue-500/20 hover:bg-blue-500/10"
-                          >
-                            Next
-                          </Button>
-                        </div>
-                        <Button
-                          variant="default"
-                          onClick={handleAutoSubmit}
-                          disabled={isSubmitting}
-                          className="relative overflow-hidden group bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
-                        >
-                          {isSubmitting ? (
-                            <motion.div
-                              animate={{ rotate: 360 }}
-                              transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-                              className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                        <Card className="p-6 mb-6 bg-[#0f2136] border-blue-500/20">
+                          <div className="flex items-center justify-between mb-4">
+                            <Badge
+                              variant="outline"
+                              className="text-blue-400 border-blue-400"
+                            >
+                              Question {currentQuestionIndex + 1}
+                            </Badge>
+                            {getQuestionTypeBadge(
+                              questions[currentQuestionIndex].type
+                            )}
+                          </div>
+                          <h2 className="text-xl text-white mb-4">
+                            {questions[currentQuestionIndex].description}
+                          </h2>
+
+                          {/* Pictorial Question Image */}
+                          {questions[currentQuestionIndex].type ===
+                            QuestionType.Pictorial &&
+                            questions[currentQuestionIndex].picture && (
+                              <div className="mt-4 flex justify-center">
+                                <div className="relative w-full max-w-md h-64 overflow-hidden rounded-lg border border-blue-500/20">
+                                  <Image
+                                    src={
+                                      questions[currentQuestionIndex].picture ||
+                                      "/placeholder.svg"
+                                    }
+                                    alt="Question image"
+                                    fill
+                                    className="object-contain"
+                                    sizes="(max-width: 768px) 100vw, 500px"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                        </Card>
+
+                        {/* Answer Section */}
+                        {questions[currentQuestionIndex].type ===
+                        QuestionType.MCQ ? (
+                          <div className="space-y-3 mb-6">
+                            {questions[currentQuestionIndex].options.map(
+                              (option) => (
+                                <motion.div
+                                  key={option.id}
+                                  whileHover={{ scale: 1.01 }}
+                                  whileTap={{ scale: 0.99 }}
+                                >
+                                  <label
+                                    className={`flex items-center p-4 rounded-lg cursor-pointer transition-all ${
+                                      answers[
+                                        questions[currentQuestionIndex].id
+                                      ]?.optionId === option.id
+                                        ? "bg-blue-500/20 border border-blue-500"
+                                        : "bg-[#1a2739] border border-blue-500/10 hover:border-blue-500/30"
+                                    }`}
+                                  >
+                                    <input
+                                      type="radio"
+                                      name={`question-${questions[currentQuestionIndex].id}`}
+                                      value={option.id}
+                                      checked={
+                                        answers[
+                                          questions[currentQuestionIndex].id
+                                        ]?.optionId === option.id
+                                      }
+                                      onChange={() =>
+                                        handleOptionSelect(
+                                          questions[currentQuestionIndex].id,
+                                          Number(option.id)
+                                        )
+                                      }
+                                      className="mr-3 h-4 w-4 text-blue-500 focus:ring-blue-500"
+                                    />
+                                    <span className="text-white">
+                                      {option.text}
+                                    </span>
+                                  </label>
+                                </motion.div>
+                              )
+                            )}
+                          </div>
+                        ) : (
+                          // Descriptive or Pictorial questions use textarea
+                          <div className="mb-6">
+                            <textarea
+                              ref={textareaRef}
+                              className="w-full h-[200px] p-4 bg-[#1a2739] text-white rounded-lg border border-blue-500/20 resize-none focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                              placeholder="Write your answer here..."
+                              value={
+                                answers[questions[currentQuestionIndex].id]
+                                  ?.description || ""
+                              }
+                              onChange={(e) =>
+                                handleDescriptiveAnswer(
+                                  questions[currentQuestionIndex].id,
+                                  e.target.value
+                                )
+                              }
+                              onCopy={handleCopyPaste}
+                              onPaste={handleCopyPaste}
                             />
-                          ) : (
-                            <>
-                              <span className="relative z-10">Submit Exam</span>
-                              <span className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></span>
-                              <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <RocketIcon className="w-6 h-6 animate-bounce" />
-                              </span>
-                            </>
-                          )}
-                        </Button>
+                          </div>
+                        )}
+
+                        <motion.div
+                          className="flex justify-between items-center"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                        >
+                          <div className="flex gap-4">
+                            <Button
+                              variant="outline"
+                              onClick={() =>
+                                setCurrentQuestionIndex((prev) =>
+                                  Math.max(0, prev - 1)
+                                )
+                              }
+                              disabled={currentQuestionIndex === 0}
+                              className="border-blue-500/20 hover:bg-blue-500/10"
+                            >
+                              Previous
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() =>
+                                setCurrentQuestionIndex((prev) =>
+                                  Math.min(questions.length - 1, prev + 1)
+                                )
+                              }
+                              disabled={
+                                currentQuestionIndex === questions.length - 1
+                              }
+                              className="border-blue-500/20 hover:bg-blue-500/10"
+                            >
+                              Next
+                            </Button>
+                          </div>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="default"
+                                disabled={isSubmitting}
+                                className="relative overflow-hidden group bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
+                              >
+                                {isSubmitting ? (
+                                  <motion.div
+                                    animate={{ rotate: 360 }}
+                                    transition={{
+                                      duration: 1,
+                                      repeat: Number.POSITIVE_INFINITY,
+                                      ease: "linear",
+                                    }}
+                                    className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                                  />
+                                ) : (
+                                  <>
+                                    <span className="relative z-10">
+                                      Submit Exam
+                                    </span>
+                                    <span className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></span>
+                                    <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                      <RocketIcon className="w-6 h-6 animate-bounce" />
+                                    </span>
+                                  </>
+                                )}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="dark">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="text-red-400 flex items-center gap-2">
+                                  <AlertTriangle className="w-6 h-6" /> Final
+                                  Submission Warning
+                                </AlertDialogTitle>
+                                <AlertDialogDescription className="text-gray-300 pt-2">
+                                  Are you absolutely sure you want to submit
+                                  your exam now?
+                                  <p className="mt-2 font-semibold text-white">
+                                    This action is irreversible. You cannot
+                                    return to change any answers.
+                                  </p>
+                                  <p className="mt-1 text-sm text-yellow-500">
+                                    Only click confirm if you are completely
+                                    finished.
+                                  </p>
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="border-gray-500/50 hover:bg-gray-700">
+                                  Review More
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={handleFinalSubmit} // <-- CALL THE ACTUAL SUBMISSION FUNCTION HERE
+                                  className="bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
+                                  disabled={isSubmitting}
+                                >
+                                  {isSubmitting
+                                    ? "Submitting..."
+                                    : "Confirm Submit"}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </motion.div>
                       </motion.div>
-                    </motion.div>
-                  )}
+                    )}
                 </motion.div>
               </div>
             </div>
@@ -672,7 +834,7 @@ const Exam = () => {
         )}
       </AnimatePresence>
     </div>
-  )
-}
+  );
+};
 
-export default Exam
+export default Exam;

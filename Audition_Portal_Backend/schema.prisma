@@ -34,6 +34,7 @@ model User {
   roundTwo       RoundTwo?
   RoundTwoReview RoundTwoReview[]
   quizAttempts   QuizAttempt[]
+  roundThree       RoundThree[]
 }
 
 model AuditionRound {
@@ -117,6 +118,29 @@ model RoundTwoReview {
   roundTwoId String?   @unique
   roundTwo   RoundTwo? @relation(fields: [roundTwoId], references: [id])
   user       User      @relation(fields: [userId], references: [id])
+}
+
+model RoundThree {
+  id                      String   @id @default(uuid())
+  userId                  Int
+  panel                   String
+  summary                 String?
+  confidence              String?
+  feedback                String?
+  rolesInclusivity        Int
+  initiative              Int
+  creativity              Int
+  practicality            Int
+  overall                 Int
+  ratingGivenToOthers     Int[]
+  roleInGd                String?
+  flaws                   String?
+  eventRating             Int?
+  status                  String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  
+  user                    User     @relation(fields: [userId], references: [id])
 }
 
 model QuizAttempt {

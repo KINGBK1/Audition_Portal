@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import AnimatedGridPattern from "@/components/magicui/animated-grid-pattern";
 import Meteors from "@/components/magicui/meteors";
 import { cn } from "@/lib/utils";
@@ -31,12 +31,114 @@ export default function Round2() {
   const [gdLink, setGdLink] = useState("");
   const [taskLinkAdded, setTaskLinkAdded] = useState(false);
   const [gdLinkAdded, setGdLinkAdded] = useState(false);
+  const [taskLinkValid, setTaskLinkValid] = useState<boolean | null>(null);
+  const [gdLinkValid, setGdLinkValid] = useState<boolean | null>(null);
   const [taskAlloted, setTaskAlloted] = useState("");
   const [panel, setPanel] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isNewEntry, setIsNewEntry] = useState(true);
 
+  // MODIFY the validateUrl function - Remove YouTube/Vimeo from creative assets
+  const validateUrl = (url: string, type: 'github' | 'creative'): boolean => {
+    if (!url.trim()) return false;
+    
+    try {
+      const urlObj = new URL(url);
+      
+      if (type === 'github') {
+        // Only GitHub links allowed
+        return urlObj.hostname.includes('github.com');
+      } else {
+        // Creative assets - ONLY design/portfolio platforms (NO video platforms)
+        const validDomains = [
+          'drive.google.com',
+          'docs.google.com',
+          'canva.com',
+          'figma.com',
+          'behance.net',
+          'dribbble.com',
+          'dropbox.com',
+          'onedrive.live.com',
+          'notion.so',
+          'notion.site',
+        ];
+        return validDomains.some(domain => urlObj.hostname.includes(domain));
+      }
+    } catch {
+      return false;
+    }
+  };
+
+  // MODIFY handleTaskLinkValidation
+  const handleTaskLinkValidation = () => {
+    const isValid = validateUrl(taskLink, 'github'); // Only GitHub
+    setTaskLinkValid(isValid);
+
+    if (isValid) {
+      toast.success("Valid GitHub link detected!", {
+        style: {
+          background: "#1e293b",
+          color: "#f1f5f9",
+          border: "1px solid #10b981",
+        },
+        icon: "✅",
+      });
+      setTaskLinkAdded(true);
+      setTimeout(() => setTaskLinkAdded(false), 3000);
+    } else {
+      toast.error("Please enter a valid GitHub repository link", {
+        style: {
+          background: "#1e293b",
+          color: "#f1f5f9",
+          border: "1px solid #ef4444",
+        },
+        icon: "⚠️",
+      });
+    }
+  };
+
+  // MODIFY handleGdLinkValidation
+  const handleGdLinkValidation = () => {
+    if (!gdLink.trim()) {
+      toast.error("Please enter a link first", {
+        style: {
+          background: "#1e293b",
+          color: "#f1f5f9",
+          border: "1px solid #ef4444",
+        },
+        icon: "⚠️",
+      });
+      return;
+    }
+
+    const isValid = validateUrl(gdLink, 'creative'); // Creative platforms
+    setGdLinkValid(isValid);
+
+    if (isValid) {
+      toast.success("Valid creative assets link!", {
+        style: {
+          background: "#1e293b",
+          color: "#f1f5f9",
+          border: "1px solid #10b981",
+        },
+        icon: "✅",
+      });
+      setGdLinkAdded(true);
+      setTimeout(() => setGdLinkAdded(false), 3000);
+    } else {
+      toast.error("Please enter a valid Canva, Drive, Figma, or portfolio link", {
+        style: {
+          background: "#1e293b",
+          color: "#f1f5f9",
+          border: "1px solid #ef4444",
+        },
+        icon: "⚠️",
+      });
+    }
+  };
+
+  // MODIFY fetchUser to validate existing links
   const fetchUser = async () => {
     try {
       const res = await fetch(
@@ -81,6 +183,14 @@ export default function Round2() {
           setStatus(round2Data.entry.status || "incomplete");
           setAddOns(round2Data.entry.addOns || []);
           setIsNewEntry(false);
+          
+          // Validate existing links with correct types
+          if (firstLine) {
+            setTaskLinkValid(validateUrl(firstLine, 'github'));
+          }
+          if (secondLine) {
+            setGdLinkValid(validateUrl(secondLine, 'creative'));
+          }
         } else {
           setIsNewEntry(true);
         }
@@ -128,9 +238,23 @@ export default function Round2() {
     });
   };
 
+  // MODIFY handleSubmit validation
   const handleSubmit = async () => {
+    // Validate GitHub link
     if (!taskLink.trim()) {
-      toast.error("Please enter a GitHub/Drive link", {
+      toast.error("Please enter a GitHub repository link", {
+        style: {
+          background: "#1e293b",
+          color: "#f1f5f9",
+          border: "1px solid #ef4444",
+        },
+        icon: "⚠️",
+      });
+      return;
+    }
+
+    if (!validateUrl(taskLink, 'github')) {
+      toast.error("Please enter a valid GitHub repository link (github.com only)", {
         style: {
           background: "#1e293b",
           color: "#f1f5f9",
@@ -143,6 +267,19 @@ export default function Round2() {
 
     if (!taskAlloted.trim()) {
       toast.error("Please describe your task", {
+        style: {
+          background: "#1e293b",
+          color: "#f1f5f9",
+          border: "1px solid #ef4444",
+        },
+        icon: "⚠️",
+      });
+      return;
+    }
+
+    // Validate creative assets link if provided
+    if (gdLink.trim() && !validateUrl(gdLink, 'creative')) {
+      toast.error("Please enter a valid creative assets link or leave it empty", {
         style: {
           background: "#1e293b",
           color: "#f1f5f9",
@@ -297,7 +434,6 @@ export default function Round2() {
           <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
         </div>
 
-        {/* Removed extra pt-24 and switched to pt-12 for a tighter top fit */}
         <div className="container mx-auto px-4 md:px-8 pt-12 pb-12 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: -50 }}
@@ -346,38 +482,60 @@ export default function Round2() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-white/90">
                     <FaGithub className="text-2xl text-blue-400" />
-                    Drive/Github Link
+                    GitHub Repository Link
                   </CardTitle>
                   <CardDescription className="text-slate-400">
-                    Paste your project repository or drive link
+                    Paste your GitHub repository link (github.com only)
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex gap-2">
-                    <Input
-                      type="url"
-                      value={taskLink}
-                      onChange={(e) => {
-                        setTaskLink(e.target.value);
-                        setTaskLinkAdded(false);
-                      }}
-                      placeholder="https://github.com/..."
-                      className="bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:ring-blue-500/50"
-                    />
+                    <div className="flex-1 relative">
+                      <Input
+                        type="url"
+                        value={taskLink}
+                        onChange={(e) => {
+                          setTaskLink(e.target.value);
+                          setTaskLinkAdded(false);
+                          setTaskLinkValid(null);
+                        }}
+                        placeholder="https://github.com/username/repository"
+                        className={cn(
+                          "bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:ring-blue-500/50 pr-10",
+                          taskLinkValid === true && "border-green-500/50",
+                          taskLinkValid === false && "border-red-500/50"
+                        )}
+                      />
+                      {taskLinkValid !== null && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          {taskLinkValid ? (
+                            <CheckCircle2 className="h-5 w-5 text-green-500" />
+                          ) : (
+                            <AlertCircle className="h-5 w-5 text-red-500" />
+                          )}
+                        </div>
+                      )}
+                    </div>
                     <Button
                       type="button"
-                      onClick={() => {
-                        if (taskLink.trim()) {
-                          toast.success("Link format is valid");
-                          setTaskLinkAdded(true);
-                          setTimeout(() => setTaskLinkAdded(false), 3000);
-                        }
-                      }}
+                      onClick={handleTaskLinkValidation}
                       className="bg-blue-600/80 hover:bg-blue-600 backdrop-blur-md"
                     >
-                      Add
+                      Validate
                     </Button>
                   </div>
+                  {taskLinkValid === false && (
+                    <p className="text-xs text-red-400 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Please enter a valid GitHub repository link (github.com only)
+                    </p>
+                  )}
+                  {taskLinkValid === true && (
+                    <p className="text-xs text-green-400 flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" />
+                      Valid GitHub repository link detected
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
@@ -392,7 +550,7 @@ export default function Round2() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-white/90">
                     <FaPhotoVideo className="text-2xl text-purple-400" />
-                    Creative Assets Link
+                    Creative Assets Link (Optional)
                   </CardTitle>
                   <CardDescription className="text-slate-400">
                     Graphic Design or Video Editing work
@@ -400,30 +558,52 @@ export default function Round2() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex gap-2">
-                    <Input
-                      type="url"
-                      value={gdLink}
-                      onChange={(e) => {
-                        setGdLink(e.target.value);
-                        setGdLinkAdded(false);
-                      }}
-                      placeholder="Canva, Drive, or Portfolio link"
-                      className="bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:ring-purple-500/50"
-                    />
+                    <div className="flex-1 relative">
+                      <Input
+                        type="url"
+                        value={gdLink}
+                        onChange={(e) => {
+                          setGdLink(e.target.value);
+                          setGdLinkAdded(false);
+                          setGdLinkValid(null);
+                        }}
+                        placeholder="Canva, Drive, Figma, or Portfolio link"
+                        className={cn(
+                          "bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:ring-purple-500/50 pr-10",
+                          gdLinkValid === true && "border-green-500/50",
+                          gdLinkValid === false && "border-red-500/50"
+                        )}
+                      />
+                      {gdLinkValid !== null && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          {gdLinkValid ? (
+                            <CheckCircle2 className="h-5 w-5 text-green-500" />
+                          ) : (
+                            <AlertCircle className="h-5 w-5 text-red-500" />
+                          )}
+                        </div>
+                      )}
+                    </div>
                     <Button
                       type="button"
-                      onClick={() => {
-                        if (gdLink.trim()) {
-                          toast.success("Link format is valid");
-                          setGdLinkAdded(true);
-                          setTimeout(() => setGdLinkAdded(false), 3000);
-                        }
-                      }}
+                      onClick={handleGdLinkValidation}
                       className="bg-purple-600/80 hover:bg-purple-600 backdrop-blur-md"
                     >
-                      Add
+                      Validate
                     </Button>
                   </div>
+                  {gdLinkValid === false && (
+                    <p className="text-xs text-red-400 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Please enter a valid Canva, Drive, Figma, or portfolio link
+                    </p>
+                  )}
+                  {gdLinkValid === true && (
+                    <p className="text-xs text-green-400 flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" />
+                      Valid creative assets link
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
@@ -552,7 +732,7 @@ export default function Round2() {
           >
             <Button
               onClick={handleSubmit}
-              disabled={isSubmitting || !taskLink.trim() || !taskAlloted.trim()}
+              disabled={isSubmitting || !taskLink.trim() || !taskAlloted.trim() || taskLinkValid === false}
               className="px-16 py-7 text-lg font-bold bg-white text-black hover:bg-slate-200 disabled:opacity-50 shadow-[0_0_30px_rgba(255,255,255,0.2)] transition-all duration-300 hover:scale-105 rounded-full"
             >
               {isSubmitting ? (
@@ -569,22 +749,51 @@ export default function Round2() {
 
         <style jsx>{`
           @keyframes blob {
-            0%, 100% { transform: translate(0px, 0px) scale(1); }
-            33% { transform: translate(30px, -50px) scale(1.1); }
-            66% { transform: translate(-20px, 20px) scale(0.9); }
+            0%,
+            100% {
+              transform: translate(0px, 0px) scale(1);
+            }
+            33% {
+              transform: translate(30px, -50px) scale(1.1);
+            }
+            66% {
+              transform: translate(-20px, 20px) scale(0.9);
+            }
           }
-          .animate-blob { animation: blob 7s infinite; }
-          .animation-delay-2000 { animation-delay: 2s; }
-          .animation-delay-4000 { animation-delay: 4s; }
-          .animate-enter { animation: enter 0.3s ease-out; }
-          .animate-leave { animation: leave 0.3s ease-in forwards; }
+          .animate-blob {
+            animation: blob 7s infinite;
+          }
+          .animation-delay-2000 {
+            animation-delay: 2s;
+          }
+          .animation-delay-4000 {
+            animation-delay: 4s;
+          }
+          .animate-enter {
+            animation: enter 0.3s ease-out;
+          }
+          .animate-leave {
+            animation: leave 0.3s ease-in forwards;
+          }
           @keyframes enter {
-            0% { opacity: 0; transform: translateY(-10px); }
-            100% { opacity: 1; transform: translateY(0); }
+            0% {
+              opacity: 0;
+              transform: translateY(-10px);
+            }
+            100% {
+              opacity: 1;
+              transform: translateY(0);
+            }
           }
           @keyframes leave {
-            0% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(-10px); }
+            0% {
+              opacity: 1;
+              transform: translateY(0);
+            }
+            100% {
+              opacity: 0;
+              transform: translateY(-10px);
+            }
           }
         `}</style>
       </div>

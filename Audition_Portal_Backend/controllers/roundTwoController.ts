@@ -4,34 +4,73 @@ import { PrismaClient, Role } from "@prisma/client";
 const prisma = new PrismaClient();
 
 // USER SIDE
+// ADD THIS NEW ENDPOINT - Get Round 2 data with review status
+export const GetRound2Data = async (req: Request, res: Response): Promise<Response> => {
+  const user = req.user as { id: number };
+
+  try {
+    const roundTwoData = await prisma.roundTwo.findUnique({
+      where: { userId: user.id },
+      include: {
+        review: true  // Include review to check forwarded status
+      }
+    });
+
+    return res.status(200).json({
+      message: 'Round 2 data fetched successfully',
+      entry: roundTwoData
+    });
+  } catch (err) {
+    console.error('[Round2 Get Error]', err);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
 //Create or Update Round 2 Entry
 export const CreateUpdateTask = async (req: Request, res: Response): Promise<Response> => {
-  // (req as any).user = { id: 1 };
-    const { taskAlloted, taskLink, addOns, status, panel } = req.body;
+  const { taskAlloted, taskLink, addOns, status, panel } = req.body;
   const user = req.user as { id: number };
 
   if (!taskAlloted || !taskLink || !status || !Array.isArray(addOns)) {
     return res.status(400).json({ error: 'Missing or invalid required fields' });
   }
 
-  // if pannel is missing, then fetch pannel from roundTwo entry if exists
-  if (!panel) {
+  try {
+    // Check if entry already exists
     const existingEntry = await prisma.roundTwo.findUnique({
       where: { userId: user.id },
+      include: {
+        review: true  // ADD THIS - Include review to check forwarded status
+      }
     });
-    if (existingEntry && existingEntry.panel) {
-      req.body.panel = existingEntry.panel;
-    } else {
+
+    // ADD THIS BLOCK - Check if user can submit
+    if (existingEntry && existingEntry.review) {
+      const isForwarded = existingEntry.review.forwarded === true;
+      
+      if (!isForwarded) {
+        return res.status(403).json({ 
+          error: 'Your submission is under review.',
+          locked: true
+        });
+      }
+      
+      // If forwarded, delete the old review when user resubmits
+      await prisma.roundTwoReview.delete({
+        where: { id: existingEntry.review.id }
+      });
+    }
+
+    // Handle panel assignment
+    let finalPanel = panel;
+    if (!finalPanel && existingEntry && existingEntry.panel) {
+      finalPanel = existingEntry.panel;
+    } else if (!finalPanel) {
       return res.status(400).json({ error: 'Panel is required for new entries' });
     }
-  }
-
-  try {
-    const existingEntry = await prisma.roundTwo.findUnique({
-      where: { userId: user.id },
-    });
 
     if (existingEntry) {
+      // Update existing entry
       const updatedEntry = await prisma.roundTwo.update({
         where: { userId: user.id },
         data: {
@@ -39,15 +78,19 @@ export const CreateUpdateTask = async (req: Request, res: Response): Promise<Res
           taskLink,
           status,
           addOns,
-          panel,
+          // Don't update panel on resubmission
         },
       });
 
-      return res.status(200).json({ message: 'saved successfully', entry: updatedEntry });
+      return res.status(200).json({ 
+        message: 'Saved successfully', 
+        entry: updatedEntry 
+      });
     } else {
+      // Create new entry
       const newEntry = await prisma.roundTwo.create({
         data: {
-          panel,
+          panel: finalPanel,
           taskAlloted,
           taskLink,
           status,
@@ -57,15 +100,16 @@ export const CreateUpdateTask = async (req: Request, res: Response): Promise<Res
         },
       });
 
-      return res.status(201).json({ message: 'saved successfully', entry: newEntry });
+      return res.status(201).json({ 
+        message: 'Saved successfully', 
+        entry: newEntry 
+      });
     }
   } catch (err) {
     console.error('[Round2 Error]', err);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-
-
 
 // ADMIN SIDE
 // Fetch All Users in Round 2
@@ -135,17 +179,17 @@ export const AddTags = async (req: Request, res: Response): Promise<Response> =>
 // Admin Review- Get data of a user
 export const FetchReview = async (req: Request, res: Response): Promise<Response> => {
   try {
-const idParam = req.query.id;
+    const idParam = req.query.id;
 
-if (!idParam || Array.isArray(idParam)) {
-  return res.status(400).json({ error: 'Valid user ID is required in query' });
-}
+    if (!idParam || Array.isArray(idParam)) {
+      return res.status(400).json({ error: 'Valid user ID is required in query' });
+    }
 
-const id = parseInt(idParam as string, 10); // ✅ safely cast to string
+    const id = parseInt(idParam as string, 10);
 
-if (isNaN(id)) {
-  return res.status(400).json({ error: 'User ID must be a number' });
-}
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'User ID must be a number' });
+    }
 
     const result = await prisma.user.findUnique({
       where: { id },
@@ -173,7 +217,7 @@ if (isNaN(id)) {
                 rating: true,
                 gd: true,
                 general: true,
-                forwarded: true,
+                forwarded: true,  // IMPORTANT - Keep this
                 createdAt: true,
               },
             },

@@ -23,7 +23,7 @@ import { CheckCircle2, ArrowRight, Trophy, Sparkles, Star } from 'lucide-react';
 
 const Dashboard = () => {
   const calculateTimeLeft = () => {
-    const targetDate = "2026-01-01"; // Your actual round end date
+    const targetDate = "2026-01-16"; // Your actual round end date
     const difference = +new Date(targetDate) - +new Date();
     let timeLeft = {
       days: 0,
@@ -185,56 +185,7 @@ const Dashboard = () => {
 
           {hasCompletedQuiz ? (
             <div className="flex items-center justify-center h-full flex-col space-y-12">
-              {/* Timer */}
-              <div className="flex items-center justify-center flex-col space-y-6">
-                <span className="text-slate-300 text-xl md:text-3xl font-light">
-                  Round ends in
-                </span>
-                <div className="flex justify-center gap-3 md:gap-5">
-                  <div className="flex w-16 md:w-20 flex-col items-center">
-                    <p className="font-bold text-3xl md:text-5xl text-slate-200">
-                      {timeLeft.days}
-                    </p>
-                    <div className="text-xs md:text-sm text-slate-400 mt-1">
-                      Days
-                    </div>
-                  </div>
-                  <p className="font-bold text-3xl md:text-5xl text-slate-400">
-                    :
-                  </p>
-                  <div className="flex w-16 md:w-20 flex-col items-center">
-                    <p className="font-bold text-3xl md:text-5xl text-slate-200">
-                      {timeLeft.hours}
-                    </p>
-                    <div className="text-xs md:text-sm text-slate-400 mt-1">
-                      Hours
-                    </div>
-                  </div>
-                  <p className="font-bold text-3xl md:text-5xl text-slate-400">
-                    :
-                  </p>
-                  <div className="flex w-16 md:w-20 flex-col items-center">
-                    <p className="font-bold text-3xl md:text-5xl text-slate-200">
-                      {timeLeft.minutes}
-                    </p>
-                    <div className="text-xs md:text-sm text-slate-400 mt-1">
-                      Min
-                    </div>
-                  </div>
-                  <p className="font-bold text-3xl md:text-5xl text-slate-400">
-                    :
-                  </p>
-                  <div className="flex w-16 md:w-20 flex-col items-center">
-                    <p className="font-bold text-3xl md:text-5xl text-slate-200">
-                      {timeLeft.seconds}
-                    </p>
-                    <div className="text-xs md:text-sm text-slate-400 mt-1">
-                      Sec
-                    </div>
-                  </div>
-                </div>
-              </div>
-
+        
               {/* Completion Card */}
               <Card className="dark border-slate-800 w-[85vw] md:w-[32vw]">
                 <CardHeader className="text-center pb-6">
@@ -319,10 +270,7 @@ const Dashboard = () => {
                       <ArrowRight className="w-5 h-5" />
                     </button>
 
-                    {/* Additional Info */}
-                    <p className="text-center text-xs text-slate-400">
-                      Make sure you&apos;re ready before starting the assessment
-                    </p>
+                    
                   </CardContent>
                 </Card>
 

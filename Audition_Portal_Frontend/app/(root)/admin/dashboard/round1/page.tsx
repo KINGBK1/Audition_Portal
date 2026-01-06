@@ -1107,19 +1107,25 @@ export default function AdminDashboard() {
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="space-y-4">
-                            <div>
-                              {question.picture && (
-                                <div className="mb-4">
-                                  <Image
-                                    src={question.picture || "/placeholder.svg"}
-                                    alt="Question diagram"
-                                    width={384}
-                                    height={288}
-                                    className="max-w-sm rounded border"
-                                  />
-                                </div>
-                              )}
+                            {/* Question Description */}
+                            <div className="p-3 bg-muted/50 border rounded">
+                              <p className="text-sm font-medium text-foreground">
+                                {question.description}
+                              </p>
                             </div>
+
+                            {/* Question Image if exists */}
+                            {question.picture && (
+                              <div className="flex justify-center">
+                                <Image
+                                  src={question.picture || "/placeholder.svg"}
+                                  alt="Question diagram"
+                                  width={384}
+                                  height={288}
+                                  className="max-w-sm rounded border"
+                                />
+                              </div>
+                            )}
 
                             {question.type === "MCQ" ||
                             question.type === "Pictorial" ? (
@@ -1131,14 +1137,13 @@ export default function AdminDashboard() {
                                   <div
                                     key={option.id}
                                     className={`p-2 rounded border text-foreground ${
-                                      // Added text-foreground for safety
-                                      option.id === userAnswer?.optionId // User's choice
-                                        ? option.isCorrect // Correct choice
+                                      option.id === userAnswer?.optionId
+                                        ? option.isCorrect
                                           ? "bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-600"
                                           : "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-600"
-                                        : option.isCorrect // Correct answer (but not user's choice)
+                                        : option.isCorrect
                                         ? "bg-green-50 dark:bg-green-950/10 border-green-200 dark:border-green-800"
-                                        : "bg-muted dark:bg-muted/50" // Neutral option
+                                        : "bg-muted dark:bg-muted/50"
                                     }`}
                                   >
                                     <div className="flex items-center gap-2">
@@ -1182,8 +1187,8 @@ export default function AdminDashboard() {
                                 <p className="text-sm font-medium text-muted-foreground">
                                   User&apos;s Answer:
                                 </p>
-                                <div className="p-3 bg-gray-50 rounded border">
-                                  <p className="text-sm">
+                                <div className="p-3 bg-muted border rounded">
+                                  <p className="text-sm text-foreground">
                                     {userAnswer?.description ||
                                       "No answer provided"}
                                   </p>

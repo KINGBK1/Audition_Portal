@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import type { Question } from "@/lib/types"
 import { Edit, Trash2, ImageIcon, CheckCircle, XCircle } from "lucide-react"
 import { motion } from "framer-motion"
+import Image from "next/image"
 
 interface QuestionListProps {
   questions: Question[]
@@ -51,11 +52,11 @@ export function QuestionList({ questions, onEdit, onDelete, loading }: QuestionL
   if (questions.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-          <CheckCircle className="w-12 h-12 text-gray-400" />
+        <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
+          <CheckCircle className="w-12 h-12 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No questions yet</h3>
-        <p className="text-gray-500 mb-4">Get started by creating your first question.</p>
+        <h3 className="text-lg font-medium text-foreground mb-2">No questions yet</h3>
+        <p className="text-muted-foreground mb-4">Get started by creating your first question.</p>
       </div>
     )
   }
@@ -99,7 +100,7 @@ export function QuestionList({ questions, onEdit, onDelete, loading }: QuestionL
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50 bg-transparent"
+                        className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/30"
                       >
                         <Trash2 className="w-4 h-4" />
                         Delete
@@ -127,23 +128,41 @@ export function QuestionList({ questions, onEdit, onDelete, loading }: QuestionL
               </div>
             </CardHeader>
 
-            {question.type === "MCQ" && question.options && question.options.length > 0 && (
-              <CardContent className="pt-0">
+            <CardContent className="pt-0 space-y-4">
+              {/* Show image if exists */}
+              {question.picture && (
+                <div className="flex justify-center">
+                  <div className="relative w-full max-w-md h-64 overflow-hidden rounded-lg border border-border">
+                    <Image
+                      src={question.picture}
+                      alt="Question image"
+                      fill
+                      className="object-contain"
+                      sizes="(max-width: 768px) 100vw, 500px"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Show options for MCQ */}
+              {question.type === "MCQ" && question.options && question.options.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-700 mb-3">Options:</p>
+                  <p className="text-sm font-medium text-foreground mb-3">Options:</p>
                   {question.options.map((option, optIndex) => (
                     <div
                       key={optIndex}
                       className={`flex items-center gap-2 p-2 rounded-md border ${
-                        option.isCorrect ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200"
+                        option.isCorrect 
+                          ? "bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900/50" 
+                          : "bg-muted border-border"
                       }`}
                     >
                       {option.isCorrect ? (
-                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                       ) : (
-                        <XCircle className="w-4 h-4 text-gray-400" />
+                        <XCircle className="w-4 h-4 text-muted-foreground" />
                       )}
-                      <span className="text-sm">{option.text}</span>
+                      <span className="text-sm text-foreground">{option.text}</span>
                       {option.isCorrect && (
                         <Badge variant="secondary" className="ml-auto text-xs">
                           Correct
@@ -152,8 +171,8 @@ export function QuestionList({ questions, onEdit, onDelete, loading }: QuestionL
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            )}
+              )}
+            </CardContent>
           </Card>
         </motion.div>
       ))}

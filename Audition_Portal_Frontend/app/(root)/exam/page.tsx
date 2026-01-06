@@ -637,25 +637,20 @@ const Exam = () => {
                             {questions[currentQuestionIndex].description}
                           </h2>
 
-                          {/* Pictorial Question Image */}
-                          {questions[currentQuestionIndex].type ===
-                            QuestionType.Pictorial &&
-                            questions[currentQuestionIndex].picture && (
-                              <div className="mt-4 flex justify-center">
-                                <div className="relative w-full max-w-md h-64 overflow-hidden rounded-lg border border-blue-500/20">
-                                  <Image
-                                    src={
-                                      questions[currentQuestionIndex].picture ||
-                                      "/placeholder.svg"
-                                    }
-                                    alt="Question image"
-                                    fill
-                                    className="object-contain"
-                                    sizes="(max-width: 768px) 100vw, 500px"
-                                  />
-                                </div>
+                          {/* Show image if picture exists */}
+                          {questions[currentQuestionIndex].picture && (
+                            <div className="mt-4 flex justify-center">
+                              <div className="relative w-full max-w-md h-64 overflow-hidden rounded-lg border border-blue-500/20">
+                                <Image
+                                  src={questions[currentQuestionIndex].picture}
+                                  alt="Question image"
+                                  fill
+                                  className="object-contain"
+                                  sizes="(max-width: 768px) 100vw, 500px"
+                                />
                               </div>
-                            )}
+                            </div>
+                          )}
                         </Card>
 
                         {/* Answer Section */}

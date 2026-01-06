@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { QuestionForm } from "./question-form"
 import { QuestionList } from "./question-list"
+import dynamic from "next/dynamic"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -12,11 +13,23 @@ import { motion } from "framer-motion"
 import { Settings, Plus, List, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
+// ✅ Fix hydration error by loading ThemeToggle only on client
+const ThemeToggle = dynamic(() => import("./theme-toggle").then(mod => ({ default: mod.ThemeToggle })), {
+  ssr: false,
+})
+
 export function AdminQuestionDashboard() {
   const [questions, setQuestions] = useState<Question[]>([])
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
+  const [activeTab, setActiveTab] = useState("list")
+
+  // ✅ Ensure component is mounted before rendering theme toggle
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // ✅ Fetch all questions
   const fetchQuestions = async () => {
@@ -43,9 +56,25 @@ export function AdminQuestionDashboard() {
     fetchQuestions()
   }, [])
 
-  // ✅ Create question (fixed endpoint)
+  // ✅ Create or Update question
   const handleAddQuestion = async (question: Question) => {
     try {
+      // Check if we're editing an existing question
+      const isEditing = currentQuestion && currentQuestion.id;
+      
+      if (isEditing) {
+        // Delete the old question first
+        const deleteResponse = await fetch(`http://localhost:8080/api/quiz/${currentQuestion.id}`, {
+          method: "DELETE",
+          credentials: "include",
+        });
+
+        if (!deleteResponse.ok) {
+          throw new Error("Failed to delete old question");
+        }
+      }
+
+      // Create the new/updated question
       const response = await fetch("http://localhost:8080/api/quiz/create", {
         method: "POST",
         credentials: "include",
@@ -61,22 +90,24 @@ export function AdminQuestionDashboard() {
       })
 
       if (!response.ok) {
-        throw new Error("Failed to create question")
+        throw new Error(isEditing ? "Failed to update question" : "Failed to create question")
       }
 
       await fetchQuestions()
       setCurrentQuestion(null)
+      setActiveTab("list")
       setError(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create question")
+      setError(err instanceof Error ? err.message : "Failed to save question")
     }
   }
 
-  // ✅ Set question to edit
+  // ✅ Set question to edit and switch to create tab
   const handleEditQuestion = (id: string) => {
     const questionToEdit = questions.find((q) => q.id === id)
     if (questionToEdit) {
       setCurrentQuestion(questionToEdit)
+      setActiveTab("create")
     }
   }
 
@@ -103,7 +134,7 @@ export function AdminQuestionDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8 w-full">
+    <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8 w-full">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
@@ -112,13 +143,18 @@ export function AdminQuestionDashboard() {
           transition={{ duration: 0.5 }}
           className="mb-8"
         >
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-600 rounded-lg">
-              <Settings className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary rounded-lg">
+                <Settings className="w-6 h-6 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">Question Management</h1>
+                <p className="text-muted-foreground">Create, manage, and organize your quiz questions</p>
+              </div>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">Question Management</h1>
+            {mounted && <ThemeToggle />}
           </div>
-          <p className="text-gray-600">Create, manage, and organize your quiz questions</p>
           <Separator className="mt-4" />
         </motion.div>
 
@@ -163,18 +199,18 @@ export function AdminQuestionDashboard() {
               <Badge variant="outline">TEXT</Badge>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{questions.filter((q) => q.type === "TEXT").length}</div>
+              <div className="text-2xl font-bold">{questions.filter((q) => q.type === "Descriptive").length}</div>
             </CardContent>
           </Card>
         </motion.div>
 
         {/* Main Content */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
-          <Tabs defaultValue="list" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="create" className="flex items-center gap-2">
                 <Plus className="w-4 h-4" />
-                Create Question
+                {currentQuestion ? "Edit Question" : "Create Question"}
               </TabsTrigger>
               <TabsTrigger value="list" className="flex items-center gap-2">
                 <List className="w-4 h-4" />
@@ -185,9 +221,11 @@ export function AdminQuestionDashboard() {
             <TabsContent value="create" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Create New Question</CardTitle>
+                  <CardTitle>{currentQuestion ? "Edit Question" : "Create New Question"}</CardTitle>
                   <CardDescription>
-                    Add a new question to your quiz database. Choose between multiple choice or text-based questions.
+                    {currentQuestion 
+                      ? "Make changes to the existing question below."
+                      : "Add a new question to your quiz database. Choose between multiple choice or text-based questions."}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

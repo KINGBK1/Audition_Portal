@@ -125,9 +125,10 @@ const Dashboard = () => {
     }
   }
 
-  const hasCompletedQuiz = userInfo?.hasGivenExam && userInfo?.round === 0;
+  const hasCompletedQuiz = userInfo?.hasGivenExam && userInfo?.round === 1;
   const isRoundTwo = userInfo?.round === 2;
   const isRoundThreeOrHigher = userInfo?.round && userInfo.round >= 3;
+  const showStartButton = !userInfo?.hasGivenExam;
 
   const handleRoundNavigation = () => {
     if (userInfo?.round === 2) {
@@ -185,7 +186,6 @@ const Dashboard = () => {
 
           {hasCompletedQuiz ? (
             <div className="flex items-center justify-center h-full flex-col space-y-12">
-        
               {/* Completion Card */}
               <Card className="dark border-slate-800 w-[85vw] md:w-[32vw]">
                 <CardHeader className="text-center pb-6">
@@ -350,7 +350,7 @@ const Dashboard = () => {
                 <div className="absolute inset-0 -z-10 bg-gradient-to-r from-yellow-500/10 to-amber-500/10 blur-3xl rounded-full" />
               </div>
             </div>
-          ) : (
+          ) : showStartButton ? (
             <div className="flex items-center justify-center h-full flex-col space-y-14">
               {/* Timer */}
               <div className="flex items-center justify-center flex-col space-y-7">
@@ -449,7 +449,7 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             </div>
-          )}
+          ) : null}
 
           <AnimatedGridPattern
             numSquares={30}

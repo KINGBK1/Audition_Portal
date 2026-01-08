@@ -111,6 +111,7 @@ model RoundTwoReview {
   gd         Boolean
   general    Boolean
   forwarded  Boolean
+  colour     String    @default("#898989")
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   userId     Int

@@ -927,57 +927,61 @@ export default function AdminDashboard() {
 
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Panel Members</h3>
-                  {Array.from({ length: 6 }, (_, i) => {
-                    const panelNum = i + 1;
-                    const panelMembers = users.filter(
-                      (user) => user.roundTwo?.panel === panelNum
-                    );
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Array.from({ length: 6 }, (_, i) => {
+                      const panelNum = i + 1;
+                      const panelMembers = users.filter(
+                        (user) => user.roundTwo?.panel === panelNum
+                      );
 
-                    return (
-                      <Card key={panelNum}>
-                        <CardHeader>
-                          <CardTitle className="text-base">
-                            Panel {panelNum} ({panelMembers.length} members)
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          {panelMembers.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                              {panelMembers.map((user) => {
-                                const userScore = userScores.find(
-                                  (s) => s.userId === user.id
-                                );
-                                return (
-                                  <div
-                                    key={user.id}
-                                    className="flex items-center justify-between p-3 bg-muted rounded"
-                                  >
-                                    <div className="flex-1">
-                                      <div className="text-sm font-medium">
-                                        {user.username}
+                      return (
+                        <Card key={panelNum}>
+                          <CardHeader>
+                            <CardTitle className="text-base">
+                              Panel {panelNum} ({panelMembers.length} members)
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            {panelMembers.length > 0 ? (
+                              <ScrollArea className="h-[400px] pr-2">
+                                <div className="space-y-1">
+                                  {panelMembers.map((user) => {
+                                    const userScore = userScores.find(
+                                      (s) => s.userId === user.id
+                                    );
+                                    return (
+                                      <div
+                                        key={user.id}
+                                        className="flex items-center justify-between px-3 py-2 bg-muted rounded hover:bg-muted/80 transition-colors"
+                                      >
+                                        <div className="flex-1 min-w-0">
+                                          <div className="text-xs font-medium truncate">
+                                            {user.username}
+                                          </div>
+                                          <div className="text-[10px] text-muted-foreground truncate">
+                                            {user.specialization}
+                                          </div>
+                                        </div>
+                                        {userScore && (
+                                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 ml-2 flex-shrink-0">
+                                            {userScore.percentage}%
+                                          </Badge>
+                                        )}
                                       </div>
-                                      <div className="text-xs text-muted-foreground">
-                                        {user.specialization}
-                                      </div>
-                                    </div>
-                                    {userScore && (
-                                      <Badge variant="outline" className="ml-2">
-                                        {userScore.percentage}%
-                                      </Badge>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-muted-foreground">
-                              No members assigned yet
-                            </p>
-                          )}
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                                    );
+                                  })}
+                                </div>
+                              </ScrollArea>
+                            ) : (
+                              <p className="text-sm text-muted-foreground">
+                                No members assigned yet
+                              </p>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
                 </div>
               </CardContent>
             </Card>

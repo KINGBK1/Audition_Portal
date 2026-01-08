@@ -34,6 +34,17 @@ import {
   Calculator,
 } from "lucide-react"
 
+// ========= Color Options (Edit hex values as needed) ==========
+const COLOR_OPTIONS = [
+  { value: "#2f0e0c", label: "Block + Non-genuine" },
+  { value: "#5d3712", label: "Genuine + Weak/Some BT" },
+  { value: "#322707", label: "Good + Some BT" },
+  { value: "#1f2d2c", label: "Very Good + Some BT" },
+  { value: "#1e2c17", label: "Excellent + No BT" },
+  { value: "#ba772e", label: "GD pass" },
+];
+
+
 // ========= Types for ROUND 2 ==========
 interface AuditionRound {
   id: number
@@ -64,6 +75,7 @@ interface RoundTwoReview {
   forwarded: boolean
   createdAt: string
   updatedAt: string
+  colour?: string
 }
 
 interface RoundTwo {
@@ -75,6 +87,7 @@ interface RoundTwo {
   panel: number
   tags: string[]
   review?: RoundTwoReview | null
+  colour?: string
 }
 
 interface User {
@@ -88,6 +101,7 @@ interface User {
   createdAt: string
   roundTwo?: RoundTwo | null
   auditionRounds?: AuditionRound[]
+  colour?: string
 }
 
 interface ReviewFormState {
@@ -102,6 +116,7 @@ interface ReviewFormState {
   gd: string
   general: string
   forwarded: string
+  colour?: string
 }
 
 export default function AdminRoundTwoDashboard() {
@@ -393,6 +408,7 @@ export default function AdminRoundTwoDashboard() {
       gd: review?.gd ? "yes" : "no",
       general: review?.general ? "yes" : "no",
       forwarded: review?.forwarded ? "yes" : "no",
+      colour: review?.colour || "#898989",
     })
 
     setIsReviewDialogOpen(true)
@@ -434,6 +450,7 @@ export default function AdminRoundTwoDashboard() {
       gd: reviewForm.gd === "yes",
       general: reviewForm.general === "yes",
       forwarded: reviewForm.forwarded === "yes",
+      colour: reviewForm.colour || "#898989",
     }
 
     try {
@@ -603,6 +620,13 @@ export default function AdminRoundTwoDashboard() {
                             <TableRow key={user.id} className="border-gray-800 hover:bg-gray-800/50">
                               <TableCell>
                                 <div className="flex items-center gap-2">
+                                  {user.roundTwo?.review?.colour && (
+                                    <div 
+                                      className="w-6 h-6 rounded-full border border-gray-600" 
+                                      style={{ backgroundColor: user.roundTwo.review.colour }}
+                                      title={`Colour: ${user.roundTwo.review.colour}`}
+                                    />
+                                  )}
                                   <div>
                                     <div className="font-medium text-gray-200">{user.username}</div>
                                     <div className="text-sm text-gray-400">{user.email}</div>
@@ -707,55 +731,68 @@ export default function AdminRoundTwoDashboard() {
 
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-gray-100">Panel Members</h3>
-                  {Array.from({ length: 6 }, (_, i) => {
-                    const panelNum = i + 1
-                    const panelMembers = users.filter((user) => user.roundTwo?.panel === panelNum)
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Array.from({ length: 6 }, (_, i) => {
+                      const panelNum = i + 1
+                      const panelMembers = users.filter((user) => user.roundTwo?.panel === panelNum)
 
-                    return (
-                      <Card key={panelNum} className="bg-gray-800 border-gray-700">
-                        <CardHeader>
-                          <CardTitle className="text-base text-gray-100">
-                            Panel {panelNum} ({panelMembers.length} members)
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          {panelMembers.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                              {panelMembers.map((user) => {
-                                const rating = user.roundTwo?.review?.rating
-                                const forwarded = user.roundTwo?.review?.forwarded
-                                return (
-                                  <div
-                                    key={user.id}
-                                    className="flex items-center justify-between p-3 bg-gray-900 border border-gray-700 rounded hover:bg-gray-800/50 transition-colors"
-                                  >
-                                    <div className="flex-1">
-                                      <div className="text-sm font-medium text-gray-200">{user.username}</div>
-                                      <div className="text-xs text-gray-400">{user.specialization}</div>
-                                    </div>
-                                    <div className="flex flex-col items-end gap-1">
-                                      {rating != null && (
-                                        <Badge variant="outline" className="ml-2 border-gray-600 text-gray-200">
-                                          {rating}/10
-                                        </Badge>
-                                      )}
-                                      {forwarded && (
-                                        <Badge className="ml-2 text-[10px] bg-blue-600 text-white">
-                                          Forwarded
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </div>
-                                )
-                              })}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-gray-400">No members assigned yet</p>
-                          )}
-                        </CardContent>
-                      </Card>
-                    )
-                  })}
+                      return (
+                        <Card key={panelNum} className="bg-gray-800 border-gray-700">
+                          <CardHeader>
+                            <CardTitle className="text-base text-gray-100">
+                              Panel {panelNum} ({panelMembers.length} members)
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            {panelMembers.length > 0 ? (
+                              <ScrollArea className="h-[400px] pr-2">
+                                <div className="space-y-1">
+                                  {panelMembers.map((user) => {
+                                    const rating = user.roundTwo?.review?.rating
+                                    const forwarded = user.roundTwo?.review?.forwarded
+                                    const colour = user.roundTwo?.review?.colour
+                                    return (
+                                      <div
+                                        key={user.id}
+                                        className="flex items-center justify-between px-3 py-2 bg-gray-900 border border-gray-700 rounded hover:bg-gray-800/50 transition-colors"
+                                      >
+                                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                                          {colour && (
+                                            <div 
+                                              className="w-4 h-4 rounded-full border border-gray-600 flex-shrink-0" 
+                                              style={{ backgroundColor: colour }}
+                                            />
+                                          )}
+                                          <div className="flex-1 min-w-0">
+                                            <div className="text-xs font-medium text-gray-200 truncate">{user.username}</div>
+                                            <div className="text-[10px] text-gray-400 truncate">{user.specialization}</div>
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center gap-1 flex-shrink-0">
+                                          {rating != null && (
+                                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-gray-600 text-gray-200">
+                                              {rating}/10
+                                            </Badge>
+                                          )}
+                                          {forwarded && (
+                                            <Badge className="text-[9px] px-1.5 py-0 bg-blue-600 text-white">
+                                              ✓
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              </ScrollArea>
+                            ) : (
+                              <p className="text-sm text-gray-400">No members assigned yet</p>
+                            )}
+                          </CardContent>
+                        </Card>
+                      )
+                    })}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -785,21 +822,31 @@ export default function AdminRoundTwoDashboard() {
                       <p>
                         <span className="font-medium text-gray-200">Task Allotted:</span> {viewingUser.roundTwo.taskAlloted}
                       </p>
-                      <p>
-                        <span className="font-medium text-gray-200">Task Link:</span>{" "}
+                      <div>
+                        <span className="font-medium text-gray-200">Task Link:</span>
                         {viewingUser.roundTwo.taskLink ? (
-                          <a
-                            href={viewingUser.roundTwo.taskLink}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-blue-400 hover:underline"
-                          >
-                            {viewingUser.roundTwo.taskLink}
-                          </a>
+                          <div className="mt-1 space-y-1">
+                            {viewingUser.roundTwo.taskLink
+                              .split(/[\n,;]/)
+                              .map((link) => link.trim())
+                              .filter(Boolean)
+                              .map((link, index) => (
+                                <div key={index}>
+                                  <a
+                                    href={link.startsWith('http') ? link : `https://${link}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-blue-400 hover:underline break-all text-sm"
+                                  >
+                                    {link}
+                                  </a>
+                                </div>
+                              ))}
+                          </div>
                         ) : (
-                          "N/A"
+                          <span> N/A</span>
                         )}
-                      </p>
+                      </div>
                       <p>
                         <span className="font-medium text-gray-200">Status:</span> {viewingUser.roundTwo.status || "N/A"}
                       </p>
@@ -939,19 +986,63 @@ export default function AdminRoundTwoDashboard() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-gray-200">Forward to Core Team?</Label>
-                        <Select
-                          value={reviewForm.forwarded}
-                          onValueChange={(v) => updateReviewField("forwarded", v)}
-                        >
-                          <SelectTrigger className="bg-gray-900 border-gray-700 text-gray-200">
-                            <SelectValue placeholder="Forward candidate?" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-gray-800 border-gray-700">
-                            <SelectItem value="yes" className="text-gray-200 focus:bg-gray-700">Yes, forward</SelectItem>
-                            <SelectItem value="no" className="text-gray-200 focus:bg-gray-700">No</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Label className="text-gray-200">Candidate Colour Tag</Label>
+                        <div className="space-y-2">
+                          {COLOR_OPTIONS.map((option) => (
+                            <div
+                              key={option.value}
+                              className="flex items-center gap-3 p-2 rounded border border-gray-700 hover:bg-gray-800/50 cursor-pointer transition-colors"
+                              onClick={() => updateReviewField("colour", option.value)}
+                            >
+                              <input
+                                type="radio"
+                                name="colour"
+                                value={option.value}
+                                checked={reviewForm.colour === option.value}
+                                onChange={(e) => updateReviewField("colour", e.target.value)}
+                                className="w-4 h-4 cursor-pointer"
+                              />
+                              <div
+                                className="w-6 h-6 rounded-full border border-gray-600"
+                                style={{ backgroundColor: option.value }}
+                              />
+                              <span className="text-sm text-gray-300">{option.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-xs text-gray-400">Select a colour to categorize the candidate</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+
+                        <div className="space-y-2">
+                          <Label className="text-gray-200">Forward to Core Team?</Label>
+                          <Select
+                            value={reviewForm.forwarded}
+                            onValueChange={(v) => updateReviewField("forwarded", v)}
+                          >
+                            <SelectTrigger className="bg-gray-900 border-gray-700 text-gray-200">
+                              <SelectValue placeholder="Forward candidate?" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-gray-800 border-gray-700">
+                              <SelectItem value="yes" className="text-gray-200 focus:bg-gray-700">Yes, forward</SelectItem>
+                              <SelectItem value="no" className="text-gray-200 focus:bg-gray-700">No</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-gray-200">Colour Preview</Label>
+                        <div className="flex items-center gap-3 p-3 bg-gray-800 border border-gray-700 rounded-md">
+                          <div 
+                            className="w-10 h-10 rounded-full border border-gray-600" 
+                            style={{ backgroundColor: reviewForm.colour || "#898989" }}
+                          />
+                          <div className="text-sm text-gray-300">
+                            This colour tab will appear next to the candidate&apos;s name in the table
+                          </div>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

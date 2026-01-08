@@ -73,6 +73,7 @@ export const fetchAllRoundTwoCandidates = asyncHandler(async (req: Request, res:
               gd: true,
               general: true,
               forwarded: true,
+              colour: true,
               createdAt: true,
               updatedAt: true,
             },
@@ -186,6 +187,7 @@ export const submitRoundTwoReview = asyncHandler(async (req: Request, res: Respo
     gd,
     general,
     forwarded, // optional: accept forwarded flag from client but do NOT treat it as final decision
+    colour,
   } = req.body as {
     userId: number;
     roundTwoId: string;
@@ -200,6 +202,7 @@ export const submitRoundTwoReview = asyncHandler(async (req: Request, res: Respo
     gd: boolean;
     general: boolean;
     forwarded?: boolean;
+    colour?: string;
   };
 
   // Validate required fields
@@ -256,6 +259,7 @@ export const submitRoundTwoReview = asyncHandler(async (req: Request, res: Respo
         gd,
         general,
         forwarded: forwardedFlag,
+        colour: colour || undefined,
       },
       create: {
         userId: Number(userId),
@@ -272,6 +276,7 @@ export const submitRoundTwoReview = asyncHandler(async (req: Request, res: Respo
         gd,
         general,
         forwarded: forwardedFlag,
+        colour: colour || undefined,
       },
     });
 
@@ -312,7 +317,7 @@ export const submitRoundTwoReview = asyncHandler(async (req: Request, res: Respo
     .json(
       new ApiResponse(
         200,
-        { ...result, forwarded: forwardedFlag },
+        { ...result, forwarded: forwardedFlag, colour: colour || undefined },
         "Round 2 review submitted successfully"
       )
     );

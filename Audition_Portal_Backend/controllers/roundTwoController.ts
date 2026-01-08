@@ -40,26 +40,9 @@ export const CreateUpdateTask = async (req: Request, res: Response): Promise<Res
     const existingEntry = await prisma.roundTwo.findUnique({
       where: { userId: user.id },
       include: {
-        review: true  // ADD THIS - Include review to check forwarded status
+        review: true
       }
     });
-
-    // ADD THIS BLOCK - Check if user can submit
-    if (existingEntry && existingEntry.review) {
-      const isForwarded = existingEntry.review.forwarded === true;
-      
-      if (!isForwarded) {
-        return res.status(403).json({ 
-          error: 'Your submission is under review.',
-          locked: true
-        });
-      }
-      
-      // If forwarded, delete the old review when user resubmits
-      await prisma.roundTwoReview.delete({
-        where: { id: existingEntry.review.id }
-      });
-    }
 
     // Handle panel assignment
     let finalPanel = panel;
@@ -70,15 +53,13 @@ export const CreateUpdateTask = async (req: Request, res: Response): Promise<Res
     }
 
     if (existingEntry) {
-      // Update existing entry
+      // Update existing entry - only update taskLink and status, keep review intact
       const updatedEntry = await prisma.roundTwo.update({
         where: { userId: user.id },
         data: {
-          taskAlloted,
           taskLink,
           status,
-          addOns,
-          // Don't update panel on resubmission
+          // Don't update taskAlloted, addOns, or panel on resubmission
         },
       });
 

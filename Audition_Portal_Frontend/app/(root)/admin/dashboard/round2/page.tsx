@@ -850,6 +850,9 @@ export default function AdminRoundTwoDashboard() {
                       <p>
                         <span className="font-medium text-gray-200">Status:</span> {viewingUser.roundTwo.status || "N/A"}
                       </p>
+                      <p>
+                        <span className="font-medium text-gray-200">Add on task:</span> {viewingUser.roundTwo.review?.taskgiven || "N/A"}
+                      </p>
                       {viewingUser.roundTwo.tags?.length > 0 && (
                         <p>
                           <span className="font-medium text-gray-200">Tags:</span>{" "}
@@ -953,7 +956,7 @@ export default function AdminRoundTwoDashboard() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-gray-200">Task Given (for record)</Label>
+                          <Label className="text-gray-200">Add on task</Label>
                           <Input
                             value={reviewForm.taskgiven}
                             onChange={(e) => updateReviewField("taskgiven", e.target.value)}
@@ -1016,7 +1019,7 @@ export default function AdminRoundTwoDashboard() {
                       <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
 
                         <div className="space-y-2">
-                          <Label className="text-gray-200">Forward to Core Team?</Label>
+                          <Label className="text-gray-200">Forwarded to next tech task</Label>
                           <Select
                             value={reviewForm.forwarded}
                             onValueChange={(v) => updateReviewField("forwarded", v)}

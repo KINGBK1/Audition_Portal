@@ -32,6 +32,8 @@ export const fetchAllCandidates = asyncHandler(async (req: Request, res: Respons
         select: {
           panel: true,
           status: true,
+          taskAlloted: true,
+          taskLink: true,
         },
       },
     },
@@ -236,5 +238,81 @@ export const getCandidateProgress = asyncHandler(async (req, res) => {
   }
 
   res.status(200).json(new ApiResponse(200, rounds));
+});
+
+// get task details for a user
+export const getTaskDetails = asyncHandler(async (req: Request, res: Response) => {
+  const { userId } = req.params;
+
+  if (!userId || typeof userId !== "string") {
+    throw new ApiError(400, "Valid userId is required");
+  }
+
+  const roundTwo = await prisma.roundTwo.findUnique({
+    where: { userId: Number(userId) },
+    select: {
+      taskAlloted: true,
+      taskLink: true,
+    },
+  });
+
+  if (!roundTwo) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { taskAlloted: "", taskLink: "" }, "No task found"));
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, roundTwo, "Task details fetched successfully"));
+});
+
+// allot task to a candidate for round 2
+export const allotTask = asyncHandler(async (req: Request, res: Response) => {
+  const { userId, taskAlloted, taskLink } = req.body;
+
+  if (!userId || typeof userId !== "number") {
+    throw new ApiError(400, "Valid userId is required");
+  }
+
+  if (!taskAlloted || typeof taskAlloted !== "string") {
+    throw new ApiError(400, "Task description is required");
+  }
+
+  try {
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    // Create or update RoundTwo record with task
+    const roundTwo = await prisma.roundTwo.upsert({
+      where: { userId },
+      update: {
+        taskAlloted,
+        taskLink: taskLink || "",
+      },
+      create: {
+        userId,
+        taskAlloted,
+        taskLink: taskLink || "",
+        panel: 0,
+        status: "ASSIGNED",
+        addOns: [],
+        tags: [],
+      },
+    });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, roundTwo, "Task allotted successfully"));
+  } catch (error) {
+    console.error("Error allotting task:", error);
+    throw new ApiError(500, "Failed to allot task");
+  }
 });
 

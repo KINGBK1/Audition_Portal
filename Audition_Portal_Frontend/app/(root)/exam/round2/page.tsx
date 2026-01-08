@@ -25,15 +25,12 @@ import { cn } from "@/lib/utils";
 export default function Round2() {
   const router = useRouter();
   const [status, setStatus] = useState("incomplete");
-  const [addOns, setAddOns] = useState<string[]>([]);
-  const [newAddOn, setNewAddOn] = useState("");
   const [taskLink, setTaskLink] = useState("");
   const [gdLink, setGdLink] = useState("");
   const [taskLinkAdded, setTaskLinkAdded] = useState(false);
   const [gdLinkAdded, setGdLinkAdded] = useState(false);
   const [taskLinkValid, setTaskLinkValid] = useState<boolean | null>(null);
   const [gdLinkValid, setGdLinkValid] = useState<boolean | null>(null);
-  const [taskAlloted, setTaskAlloted] = useState("");
   const [panel, setPanel] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -179,9 +176,7 @@ export default function Round2() {
           const [firstLine, secondLine] = storedLinks.split(/\r?\n/, 2);
           setTaskLink(firstLine || "");
           setGdLink(secondLine || "");
-          setTaskAlloted(round2Data.entry.taskAlloted || "");
           setStatus(round2Data.entry.status || "incomplete");
-          setAddOns(round2Data.entry.addOns || []);
           setIsNewEntry(false);
           
           // Validate existing links with correct types
@@ -212,32 +207,6 @@ export default function Round2() {
     fetchUser();
   }, []);
 
-  const handleAddMore = () => {
-    if (newAddOn.trim()) {
-      setAddOns([...addOns, newAddOn.trim()]);
-      setNewAddOn("");
-      toast.success("Add-on added successfully", {
-        style: {
-          background: "#1e293b",
-          color: "#f1f5f9",
-          border: "1px solid #10b981",
-        },
-        icon: "✅",
-      });
-    }
-  };
-
-  const handleRemoveAddOn = (index: number) => {
-    setAddOns(addOns.filter((_, i) => i !== index));
-    toast.success("Add-on removed", {
-      style: {
-        background: "#1e293b",
-        color: "#f1f5f9",
-        border: "1px solid #6b7280",
-      },
-    });
-  };
-
   // MODIFY handleSubmit validation
   const handleSubmit = async () => {
     // Validate GitHub link
@@ -255,18 +224,6 @@ export default function Round2() {
 
     if (!validateUrl(taskLink, 'github')) {
       toast.error("Please enter a valid GitHub repository link (github.com only)", {
-        style: {
-          background: "#1e293b",
-          color: "#f1f5f9",
-          border: "1px solid #ef4444",
-        },
-        icon: "⚠️",
-      });
-      return;
-    }
-
-    if (!taskAlloted.trim()) {
-      toast.error("Please describe your task", {
         style: {
           background: "#1e293b",
           color: "#f1f5f9",
@@ -299,9 +256,9 @@ export default function Round2() {
 
       const requestBody: any = {
         taskLink: combinedLink,
-        taskAlloted,
+        taskAlloted: "Round 2 submission",
         status,
-        addOns,
+        addOns: [],
       };
 
       if (isNewEntry && panel !== null) {
@@ -352,19 +309,12 @@ export default function Round2() {
                   </p>
                   <div className="mt-2 text-sm text-slate-300 space-y-1">
                     <p>✓ Task link saved</p>
-                    <p>✓ Description submitted</p>
                     <p>
                       ✓ Status:{" "}
                       <span className="capitalize font-semibold text-green-400">
                         {status}
                       </span>
                     </p>
-                    {addOns.length > 0 && (
-                      <p>
-                        ✓ {addOns.length} additional feature
-                        {addOns.length !== 1 ? "s" : ""} added
-                      </p>
-                    )}
                     <p className="mt-3 text-xs text-slate-400 animate-pulse">
                       🔄 Redirecting to dashboard in 3 seconds...
                     </p>
@@ -476,7 +426,7 @@ export default function Round2() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="lg:col-span-1"
+              className="space-y-6"
             >
               <Card className="dark bg-white/5 border-white/10 backdrop-blur-xl shadow-2xl ring-1 ring-white/10">
                 <CardHeader>
@@ -538,14 +488,7 @@ export default function Round2() {
                   )}
                 </CardContent>
               </Card>
-            </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="lg:col-span-1"
-            >
               <Card className="dark bg-white/5 border-white/10 backdrop-blur-xl shadow-2xl ring-1 ring-white/10">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-white/90">
@@ -607,41 +550,18 @@ export default function Round2() {
                 </CardContent>
               </Card>
             </motion.div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="lg:col-span-2"
-            >
-              <Card className="dark bg-white/5 border-white/10 backdrop-blur-xl shadow-2xl ring-1 ring-white/10">
-                <CardHeader>
-                  <CardTitle className="text-white/90">Task Description</CardTitle>
-                  <CardDescription className="text-slate-400">
-                    Summary of your contributions
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    value={taskAlloted}
-                    onChange={(e) => setTaskAlloted(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-slate-500 min-h-[220px] resize-none focus:ring-blue-500/50"
-                    placeholder="Describe your technical implementation..."
-                  />
-                </CardContent>
-              </Card>
-            </motion.div>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.5 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
             >
               <Card className="dark bg-white/5 border-white/10 backdrop-blur-xl shadow-2xl ring-1 ring-white/10 h-full">
                 <CardHeader>
                   <CardTitle className="text-white/90">Task Status</CardTitle>
+                  <CardDescription className="text-slate-400">
+                    Select the status of your task completion
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {[
@@ -674,65 +594,12 @@ export default function Round2() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="mb-8"
-          >
-            <Card className="dark bg-white/5 border-white/10 backdrop-blur-xl shadow-2xl ring-1 ring-white/10">
-              <CardHeader>
-                <CardTitle className="text-white/90">Additional Features</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  <Input
-                    type="text"
-                    value={newAddOn}
-                    onChange={(e) => setNewAddOn(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && handleAddMore()}
-                    placeholder="Bonus features implemented..."
-                    className="bg-white/5 border-white/10 text-white placeholder:text-slate-500"
-                  />
-                  <Button
-                    onClick={handleAddMore}
-                    className="bg-white/10 hover:bg-white/20 border border-white/10 backdrop-blur-md px-6"
-                  >
-                    <HiPlus className="mr-2" /> Add
-                  </Button>
-                </div>
-
-                <AnimatePresence>
-                  {addOns.length > 0 && (
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      {addOns.map((addOn, index) => (
-                        <motion.div
-                          key={index}
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.8 }}
-                        >
-                          <Badge className="bg-blue-500/20 border border-blue-500/30 text-blue-100 px-3 py-1.5 backdrop-blur-md flex items-center gap-2">
-                            {addOn}
-                            <button onClick={() => handleRemoveAddOn(index)} className="hover:text-red-400">
-                              <HiX />
-                            </button>
-                          </Badge>
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
-                </AnimatePresence>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.7 }}
             className="flex justify-center"
           >
             <Button
               onClick={handleSubmit}
-              disabled={isSubmitting || !taskLink.trim() || !taskAlloted.trim() || taskLinkValid === false}
+              disabled={isSubmitting || !taskLink.trim() || taskLinkValid === false}
               className="px-16 py-7 text-lg font-bold bg-white text-black hover:bg-slate-200 disabled:opacity-50 shadow-[0_0_30px_rgba(255,255,255,0.2)] transition-all duration-300 hover:scale-105 rounded-full"
             >
               {isSubmitting ? (

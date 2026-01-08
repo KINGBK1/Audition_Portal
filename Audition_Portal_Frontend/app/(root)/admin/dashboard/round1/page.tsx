@@ -91,7 +91,7 @@ interface User {
   hasGivenExam: boolean
   createdAt: string
   auditionRounds?: AuditionRound[]
-  roundTwo?: { panel: number; status: string } | null
+  roundTwo?: { panel: number; status: string; taskAlloted?: string; taskLink?: string } | null
 }
 
 interface UserScore {
@@ -117,6 +117,10 @@ export default function AdminDashboard() {
   const [selectedPanel, setSelectedPanel] = useState<string>("")
   const [loadingScores, setLoadingScores] = useState<number[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false)
+  const [taskUser, setTaskUser] = useState<User | null>(null)
+  const [taskText, setTaskText] = useState("")
+  const [taskLink, setTaskLink] = useState("")
 
   const fetchData = async()=> {
     try {
@@ -554,6 +558,85 @@ export default function AdminDashboard() {
     }
   }
 
+  // Handle task allocation
+  const handleAllotTask = async (): Promise<void> => {
+    if (!taskUser) {
+      toast({ title: "No user selected", variant: "destructive" })
+      return
+    }
+
+    if (!taskText.trim()) {
+      toast({ title: "Please enter a task", variant: "destructive" })
+      return
+    }
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/task`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: taskUser.id,
+            taskAlloted: taskText.trim(),
+            taskLink: taskLink.trim() || "",
+          }),
+        }
+      )
+
+      if (!res.ok) {
+        throw new Error(`Failed to allot task: ${res.status}`)
+      }
+
+      toast({ title: "Task allotted successfully" })
+      setIsTaskDialogOpen(false)
+      setTaskUser(null)
+      setTaskText("")
+      setTaskLink("")
+      await fetchData()
+    } catch (error) {
+      console.error("Error allotting task:", error)
+      toast({
+        title: "Error allotting task",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Open task dialog and fetch existing task if present
+  const handleOpenTaskDialog = async (user: User): Promise<void> => {
+    setTaskUser(user)
+    
+    // Fetch existing task data
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/task/${user.id}`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      )
+
+      if (res.ok) {
+        const json = await res.json()
+        const taskData = json.data || {}
+        setTaskText(taskData.taskAlloted || "")
+        setTaskLink(taskData.taskLink || "")
+      } else {
+        setTaskText("")
+        setTaskLink("")
+      }
+    } catch (error) {
+      console.error("Error fetching task:", error)
+      setTaskText("")
+      setTaskLink("")
+    }
+
+    setIsTaskDialogOpen(true)
+  }
+
   // Handle user rejection
   const handleRejectUser = async (userId: number): Promise<void> => {
     try {
@@ -790,13 +873,20 @@ export default function AdminDashboard() {
                         filteredUsers.map((user) => (
                           <TableRow key={user.id}>
                             <TableCell>
-                              <div>
-                                <div className="font-medium">
-                                  {user.username}
+                              <div className="flex items-center gap-2">
+                                <div>
+                                  <div className="font-medium">
+                                    {user.username}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {user.email}
+                                  </div>
                                 </div>
-                                <div className="text-sm text-muted-foreground">
-                                  {user.email}
-                                </div>
+                                {user.roundTwo?.taskAlloted && (
+                                  <Badge variant="default" className="text-xs">
+                                    Task Allotted
+                                  </Badge>
+                                )}
                               </div>
                             </TableCell>
                             <TableCell>
@@ -885,6 +975,22 @@ export default function AdminDashboard() {
                                       </AlertDialog>
                                     </>
                                   )}
+
+                                {user.auditionRounds?.some(
+                                  (round) =>
+                                    round.round === 1 &&
+                                    round.finalSelection === true
+                                ) && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleOpenTaskDialog(user)}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <FileText className="h-4 w-4" />
+                                    Allot Task
+                                  </Button>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -1235,6 +1341,55 @@ export default function AdminDashboard() {
                 )}
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Task Allocation Dialog */}
+        <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Allot Task</DialogTitle>
+              <DialogDescription>
+                Assign a task for {taskUser?.username} in Round 2
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="task">Task Description *</Label>
+                <textarea
+                  id="task"
+                  rows={4}
+                  value={taskText}
+                  onChange={(e) => setTaskText(e.target.value)}
+                  placeholder="Enter the task description for the candidate..."
+                  className="w-full p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="taskLink">Task Link (Optional)</Label>
+                <Input
+                  id="taskLink"
+                  type="text"
+                  value={taskLink}
+                  onChange={(e) => setTaskLink(e.target.value)}
+                  placeholder="https://github.com/repo/task or Google Drive link"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsTaskDialogOpen(false)
+                  setTaskUser(null)
+                  setTaskText("")
+                  setTaskLink("")
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleAllotTask}>Allot Task</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

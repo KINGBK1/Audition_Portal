@@ -182,3 +182,17 @@
     opacity: 0;
   }
 }
+@keyframes futuristic-glow {
+  0%, 100% { 
+    background-color: #f8fafc; /* slate-50 (Off-white) */
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1); 
+  }
+  50% { 
+    background-color: #cbd5e1; /* slate-300 */
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.2); 
+  }
+}
+
+.animate-futuristic {
+  animation: futuristic-glow 4s ease-in-out infinite;
+}

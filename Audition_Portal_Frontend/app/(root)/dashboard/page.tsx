@@ -185,25 +185,62 @@ const Dashboard = () => {
           </div>
 
           {hasCompletedQuiz ? (
-            <div className="flex items-center justify-center h-full flex-col space-y-12">
-              {/* Completion Card */}
-              <Card className="dark border-slate-800 w-[85vw] md:w-[32vw]">
-                <CardHeader className="text-center pb-6">
-                  <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                  <CardTitle className="text-2xl text-white">
-                    Quiz Completed
-                  </CardTitle>
-                  <CardDescription className="text-base text-slate-400 mt-2">
-                    Submitted successfully
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="text-center pb-6">
-                  <p className="text-slate-400 text-sm leading-relaxed">
-                    Your submission is under review. You&apos;ll be notified
-                    about the next round.
-                  </p>
-                </CardContent>
-              </Card>
+            <div className="flex items-center justify-center h-full flex-col space-y-12 z-10 relative">
+              {/* Themed Completion Card */}
+              <div className="max-w-xl w-full border border-slate-800 bg-card/90 backdrop-blur-md p-10 md:p-14 rounded-none shadow-2xl relative text-center">
+                {/* Blue Top Accent Line */}
+                <div className="absolute top-0 left-0 w-full h-[2px] bg-blue-500" />
+
+                <div className="space-y-8">
+                  {/* Icon with Emerald Glow */}
+                  <div className="relative inline-block">
+                    <div className="absolute inset-0 blur-xl bg-emerald-500/10 rounded-full" />
+                    <CheckCircle2 className="w-20 h-20 text-emerald-500 relative z-10 mx-auto" />
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-blue-500 tracking-[0.5em] text-[10px] uppercase font-black font-mono">
+                      Assessment Concluded
+                    </p>
+                    <h2 className="text-3xl md:text-4xl font-light tracking-widest text-white font-sans uppercase">
+                      Test Completed
+                    </h2>
+                  </div>
+
+                  {/* Aesthetic Divider */}
+                  <div className="flex items-center justify-center gap-4">
+                    <div className="w-12 h-[1px] bg-slate-800" />
+                    <div className="w-2 h-2 border border-slate-700 rotate-45" />
+                    <div className="w-12 h-[1px] bg-slate-800" />
+                  </div>
+
+                  <div className="space-y-5 font-mono">
+                    <p className="text-slate-400 text-sm leading-relaxed uppercase tracking-[0.15em] font-bold px-4">
+                      Your 45-minute session has{" "}
+                      <span className="text-white">successfully timed out</span>{" "}
+                      and all responses have been saved.
+                    </p>
+                    <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] leading-relaxed max-w-xs mx-auto">
+                      The recruitment team will now review your performance.
+                      Results will be updated on this portal soon.
+                    </p>
+                  </div>
+
+                  {/* Terminal Status Instead of Button */}
+                  <div className="pt-4">
+                    <div className="inline-flex items-center gap-3 px-5 py-3 border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 font-mono text-[10px] uppercase tracking-[0.2em]">
+                      <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_#10b981]" />
+                      Status: Evaluation in Progress
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Technical Footer Detail */}
+              <div className="font-mono text-[10px] text-slate-500 uppercase tracking-[0.5em]">
+                End of Line // Transmission_Complete //{" "}
+                {new Date().toLocaleTimeString()}
+              </div>
             </div>
           ) : isRoundTwo ? (
             <div className="flex items-center justify-center h-full">
@@ -269,8 +306,6 @@ const Dashboard = () => {
                       <span>Begin Round 2</span>
                       <ArrowRight className="w-5 h-5" />
                     </button>
-
-                    
                   </CardContent>
                 </Card>
 
@@ -351,98 +386,85 @@ const Dashboard = () => {
               </div>
             </div>
           ) : showStartButton ? (
-            <div className="flex items-center justify-center h-full flex-col space-y-14">
-              {/* Timer */}
-              <div className="flex items-center justify-center flex-col space-y-7">
-                <span className="text-slate-300 text-3xl md:text-5xl font-light">
-                  Round ends in
+            <div className="flex items-center justify-center h-full flex-col space-y-16">
+              {/* Timer Section */}
+              <div className="flex items-center justify-center flex-col space-y-8">
+                <span className="text-slate-500 text-xs md:text-sm font-bold uppercase tracking-[0.4em] font-mono">
+                  Window Closing In
                 </span>
-                <div className="flex justify-center gap-4 md:gap-6">
-                  <div className="flex w-16 md:w-24 flex-col items-center">
-                    <p className="font-bold text-4xl md:text-6xl text-slate-200">
-                      {timeLeft.days}
-                    </p>
-                    <div className="text-sm md:text-base text-slate-400 mt-2">
-                      Days
-                    </div>
-                  </div>
-                  <p className="font-bold text-4xl md:text-6xl text-slate-400">
-                    :
-                  </p>
-                  <div className="flex w-16 md:w-24 flex-col items-center">
-                    <p className="font-bold text-4xl md:text-6xl text-slate-200">
-                      {timeLeft.hours}
-                    </p>
-                    <div className="text-sm md:text-base text-slate-400 mt-2">
-                      Hours
-                    </div>
-                  </div>
-                  <p className="font-bold text-4xl md:text-6xl text-slate-400">
-                    :
-                  </p>
-                  <div className="flex w-16 md:w-24 flex-col items-center">
-                    <p className="font-bold text-4xl md:text-6xl text-slate-200">
-                      {timeLeft.minutes}
-                    </p>
-                    <div className="text-sm md:text-base text-slate-400 mt-2">
-                      Min
-                    </div>
-                  </div>
-                  <p className="font-bold text-4xl md:text-6xl text-slate-400">
-                    :
-                  </p>
-                  <div className="flex w-16 md:w-24 flex-col items-center">
-                    <p className="font-bold text-4xl md:text-6xl text-slate-200">
-                      {timeLeft.seconds}
-                    </p>
-                    <div className="text-sm md:text-base text-slate-400 mt-2">
-                      Sec
-                    </div>
-                  </div>
+                <div className="flex justify-center gap-8 md:gap-12">
+                  {[
+                    { label: "DAYS", value: timeLeft.days },
+                    { label: "HOURS", value: timeLeft.hours },
+                    { label: "MINS", value: timeLeft.minutes },
+                    { label: "SECS", value: timeLeft.seconds },
+                  ].map((item, index, array) => (
+                    <React.Fragment key={item.label}>
+                      <div className="flex flex-col items-center">
+                        <p className="font-bold text-5xl md:text-7xl text-slate-100 tabular-nums tracking-tighter">
+                          {String(item.value).padStart(2, "0")}
+                        </p>
+                        <div className="text-[10px] text-slate-500 mt-3 tracking-[0.2em] font-bold">
+                          {item.label}
+                        </div>
+                      </div>
+                      {index !== array.length - 1 && (
+                        <p className="font-light text-4xl md:text-6xl text-slate-800 self-center -mt-6">
+                          :
+                        </p>
+                      )}
+                    </React.Fragment>
+                  ))}
                 </div>
               </div>
 
               {/* Quiz Card */}
-              <Card className="dark border-slate-800 w-[85vw] md:w-[38vw]">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-xl text-white">
+              <Card className="border-white/5 w-[85vw] md:w-[35vw] bg-black/60 backdrop-blur-xl rounded-none shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                <CardHeader className="pb-4 border-b border-white/5 mx-6 px-0">
+                  <CardTitle className="text-lg text-white font-bold uppercase tracking-[0.2em]">
                     General Round
                   </CardTitle>
-                  <CardDescription className="text-base text-slate-400">
+                  <CardDescription className="text-[11px] text-slate-500 uppercase tracking-widest font-medium">
                     Time to put your skills to the test
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-slate-300 text-base">
+                <CardContent className="space-y-8 pt-8 px-6">
+                  <p className="text-slate-400 text-sm font-medium leading-relaxed tracking-wide">
                     Please go through the{" "}
                     <Popover>
                       <PopoverTrigger>
-                        <span className="text-blue-400 hover:text-blue-300 cursor-pointer underline">
+                        <span className="text-blue-500 hover:text-blue-400 cursor-pointer underline underline-offset-8 transition-colors">
                           rules
                         </span>
                       </PopoverTrigger>
-                      <PopoverContent className="dark border-slate-800">
-                        <div className="space-y-2">
-                          <p className="text-slate-300 text-sm">
-                            • 45 minutes to complete
-                          </p>
-                          <p className="text-slate-300 text-sm">
-                            • 10 questions total
-                          </p>
-                          <p className="text-slate-300 text-sm">
-                            • 1 mark per question
-                          </p>
-                          <p className="text-slate-300 text-sm">
-                            • No negative marking
-                          </p>
+                      <PopoverContent className="bg-black border-white/10 rounded-none shadow-2xl">
+                        <div className="space-y-3 p-1">
+                          {[
+                            "45:00 MINUTE DURATION",
+                            "10 SYSTEM QUESTIONS",
+                            "BINARY SCORING (1/0)",
+                            "ZERO PENALTY PROTOCOL",
+                          ].map((rule) => (
+                            <p
+                              key={rule}
+                              className="text-[10px] text-slate-400 font-mono tracking-widest flex items-center gap-3"
+                            >
+                              <span className="w-1 h-1 bg-blue-600" /> {rule}
+                            </p>
+                          ))}
                         </div>
                       </PopoverContent>
                     </Popover>{" "}
-                    before attempting
+                    before attempting.
                   </p>
+
                   <Button
                     onClick={() => push("/exam")}
-                    className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-base py-5"
+                    className={cn(
+                      "w-full h-14 text-[11px] font-black uppercase tracking-[0.3em] transition-colors rounded-none",
+                      "bg-[#f1f5f9] text-slate-950 hover:bg-white", // Sharp Off-white
+                      "animate-futuristic"
+                    )}
                   >
                     Start Test
                   </Button>

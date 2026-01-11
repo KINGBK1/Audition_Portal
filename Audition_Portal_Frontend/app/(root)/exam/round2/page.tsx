@@ -1,34 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaGithub, FaPaintBrush, FaPhotoVideo } from "react-icons/fa";
-import { HiPlus, HiCheck, HiExclamation, HiClock, HiX } from "react-icons/hi";
+import { FaGithub, FaPhotoVideo } from "react-icons/fa";
+import { HiCheck, HiExclamation, HiClock } from "react-icons/hi";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
-import AnimatedGridPattern from "@/components/magicui/animated-grid-pattern";
-import Meteors from "@/components/magicui/meteors";
+import { Loader2, CheckCircle2, AlertCircle, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Round2() {
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const router = useRouter();
   const [status, setStatus] = useState("incomplete");
   const [taskLink, setTaskLink] = useState("");
   const [gdLink, setGdLink] = useState("");
-  const [taskLinkAdded, setTaskLinkAdded] = useState(false);
-  const [gdLinkAdded, setGdLinkAdded] = useState(false);
   const [taskLinkValid, setTaskLinkValid] = useState<boolean | null>(null);
   const [gdLinkValid, setGdLinkValid] = useState<boolean | null>(null);
   const [panel, setPanel] = useState<number | null>(null);
@@ -36,106 +25,59 @@ export default function Round2() {
   const [isLoading, setIsLoading] = useState(true);
   const [isNewEntry, setIsNewEntry] = useState(true);
 
-  // MODIFY the validateUrl function - Remove YouTube/Vimeo from creative assets
-  const validateUrl = (url: string, type: 'github' | 'creative'): boolean => {
+  // URL Validation Logic
+  const validateUrl = (url: string, type: "github" | "creative"): boolean => {
     if (!url.trim()) return false;
-    
     try {
       const urlObj = new URL(url);
-      
-      if (type === 'github') {
-        // Only GitHub links allowed
-        return urlObj.hostname.includes('github.com');
-      } else {
-        // Creative assets - ONLY design/portfolio platforms (NO video platforms)
-        const validDomains = [
-          'drive.google.com',
-          'docs.google.com',
-          'canva.com',
-          'figma.com',
-          'behance.net',
-          'dribbble.com',
-          'dropbox.com',
-          'onedrive.live.com',
-          'notion.so',
-          'notion.site',
-        ];
-        return validDomains.some(domain => urlObj.hostname.includes(domain));
-      }
+      if (type === "github") return urlObj.hostname.includes("github.com");
+      const validDomains = [
+        "drive.google.com",
+        "canva.com",
+        "figma.com",
+        "behance.net",
+        "notion.site",
+      ];
+      return validDomains.some((domain) => urlObj.hostname.includes(domain));
     } catch {
       return false;
     }
   };
 
-  // MODIFY handleTaskLinkValidation
   const handleTaskLinkValidation = () => {
-    const isValid = validateUrl(taskLink, 'github'); // Only GitHub
+    const isValid = validateUrl(taskLink, "github");
     setTaskLinkValid(isValid);
-
     if (isValid) {
-      toast.success("Valid GitHub link detected!", {
-        style: {
-          background: "#1e293b",
-          color: "#f1f5f9",
-          border: "1px solid #10b981",
-        },
-        icon: "✅",
+      toast.success("GitHub Verified", {
+        style: { background: "#1e3a8a", color: "#fff", borderRadius: "0px" },
       });
-      setTaskLinkAdded(true);
-      setTimeout(() => setTaskLinkAdded(false), 3000);
     } else {
-      toast.error("Please enter a valid GitHub repository link", {
-        style: {
-          background: "#1e293b",
-          color: "#f1f5f9",
-          border: "1px solid #ef4444",
-        },
-        icon: "⚠️",
-      });
+      toast.error(
+        "Please enter a valid GitHub repository link (github.com only)",
+        {
+          style: { background: "#7f1d1d", color: "#fff", borderRadius: "0px" },
+        }
+      );
     }
   };
 
-  // MODIFY handleGdLinkValidation
   const handleGdLinkValidation = () => {
-    if (!gdLink.trim()) {
-      toast.error("Please enter a link first", {
-        style: {
-          background: "#1e293b",
-          color: "#f1f5f9",
-          border: "1px solid #ef4444",
-        },
-        icon: "⚠️",
-      });
-      return;
-    }
-
-    const isValid = validateUrl(gdLink, 'creative'); // Creative platforms
+    const isValid = validateUrl(gdLink, "creative");
     setGdLinkValid(isValid);
-
     if (isValid) {
-      toast.success("Valid creative assets link!", {
-        style: {
-          background: "#1e293b",
-          color: "#f1f5f9",
-          border: "1px solid #10b981",
-        },
-        icon: "✅",
+      toast.success("Assets Verified", {
+        style: { background: "#581c87", color: "#fff", borderRadius: "0px" },
       });
-      setGdLinkAdded(true);
-      setTimeout(() => setGdLinkAdded(false), 3000);
     } else {
-      toast.error("Please enter a valid Canva, Drive, Figma, or portfolio link", {
-        style: {
-          background: "#1e293b",
-          color: "#f1f5f9",
-          border: "1px solid #ef4444",
-        },
-        icon: "⚠️",
-      });
+      toast.error(
+        "Please enter a valid Canva, Drive, Figma, or portfolio link",
+        {
+          style: { background: "#7f1d1d", color: "#fff", borderRadius: "0px" },
+        }
+      );
     }
   };
 
-  // MODIFY fetchUser to validate existing links
   const fetchUser = async () => {
     try {
       const res = await fetch(
@@ -157,9 +99,7 @@ export default function Round2() {
         return;
       }
 
-      setPanel(
-        user.panel !== null && user.panel !== undefined ? user.panel : null
-      );
+      setPanel(user.panel ?? null);
 
       const round2Res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/round2`,
@@ -169,35 +109,34 @@ export default function Round2() {
         }
       );
 
+      // Inside fetchUser function, replace the round2Res block:
       if (round2Res.ok) {
         const round2Data = await round2Res.json();
+
         if (round2Data.entry) {
-          const storedLinks: string = round2Data.entry.taskLink || "";
+          const dbStatus = round2Data.entry.status;
+          const storedLinks = round2Data.entry.taskLink || "";
           const [firstLine, secondLine] = storedLinks.split(/\r?\n/, 2);
+
           setTaskLink(firstLine || "");
           setGdLink(secondLine || "");
-          setStatus(round2Data.entry.status || "incomplete");
-          setIsNewEntry(false);
-          
-          // Validate existing links with correct types
-          if (firstLine) {
-            setTaskLinkValid(validateUrl(firstLine, 'github'));
+          setStatus(dbStatus || "incomplete");
+
+          // CRITICAL FIX: Only set isSubmitted to true if the DB status is "done"
+          if (dbStatus === "done") {
+            setIsSubmitted(true);
+            setIsNewEntry(false);
+            // Ensure the button stays disabled by validating existing links
+            if (firstLine) setTaskLinkValid(validateUrl(firstLine, "github"));
+          } else {
+            // If status is "ASSIGNED" or anything else, keep the button active
+            setIsSubmitted(false);
+            setIsNewEntry(false); // It's an existing row, but not yet "Finalized"
           }
-          if (secondLine) {
-            setGdLinkValid(validateUrl(secondLine, 'creative'));
-          }
-        } else {
-          setIsNewEntry(true);
         }
       }
     } catch (e) {
-      toast.error("Failed to fetch user data, please refresh.", {
-        style: {
-          background: "#1e293b",
-          color: "#f1f5f9",
-          border: "1px solid #ef4444",
-        },
-      });
+      toast.error("Failed to fetch user data");
     } finally {
       setIsLoading(false);
     }
@@ -207,71 +146,35 @@ export default function Round2() {
     fetchUser();
   }, []);
 
-  // MODIFY handleSubmit validation
   const handleSubmit = async () => {
-    // Validate GitHub link
-    if (!taskLink.trim()) {
-      toast.error("Please enter a GitHub repository link", {
-        style: {
-          background: "#1e293b",
-          color: "#f1f5f9",
-          border: "1px solid #ef4444",
-        },
-        icon: "⚠️",
-      });
-      return;
-    }
+    if (isSubmitted) return;
 
-    if (!validateUrl(taskLink, 'github')) {
-      toast.error("Please enter a valid GitHub repository link (github.com only)", {
-        style: {
-          background: "#1e293b",
-          color: "#f1f5f9",
-          border: "1px solid #ef4444",
-        },
-        icon: "⚠️",
-      });
-      return;
-    }
-
-    // Validate creative assets link if provided
-    if (gdLink.trim() && !validateUrl(gdLink, 'creative')) {
-      toast.error("Please enter a valid creative assets link or leave it empty", {
-        style: {
-          background: "#1e293b",
-          color: "#f1f5f9",
-          border: "1px solid #ef4444",
-        },
-        icon: "⚠️",
-      });
+    // Validation Check
+    if (!taskLink.trim() || !validateUrl(taskLink, "github")) {
+      toast.error("Valid GitHub link is required");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const mainLink = taskLink.trim();
-      const extraLink = gdLink.trim();
-      const combinedLink = extraLink ? `${mainLink}\n${extraLink}` : mainLink;
+      const combinedLink = gdLink.trim()
+        ? `${taskLink.trim()}\n${gdLink.trim()}`
+        : taskLink.trim();
 
-      const requestBody: any = {
+      const requestBody = {
         taskLink: combinedLink,
         taskAlloted: "Round 2 submission",
-        status,
+        status: "done",
         addOns: [],
+        ...(isNewEntry && panel !== null && { panel }),
       };
-
-      if (isNewEntry && panel !== null) {
-        requestBody.panel = panel;
-      }
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/round2`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify(requestBody),
         }
@@ -280,390 +183,331 @@ export default function Round2() {
       const data = await response.json();
 
       if (!response.ok) {
-        toast.error(data.error || "Failed to submit Round 2", {
-          style: {
-            background: "#1e293b",
-            color: "#f1f5f9",
-            border: "1px solid #ef4444",
-          },
-          icon: "❌",
-        });
-        return;
+        throw new Error(data.error || "Submission failed");
       }
 
-      toast.custom(
-        (t) => (
-          <div
-            className={`${
-              t.visible ? "animate-enter" : "animate-leave"
-            } max-w-md w-full bg-slate-900/90 backdrop-blur-xl shadow-2xl rounded-xl pointer-events-auto flex ring-1 ring-white/10 border border-green-500/50`}
-          >
-            <div className="flex-1 w-0 p-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0 pt-0.5">
-                  <CheckCircle2 className="h-10 w-10 text-green-500" />
-                </div>
-                <div className="ml-3 flex-1">
-                  <p className="text-lg font-semibold text-white flex items-center gap-2">
-                    Submission Successful! 🎉
-                  </p>
-                  <div className="mt-2 text-sm text-slate-300 space-y-1">
-                    <p>✓ Task link saved</p>
-                    <p>
-                      ✓ Status:{" "}
-                      <span className="capitalize font-semibold text-green-400">
-                        {status}
-                      </span>
-                    </p>
-                    <p className="mt-3 text-xs text-slate-400 animate-pulse">
-                      🔄 Redirecting to dashboard in 3 seconds...
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="flex border-l border-white/10">
-              <button
-                onClick={() => toast.dismiss(t.id)}
-                className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-slate-400 hover:text-white focus:outline-none"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        ),
-        {
-          duration: 5000,
-          position: "top-center",
-        }
-      );
+      setIsSubmitted(true);
+      toast.success("SUBMISSION LOGGED SUCCESSFULLY");
 
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 3000);
-    } catch (error) {
-      console.error("Submission error:", error);
-      toast.error("An error occurred while submitting. Please try again.", {
-        style: {
-          background: "#1e293b",
-          color: "#f1f5f9",
-          border: "1px solid #ef4444",
-        },
-        icon: "🔥",
-      });
+      // Optional: Redirect after success
+      setTimeout(() => router.push("/dashboard"), 3000);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "An error occurred";
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (isLoading) {
+  if (isLoading)
     return (
-      <div className="min-h-screen w-full bg-slate-950 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
+      <div className="h-screen w-full bg-[#020617] flex items-center justify-center">
+        <Loader2 className="w-12 h-12 text-blue-400 animate-spin" />
       </div>
     );
-  }
 
   return (
-    <>
-      <Toaster position="top-center" />
-      <div className="min-h-screen w-full bg-slate-950 overflow-hidden relative">
-        <AnimatedGridPattern
-          numSquares={30}
-          maxOpacity={0.4}
-          duration={3}
-          repeatDelay={1}
-          className={cn(
-            "[mask-image:radial-gradient(1000px_circle_at_center,white,transparent)]",
-            "fixed inset-0 h-full w-full skew-y-3 z-0"
-          )}
+    <div className="h-screen w-full bg-[#02010a] text-slate-200 font-mono relative flex flex-col items-center justify-center overflow-hidden">
+      {/* DYNAMIC HIGH-BRIGHTNESS BACKGROUND */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        {/* Orbital Blue Orb */}
+        <motion.div
+          animate={{
+            top: ["10%", "80%", "80%", "10%", "10%"],
+            left: ["10%", "10%", "80%", "80%", "10%"],
+          }}
+          transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+          className="absolute w-[50vw] h-[50vw] bg-blue-600/30 blur-[120px] rounded-full"
+        />
+        {/* Orbital Violet Orb */}
+        <motion.div
+          animate={{
+            bottom: ["10%", "80%", "80%", "10%", "10%"],
+            right: ["10%", "10%", "80%", "80%", "10%"],
+          }}
+          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+          className="absolute w-[45vw] h-[45vw] bg-purple-600/25 blur-[130px] rounded-full"
         />
 
-        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-          <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-        </div>
+        {/* Subtle Grid Overlay */}
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{
+            backgroundImage: `radial-gradient(#1e293b 1px, transparent 1px)`,
+            backgroundSize: "30px 30px",
+          }}
+        />
+      </div>
 
-        <div className="container mx-auto px-4 md:px-8 pt-12 pb-12 relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-center mb-10"
-          >
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600 mb-2"
-            >
-              Round 2
-            </motion.div>
-            <motion.h1
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="text-2xl md:text-4xl font-bold text-white"
-            >
-              Tech Review
-            </motion.h1>
-            {panel !== null && (
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.7 }}
-                className="mt-4 inline-block"
-              >
-                <Badge className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-2 text-sm font-semibold hover:bg-white/20 transition-colors">
-                  Panel: {panel}
+      <Toaster position="top-center" />
+
+      <div className="container relative z-10 max-w-7xl h-full flex flex-col justify-between py-10 px-8">
+        {/* HEADER */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center mt-6"
+        >
+          <div className="flex items-center justify-center gap-4 mb-2">
+            <div className="h-[1px] w-12 bg-blue-400/50 shadow-[0_0_8px_#3b82f6]" />
+            <p className="text-blue-400 tracking-[0.6em] text-[11px] uppercase font-black drop-shadow-lg">
+              Authorized // Round 2 Submission
+            </p>
+            <div className="h-[1px] w-12 bg-blue-400/50 shadow-[0_0_8px_#3b82f6]" />
+          </div>
+          <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-white uppercase ">
+            TECH{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-800">
+              REVIEW
+            </span>
+          </h1>
+        </motion.div>
+
+        {/* MAIN CONTENT GRID */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 w-full  my-6 items-stretch">
+          {/* LEFT: FORMS */}
+          <div className="lg:col-span-7 flex flex-col gap-6">
+            <div className="group flex-1 border border-white/10 bg-white/5 backdrop-blur-2xl p-6 relative rounded-none shadow-[0_0_40px_rgba(0,0,0,0.5)] transition-all hover:border-blue-500/50">
+              <div className="absolute top-0 left-0 w-full h-[4px] bg-blue-500 shadow-[0_0_15px_#3b82f6]" />
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-4 mt-3">
+                  <FaGithub className="text-3xl text-blue-300 animate-pulse" />
+                  <h3 className="text-xl font-mono font-bold uppercase tracking-widest text-white">
+                    GITHUB REPOSITORY LINK
+                  </h3>
+                </div>
+                <Badge className="bg-blue-500 text-white rounded-none font-bold">
+                  REQUIRED
                 </Badge>
-              </motion.div>
-            )}
-          </motion.div>
+              </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="space-y-6"
-            >
-              <Card className="dark bg-white/5 border-white/10 backdrop-blur-xl shadow-2xl ring-1 ring-white/10">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-white/90">
-                    <FaGithub className="text-2xl text-blue-400" />
-                    GitHub Repository Link
-                  </CardTitle>
-                  <CardDescription className="text-slate-400">
-                    Paste your GitHub repository link (github.com only)
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex gap-2">
-                    <div className="flex-1 relative">
-                      <Input
-                        type="url"
-                        value={taskLink}
-                        onChange={(e) => {
-                          setTaskLink(e.target.value);
-                          setTaskLinkAdded(false);
-                          setTaskLinkValid(null);
-                        }}
-                        placeholder="https://github.com/username/repository"
-                        className={cn(
-                          "bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:ring-blue-500/50 pr-10",
-                          taskLinkValid === true && "border-green-500/50",
-                          taskLinkValid === false && "border-red-500/50"
-                        )}
-                      />
-                      {taskLinkValid !== null && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                          {taskLinkValid ? (
-                            <CheckCircle2 className="h-5 w-5 text-green-500" />
-                          ) : (
-                            <AlertCircle className="h-5 w-5 text-red-500" />
-                          )}
-                        </div>
+              <div className="space-y-2 pt-2">
+                <div className="relative">
+                  <Input
+                    value={taskLink}
+                    disabled={isSubmitted}
+                    onChange={(e) => setTaskLink(e.target.value)}
+                    placeholder="https://github.com/username/repository"
+                    className="bg-black/80 border-slate-500 rounded-none h-12 px-4 text-sm tracking-normal focus:border-blue-500 uppercase transition-all"
+                  />
+                  {taskLinkValid !== null && (
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                      {taskLinkValid ? (
+                        <CheckCircle2 className="h-6 w-6 text-emerald-400" />
+                      ) : (
+                        <AlertCircle className="h-6 w-6 text-red-400" />
                       )}
                     </div>
-                    <Button
-                      type="button"
-                      onClick={handleTaskLinkValidation}
-                      className="bg-blue-600/80 hover:bg-blue-600 backdrop-blur-md"
-                    >
-                      Validate
-                    </Button>
-                  </div>
-                  {taskLinkValid === false && (
-                    <p className="text-xs text-red-400 flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      Please enter a valid GitHub repository link (github.com only)
-                    </p>
                   )}
-                  {taskLinkValid === true && (
-                    <p className="text-xs text-green-400 flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3" />
-                      Valid GitHub repository link detected
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
+                </div>
+                <Button
+                  onClick={handleTaskLinkValidation}
+                  disabled={isSubmitted || isSubmitting}
+                  className="w-full bg-blue-600 hover:bg-white hover:text-black text-white rounded-none h-12 font-black uppercase tracking-tight text-sm transition-all duration-500 mb-4"
+                >
+                  VALIDATE
+                </Button>
+                {taskLinkValid === false && (
+                  <p className="text-xs text-red-400 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Please enter a valid GitHub repository link (github.com
+                    only)
+                  </p>
+                )}
+              </div>
+            </div>
 
-              <Card className="dark bg-white/5 border-white/10 backdrop-blur-xl shadow-2xl ring-1 ring-white/10">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-white/90">
-                    <FaPhotoVideo className="text-2xl text-purple-400" />
-                    Creative Assets Link (Optional)
-                  </CardTitle>
-                  <CardDescription className="text-slate-400">
-                    Graphic Design or Video Editing work
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex gap-2">
-                    <div className="flex-1 relative">
-                      <Input
-                        type="url"
-                        value={gdLink}
-                        onChange={(e) => {
-                          setGdLink(e.target.value);
-                          setGdLinkAdded(false);
-                          setGdLinkValid(null);
-                        }}
-                        placeholder="Canva, Drive, Figma, or Portfolio link"
-                        className={cn(
-                          "bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:ring-purple-500/50 pr-10",
-                          gdLinkValid === true && "border-green-500/50",
-                          gdLinkValid === false && "border-red-500/50"
-                        )}
-                      />
-                      {gdLinkValid !== null && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                          {gdLinkValid ? (
-                            <CheckCircle2 className="h-5 w-5 text-green-500" />
-                          ) : (
-                            <AlertCircle className="h-5 w-5 text-red-500" />
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <Button
-                      type="button"
-                      onClick={handleGdLinkValidation}
-                      className="bg-purple-600/80 hover:bg-purple-600 backdrop-blur-md"
-                    >
-                      Validate
-                    </Button>
-                  </div>
-                  {gdLinkValid === false && (
-                    <p className="text-xs text-red-400 flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      Please enter a valid Canva, Drive, Figma, or portfolio link
-                    </p>
-                  )}
-                  {gdLinkValid === true && (
-                    <p className="text-xs text-green-400 flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3" />
-                      Valid creative assets link
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              <Card className="dark bg-white/5 border-white/10 backdrop-blur-xl shadow-2xl ring-1 ring-white/10 h-full">
-                <CardHeader>
-                  <CardTitle className="text-white/90">Task Status</CardTitle>
-                  <CardDescription className="text-slate-400">
-                    Select the status of your task completion
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {[
-                    { value: "done", label: "Done", icon: HiCheck },
-                    { value: "partially done", label: "Partially Done", icon: HiClock },
-                    { value: "incomplete", label: "Incomplete", icon: HiExclamation },
-                  ].map((option) => {
-                    const Icon = option.icon;
-                    const isSelected = status === option.value;
-                    return (
-                      <button
-                        key={option.value}
-                        onClick={() => setStatus(option.value)}
-                        className={`w-full p-4 rounded-xl flex items-center justify-between transition-all duration-300 border ${
-                          isSelected
-                            ? "bg-blue-600/40 border-blue-400/50 text-white shadow-[0_0_15px_rgba(37,99,235,0.3)]"
-                            : "bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:border-white/20"
-                        }`}
-                      >
-                        <span className="font-semibold">{option.label}</span>
-                        <Icon className={`text-xl ${isSelected ? "text-white" : "opacity-20"}`} />
-                      </button>
-                    );
-                  })}
-                </CardContent>
-              </Card>
-            </motion.div>
+            <div className="group flex-1 border border-white/10 bg-white/5 backdrop-blur-2xl p-6 relative rounded-none shadow-[0_0_40px_rgba(0,0,0,0.5)] transition-all hover:border-purple-500/50">
+              <div className="absolute top-0 left-0 w-full h-[4px] bg-purple-600 shadow-[0_0_15px_#9333ea]" />
+              <div className="flex items-center gap-5 mb-6">
+                <FaPhotoVideo className="text-3xl text-purple-400" />
+                <h3 className="text-xl font-mono font-bold uppercase tracking-widest text-white">
+                  Creative Assets Link (Optional)
+                </h3>
+              </div>
+              <div className="space-y-2">
+                <Input
+                  value={gdLink}
+                  onChange={(e) => setGdLink(e.target.value)}
+                  placeholder="Canva, Drive, Figma, or Portfolio link"
+                  className="bg-black/80 border-slate-700 rounded-none h-12 px-4 text-sm tracking-normal focus:border-purple-500 uppercase transition-all"
+                />
+                <Button
+                  onClick={handleGdLinkValidation}
+                  className="w-full bg-slate-900 border border-purple-500/30 text-purple-400 hover:bg-purple-600 hover:text-white rounded-none h-12 font-black uppercase tracking-tight text-sm transition-all duration-500 mb-4"
+                >
+                  Validate
+                </Button>
+                {gdLinkValid === false && (
+                  <p className="text-xs text-red-400 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Please enter a valid Canva, Drive, Figma, or portfolio link
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.7 }}
-            className="flex justify-center"
-          >
-            <Button
-              onClick={handleSubmit}
-              disabled={isSubmitting || !taskLink.trim() || taskLinkValid === false}
-              className="px-16 py-7 text-lg font-bold bg-white text-black hover:bg-slate-200 disabled:opacity-50 shadow-[0_0_30px_rgba(255,255,255,0.2)] transition-all duration-300 hover:scale-105 rounded-full"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                "Final Submission"
-              )}
-            </Button>
-          </motion.div>
+          {/* RIGHT: STATUS */}
+          {/* RIGHT: STATUS SELECTOR */}
+          <div className="lg:col-span-5 self-start">
+            <div className="border border-white/10 bg-white/5 backdrop-blur-3xl p-6 relative shadow-2xl overflow-hidden">
+              {/* Animated top bar that matches current status color */}
+              <motion.div
+                animate={{
+                  backgroundColor:
+                    status === "done"
+                      ? "#10b981"
+                      : status === "partially done"
+                      ? "#3b82f6"
+                      : "#f55f4b",
+                }}
+                className="absolute top-0 left-0 w-full h-[3px] transition-colors duration-500"
+              />
+
+              <h3 className="text-lg font-mono font-bold uppercase tracking-[0.em] text-white/90 mb-6 border-b border-white/10 pb-2">
+                TASK STATUS
+              </h3>
+
+              <div className="space-y-3">
+                {[
+                  {
+                    value: "done",
+                    label: "Done",
+                    icon: HiCheck,
+                    color: "text-emerald-400",
+                    activeClass:
+                      "bg-emerald-500/20 border-emerald-500 text-emerald-100 shadow-[0_0_20px_rgba(16,185,129,0.2)]",
+                  },
+                  {
+                    value: "partially done",
+                    label: "Partially Done",
+                    icon: HiClock,
+                    color: "text-blue-400",
+                    activeClass:
+                      "bg-blue-500/20 border-blue-500 text-blue-100 shadow-[0_0_20px_rgba(59,130,246,0.2)]",
+                  },
+                  {
+                    value: "incomplete",
+                    label: "Incomplete",
+                    icon: HiExclamation,
+                    color: "text-amber-400",
+                    activeClass:
+                      "bg-red-500/20 border-red-500 text-amber-100 shadow-[0_0_20px_rgba(245,158,11,0.2)]",
+                  },
+                ].map((option) => {
+                  const isActive = status === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      onClick={() => !isSubmitted && setStatus(option.value)}
+                      className={cn(
+                        "w-full py-3 px-5 border transition-all duration-300 flex items-center justify-between rounded-none relative group",
+                        isActive
+                          ? option.activeClass
+                          : "bg-black/40 border-white/10 text-slate-500 hover:border-white/30 hover:bg-white/5"
+                      )}
+                    >
+                      {/* Background Glow Layer for Active State */}
+                      {isActive && (
+                        <motion.div
+                          layoutId="statusGlow"
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"
+                        />
+                      )}
+
+                      <span
+                        className={cn(
+                          "font-black uppercase tracking-[0.2em] text-[11px] z-10 transition-colors",
+                          isActive ? "text-white" : "group-hover:text-slate-300"
+                        )}
+                      >
+                        {option.label}
+                      </span>
+
+                      <option.icon
+                        className={cn(
+                          "text-xl z-10 transition-all duration-300",
+                          isActive
+                            ? "text-white scale-110 drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+                            : option.color
+                        )}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+
+              <p className="mt-6 text-[9px] text-slate-400 uppercase tracking-widest text-center opacity-80">
+                Select current task progress
+              </p>
+            </div>
+          </div>
         </div>
 
-        <style jsx>{`
-          @keyframes blob {
-            0%,
-            100% {
-              transform: translate(0px, 0px) scale(1);
-            }
-            33% {
-              transform: translate(30px, -50px) scale(1.1);
-            }
-            66% {
-              transform: translate(-20px, 20px) scale(0.9);
-            }
-          }
-          .animate-blob {
-            animation: blob 7s infinite;
-          }
-          .animation-delay-2000 {
-            animation-delay: 2s;
-          }
-          .animation-delay-4000 {
-            animation-delay: 4s;
-          }
-          .animate-enter {
-            animation: enter 0.3s ease-out;
-          }
-          .animate-leave {
-            animation: leave 0.3s ease-in forwards;
-          }
-          @keyframes enter {
-            0% {
-              opacity: 0;
-              transform: translateY(-10px);
-            }
-            100% {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-          @keyframes leave {
-            0% {
-              opacity: 1;
-              transform: translateY(0);
-            }
-            100% {
-              opacity: 0;
-              transform: translateY(-10px);
-            }
-          }
-        `}</style>
+        {/* FOOTER */}
+        <motion.div className="flex flex-col items-center gap-4">
+          <Button
+            onClick={handleSubmit}
+            // Logic: Disable if already submitted OR if currently submitting OR if link isn't valid
+            disabled={isSubmitted || isSubmitting || !taskLinkValid}
+            className={cn(
+              "group relative h-12 w-full max-w-xl transition-all duration-700 rounded-none font-black uppercase tracking-[0.4em] text-lg overflow-hidden",
+              isSubmitted
+                ? "bg-emerald-900/40 text-emerald-500 border border-emerald-500/50 cursor-not-allowed shadow-none"
+                : "bg-blue-600 text-white hover:bg-blue-400 hover:text-black shadow-[0_0_50px_rgba(37,99,235,0.4)]"
+            )}
+          >
+            {isSubmitted ? (
+              <span className="flex items-center gap-3">
+                <HiCheck className="w-6 h-6" /> SUBMITTED
+              </span>
+            ) : isSubmitting ? (
+              <Loader2 className="h-8 w-8 animate-spin" />
+            ) : (
+              <span className="flex items-center gap-6">
+                FINAL SUBMISSION{" "}
+                <ChevronRight className="w-8 h-8 group-hover:translate-x-4 transition-transform" />
+              </span>
+            )}
+          </Button>
+          <div className="flex items-center gap-10 opacity-40">
+            <div className="h-[1px] w-24 bg-blue-500" />
+            <p className="text-[10px] text-blue-400 uppercase tracking-[1em] animate-pulse">
+              SECURE_LINK_ESTABLISHED
+            </p>
+            <div className="h-[1px] w-24 bg-blue-500" />
+          </div>
+        </motion.div>
       </div>
-    </>
+
+      <style jsx global>{`
+        /* Set monospace font across the page */
+        body,
+        input,
+        button,
+        textarea,
+        select,
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        p,
+        span,
+        div {
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco,
+            "Roboto Mono", "Courier New", monospace;
+        }
+
+        @keyframes shimmer {
+          100% {
+            transform: translateX(100%);
+          }
+        }
+      `}</style>
+    </div>
   );
 }

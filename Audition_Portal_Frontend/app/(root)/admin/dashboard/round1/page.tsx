@@ -1,13 +1,26 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useEffect, useState } from "react"
-import Image from "next/image"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import type React from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -15,7 +28,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -26,12 +39,18 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
   AlertDialogAction,
-} from "@/components/ui/alert-dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
-import { toast } from "@/components/ui/use-toast"
+} from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/use-toast";
 import {
   Users,
   CheckCircle,
@@ -46,83 +65,88 @@ import {
   FileText,
   Trophy,
   Calculator,
-} from "lucide-react"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { fetchUserData } from "@/lib/store/features/auth/authSlice"
+} from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { fetchUserData } from "@/lib/store/features/auth/authSlice";
 
 // Types
 interface QuestionOption {
-  id: number
-  text: string
-  isCorrect: boolean
+  id: number;
+  text: string;
+  isCorrect: boolean;
 }
 
 export interface Question {
-  id: number
-  type: string
-  description: string
-  picture?: string | null
-  options: QuestionOption[]
+  id: number;
+  type: string;
+  description: string;
+  picture?: string | null;
+  options: QuestionOption[];
 }
 
 interface Answer {
-  questionId: number
-  optionId?: number
-  description?: string
-  option?: QuestionOption
-  question?: Question
+  questionId: number;
+  optionId?: number;
+  description?: string;
+  option?: QuestionOption;
+  question?: Question;
 }
 
 interface AuditionRound {
-  id: number
-  round: number
-  finalSelection: boolean | null
-  panel?: number
-  reviews?: any[]
+  id: number;
+  round: number;
+  finalSelection: boolean | null;
+  panel?: number;
+  reviews?: any[];
 }
 
 interface User {
-  id: number
-  username: string
-  email: string
-  contact: string
-  gender?: string
-  specialization?: string
-  hasGivenExam: boolean
-  createdAt: string
-  auditionRounds?: AuditionRound[]
-  roundTwo?: { panel: number; status: string; taskAlloted?: string; taskLink?: string } | null
+  id: number;
+  username: string;
+  email: string;
+  contact: string;
+  gender?: string;
+  specialization?: string;
+  hasGivenExam: boolean;
+  createdAt: string;
+  auditionRounds?: AuditionRound[];
+  roundTwo?: {
+    panel: number;
+    status: string;
+    taskAlloted?: string;
+    taskLink?: string;
+  } | null;
 }
 
 interface UserScore {
-  userId: number
-  correct: number
-  total: number
-  percentage: number
+  userId: number;
+  correct: number;
+  total: number;
+  percentage: number;
 }
 
 export default function AdminDashboard() {
   // State
-  const [users, setUsers] = useState<User[]>([])
-  const [questions, setQuestions] = useState<Question[]>([])
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([])
-  const [userScores, setUserScores] = useState<UserScore[]>([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [filterStatus, setFilterStatus] = useState("all")
-  const [viewingUser, setViewingUser] = useState<User | null>(null)
-  const [viewingResponses, setViewingResponses] = useState<Answer[]>([])
-  const [isResponsesDialogOpen, setIsResponsesDialogOpen] = useState(false)
-  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const [selectedPanel, setSelectedPanel] = useState<string>("")
-  const [loadingScores, setLoadingScores] = useState<number[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false)
-  const [taskUser, setTaskUser] = useState<User | null>(null)
-  const [taskText, setTaskText] = useState("")
-  const [taskLink, setTaskLink] = useState("")
+  const [users, setUsers] = useState<User[]>([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [userScores, setUserScores] = useState<UserScore[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [viewingUser, setViewingUser] = useState<User | null>(null);
+  const [viewingResponses, setViewingResponses] = useState<Answer[]>([]);
+  const [isResponsesDialogOpen, setIsResponsesDialogOpen] = useState(false);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedPanel, setSelectedPanel] = useState<string>("");
+  const [loadingScores, setLoadingScores] = useState<number[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
+  const [taskUser, setTaskUser] = useState<User | null>(null);
+  const [taskText, setTaskText] = useState("");
+  const [taskLink, setTaskLink] = useState("");
 
-  const fetchData = async()=> {
+  const fetchData = async () => {
     try {
       setIsLoading(true);
 
@@ -195,32 +219,37 @@ export default function AdminDashboard() {
     } finally {
       setIsLoading(false);
     }
-  }
+  };
   useEffect(() => {
-  fetchData()
-}, []);
-
+    fetchData();
+  }, []);
 
   // Calculate scores for all users who have taken the exam
-  const calculateAllScores = async (examUsers: User[], questionsData: Question[]) => {
-    const scores: UserScore[] = []
+  const calculateAllScores = async (
+    examUsers: User[],
+    questionsData: Question[]
+  ) => {
+    const scores: UserScore[] = [];
 
     for (const user of examUsers) {
       try {
-        setLoadingScores((prev) => [...prev, user.id])
-        const score = await calculateUserScore(user.id, questionsData)
-        scores.push(score)
+        setLoadingScores((prev) => [...prev, user.id]);
+        const score = await calculateUserScore(user.id, questionsData);
+        scores.push(score);
       } catch (error) {
-        console.error(`Error calculating score for user ${user.id}:`, error)
+        console.error(`Error calculating score for user ${user.id}:`, error);
       } finally {
-        setLoadingScores((prev) => prev.filter((id) => id !== user.id))
+        setLoadingScores((prev) => prev.filter((id) => id !== user.id));
       }
     }
 
-    setUserScores(scores)
-  }
+    setUserScores(scores);
+  };
 
-  const calculateUserScore = async (userId: number, questionsData: Question[]): Promise<UserScore> => {
+  const calculateUserScore = async (
+    userId: number,
+    questionsData: Question[]
+  ): Promise<UserScore> => {
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/responses/${userId}`,
@@ -280,56 +309,63 @@ export default function AdminDashboard() {
 
   // Filter logic
   useEffect(() => {
-    let list = [...users]
+    let list = [...users];
 
     if (searchTerm) {
       list = list.filter(
         (u) =>
           u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
           u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          u.specialization?.toLowerCase().includes(searchTerm.toLowerCase()),
-      )
+          u.specialization?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
 
     if (filterStatus !== "all") {
       list = list.filter((user) => {
-        const round1 = user.auditionRounds?.find((r) => r.round === 1)
+        const round1 = user.auditionRounds?.find((r) => r.round === 1);
         switch (filterStatus) {
           case "pending":
-            return user.hasGivenExam && (!round1 || round1.finalSelection === null)
+            return (
+              user.hasGivenExam && (!round1 || round1.finalSelection === null)
+            );
           case "qualified":
-            return round1?.finalSelection === true
+            return round1?.finalSelection === true;
           case "rejected":
-            return round1?.finalSelection === false
+            return round1?.finalSelection === false;
           case "assigned":
-            return !!user.roundTwo
+            return !!user.roundTwo;
           default:
-            return true
+            return true;
         }
-      })
+      });
     }
 
-    setFilteredUsers(list)
-  }, [users, searchTerm, filterStatus])
+    setFilteredUsers(list);
+  }, [users, searchTerm, filterStatus]);
 
   // Get score badge for a user
   const getScoreBadge = (userId: number): React.ReactNode => {
-    const user = users.find((u) => u.id === userId)
+    const user = users.find((u) => u.id === userId);
     if (!user || !user.hasGivenExam) {
-      return <Badge variant="outline">Not Taken</Badge>
+      return <Badge variant="outline">Not Taken</Badge>;
     }
 
     if (loadingScores.includes(userId)) {
-      return <Badge variant="secondary">Calculating...</Badge>
+      return <Badge variant="secondary">Calculating...</Badge>;
     }
 
-    const userScore = userScores.find((s) => s.userId === userId)
+    const userScore = userScores.find((s) => s.userId === userId);
     if (!userScore) {
-      return <Badge variant="secondary">Loading...</Badge>
+      return <Badge variant="secondary">Loading...</Badge>;
     }
 
-    const { correct, total, percentage } = userScore
-    const variant = percentage >= 70 ? "default" : percentage >= 50 ? "secondary" : "destructive"
+    const { correct, total, percentage } = userScore;
+    const variant =
+      percentage >= 70
+        ? "default"
+        : percentage >= 50
+        ? "secondary"
+        : "destructive";
 
     return (
       <div className="flex flex-col items-center gap-1">
@@ -338,57 +374,64 @@ export default function AdminDashboard() {
           {correct}/{total}
         </span>
       </div>
-    )
-  }
+    );
+  };
 
   // Get status badge for a user
   const getStatusBadge = (user: User): React.ReactNode => {
     if (!user.hasGivenExam) {
-      return <Badge variant="outline">Not Taken</Badge>
+      return <Badge variant="outline">Not Taken</Badge>;
     }
 
-    const round1 = user.auditionRounds?.find((r) => r.round === 1)
+    const round1 = user.auditionRounds?.find((r) => r.round === 1);
 
     if (!round1) {
-      return <Badge variant="secondary">Pending Review</Badge>
+      return <Badge variant="secondary">Pending Review</Badge>;
     }
 
     if (round1.finalSelection === null) {
-      return <Badge variant="secondary">Pending Review</Badge>
+      return <Badge variant="secondary">Pending Review</Badge>;
     }
 
     if (round1.finalSelection === true) {
       if (user.roundTwo) {
-        return <Badge variant="default">Panel {user.roundTwo.panel}</Badge>
+        return <Badge variant="default">Panel {user.roundTwo.panel}</Badge>;
       }
-      return <Badge variant="default">Qualified</Badge>
+      return <Badge variant="default">Qualified</Badge>;
     }
 
     if (round1.finalSelection === false) {
-      return <Badge variant="destructive">Rejected</Badge>
+      return <Badge variant="destructive">Rejected</Badge>;
     }
 
-    return <Badge variant="secondary">Pending Review</Badge>
-  }
+    return <Badge variant="secondary">Pending Review</Badge>;
+  };
 
   // Open response dialog and fetch answers
   const handleViewResponses = async (user: User) => {
-    setViewingUser(user)
+    setViewingUser(user);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/responses/${user.id}`, {
-        method: "GET",
-        credentials: "include",
-      })
-      const json = await res.json()
-      setViewingResponses(json.data || [])
-      setIsResponsesDialogOpen(true)
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/responses/${user.id}`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+      const json = await res.json();
+      setViewingResponses(json.data || []);
+      setIsResponsesDialogOpen(true);
     } catch {
-      toast({ title: "Error fetching responses", variant: "destructive" })
+      toast({ title: "Error fetching responses", variant: "destructive" });
     }
-  }
+  };
 
   // Submit evaluation via API
-  const submitEvaluation = async (auditionRoundId: number, panel: number | null, finalSelection: boolean) => {
+  const submitEvaluation = async (
+    auditionRoundId: number,
+    panel: number | null,
+    finalSelection: boolean
+  ) => {
     try {
       const adminRes = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
@@ -401,20 +444,21 @@ export default function AdminDashboard() {
       const adminEmail: string = adminJson.email;
 
       const evalRes = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/evaluate`, {
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/evaluate`,
+        {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            auditionRoundId, 
-            panel, 
-            finalSelection, 
-            remarks: finalSelection ? "Selected" : "Rejected", 
-            evaluatedBy: adminEmail 
+          body: JSON.stringify({
+            auditionRoundId,
+            panel,
+            finalSelection,
+            remarks: finalSelection ? "Selected" : "Rejected",
+            evaluatedBy: adminEmail,
           }),
         }
       );
-      
+
       if (!evalRes.ok) {
         throw new Error(`Evaluation failed: ${evalRes.status}`);
       }
@@ -423,151 +467,170 @@ export default function AdminDashboard() {
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/candidate`,
         { method: "GET", credentials: "include" }
       );
-      
+
       if (updatedRes.ok) {
         const updated: User[] = await updatedRes.json();
         setUsers(updated);
       }
-      
+
       toast({ title: "Evaluation submitted successfully" });
     } catch (err) {
       console.error(err);
-      toast({ 
-        title: `Error: ${err instanceof Error ? err.message : "Submitting evaluation"}`, 
-        variant: "destructive" 
+      toast({
+        title: `Error: ${
+          err instanceof Error ? err.message : "Submitting evaluation"
+        }`,
+        variant: "destructive",
       });
     }
   };
 
   // Handle random assignment
-  const handleRandomAssignment = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>): Promise<void> => {
-    event.preventDefault()
+  const handleRandomAssignment = async (
+    event: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ): Promise<void> => {
+    event.preventDefault();
 
     try {
       const qualifiedUsers = users.filter(
-        (user) => user.auditionRounds?.some((r) => r.round === 1 && r.finalSelection === true) && !user.roundTwo,
-      )
+        (user) =>
+          user.auditionRounds?.some(
+            (r) => r.round === 1 && r.finalSelection === true
+          ) && !user.roundTwo
+      );
 
       if (qualifiedUsers.length === 0) {
-        toast({ title: "No qualified users to assign", variant: "destructive" })
-        return
+        toast({
+          title: "No qualified users to assign",
+          variant: "destructive",
+        });
+        return;
       }
 
       const panelCounts = Array.from({ length: 6 }, (_, i) => ({
         panel: i + 1,
         count: users.filter((u) => u.roundTwo?.panel === i + 1).length,
-      }))
+      }));
 
-      const shuffledUsers = [...qualifiedUsers].sort(() => Math.random() - 0.5)
+      const shuffledUsers = [...qualifiedUsers].sort(() => Math.random() - 0.5);
 
       for (let i = 0; i < shuffledUsers.length; i++) {
-        const user = shuffledUsers[i]
-        const minCount = Math.min(...panelCounts.map((p) => p.count))
-        const availablePanels = panelCounts.filter((p) => p.count === minCount)
-        const selectedPanel = availablePanels[Math.floor(Math.random() * availablePanels.length)]
+        const user = shuffledUsers[i];
+        const minCount = Math.min(...panelCounts.map((p) => p.count));
+        const availablePanels = panelCounts.filter((p) => p.count === minCount);
+        const selectedPanel =
+          availablePanels[Math.floor(Math.random() * availablePanels.length)];
 
-        const auditionRound = user.auditionRounds?.find((r) => r.round === 1)
+        const auditionRound = user.auditionRounds?.find((r) => r.round === 1);
         if (auditionRound) {
-          await submitEvaluation(auditionRound.id, selectedPanel.panel, true)
+          await submitEvaluation(auditionRound.id, selectedPanel.panel, true);
         }
 
-        const panelIndex = panelCounts.findIndex((p) => p.panel === selectedPanel.panel)
-        panelCounts[panelIndex].count++
+        const panelIndex = panelCounts.findIndex(
+          (p) => p.panel === selectedPanel.panel
+        );
+        panelCounts[panelIndex].count++;
       }
 
       toast({
         title: "Random assignment completed",
         description: `Assigned ${shuffledUsers.length} users across panels with equal distribution`,
-      })
+      });
     } catch (error) {
-      console.error("Random assignment error:", error)
-      toast({ title: "Error during random assignment", variant: "destructive" })
+      console.error("Random assignment error:", error);
+      toast({
+        title: "Error during random assignment",
+        variant: "destructive",
+      });
     }
-  }
+  };
 
   // Handle manual panel assignment
-  const handleAssignPanel = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>): Promise<void> => {
-    event.preventDefault()
+  const handleAssignPanel = async (
+    event: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ): Promise<void> => {
+    event.preventDefault();
 
     if (!selectedUser || !selectedPanel) {
-      toast({ title: "Please select a user and a panel", variant: "destructive" })
-      return
+      toast({
+        title: "Please select a user and a panel",
+        variant: "destructive",
+      });
+      return;
     }
 
     try {
       // Fetch admin email from authenticated session
-      const adminRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`, {
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-      })
-      
-      if (!adminRes.ok) {
-        throw new Error("Failed to fetch admin details")
-      }
-      
-      const adminJson = await adminRes.json()
-      const adminEmail = adminJson.email
-
-      const auditionRound = selectedUser.auditionRounds?.find((r) => r.round === 1)
-
-      if (!auditionRound) {
-        const evalRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/evaluate`, {
-          method: "POST",
+      const adminRes = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
+        {
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: selectedUser.id,
-            panel: Number.parseInt(selectedPanel, 10),
-            finalSelection: true,
-            remarks: "Selected",
-            evaluatedBy: adminEmail,
-          }),
-        })
-        
+        }
+      );
+
+      if (!adminRes.ok) {
+        throw new Error("Failed to fetch admin details");
+      }
+
+      const adminJson = await adminRes.json();
+      const adminEmail = adminJson.email;
+
+      const auditionRound = selectedUser.auditionRounds?.find(
+        (r) => r.round === 1
+      );
+
+      if (!auditionRound) {
+        const evalRes = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/evaluate`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: selectedUser.id,
+              panel: Number.parseInt(selectedPanel, 10),
+              finalSelection: true,
+              remarks: "Selected",
+              evaluatedBy: adminEmail,
+            }),
+          }
+        );
+
         if (!evalRes.ok) {
-          throw new Error(`Evaluation failed: ${evalRes.status}`)
+          throw new Error(`Evaluation failed: ${evalRes.status}`);
         }
       } else {
-        await submitEvaluation(auditionRound.id, Number.parseInt(selectedPanel, 10), true)
+        await submitEvaluation(
+          auditionRound.id,
+          Number.parseInt(selectedPanel, 10),
+          true
+        );
       }
 
-      // Refetch updated user data to reflect round column changes
-      const updatedRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/candidate`, {
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-      })
-      
-      if (updatedRes.ok) {
-        const updatedData = await updatedRes.json()
-        const round1Users = updatedData.filter((u: User) => {
-          const hasRound1 = u.auditionRounds && u.auditionRounds.some((r: AuditionRound) => r.round === 1)
-          const noRounds = !u.auditionRounds || u.auditionRounds.length === 0
-          return hasRound1 || noRounds
-        })
-        setUsers(round1Users)
-      }
+      // Refresh the dashboard data to reflect the assignment
+      await fetchData();
 
-      setIsAssignDialogOpen(false)
-      setSelectedUser(null)
-      setSelectedPanel("")
+      setIsAssignDialogOpen(false);
+      setSelectedUser(null);
+      setSelectedPanel("");
 
       toast({ title: `Successfully assigned to Panel ${selectedPanel}` });
-      await fetchData();
     } catch {
-      toast({ title: "Error assigning panel", variant: "destructive" })
+      toast({ title: "Error assigning panel", variant: "destructive" });
     }
-  }
+  };
 
   // Handle task allocation
   const handleAllotTask = async (): Promise<void> => {
     if (!taskUser) {
-      toast({ title: "No user selected", variant: "destructive" })
-      return
+      toast({ title: "No user selected", variant: "destructive" });
+      return;
     }
 
     if (!taskText.trim()) {
-      toast({ title: "Please enter a task", variant: "destructive" })
-      return
+      toast({ title: "Please enter a task", variant: "destructive" });
+      return;
     }
 
     try {
@@ -583,32 +646,32 @@ export default function AdminDashboard() {
             taskLink: taskLink.trim() || "",
           }),
         }
-      )
+      );
 
       if (!res.ok) {
-        throw new Error(`Failed to allot task: ${res.status}`)
+        throw new Error(`Failed to allot task: ${res.status}`);
       }
 
-      toast({ title: "Task allotted successfully" })
-      setIsTaskDialogOpen(false)
-      setTaskUser(null)
-      setTaskText("")
-      setTaskLink("")
-      await fetchData()
+      toast({ title: "Task allotted successfully" });
+      setIsTaskDialogOpen(false);
+      setTaskUser(null);
+      setTaskText("");
+      setTaskLink("");
+      await fetchData();
     } catch (error) {
-      console.error("Error allotting task:", error)
+      console.error("Error allotting task:", error);
       toast({
         title: "Error allotting task",
         description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   // Open task dialog and fetch existing task if present
   const handleOpenTaskDialog = async (user: User): Promise<void> => {
-    setTaskUser(user)
-    
+    setTaskUser(user);
+
     // Fetch existing task data
     try {
       const res = await fetch(
@@ -617,98 +680,106 @@ export default function AdminDashboard() {
           method: "GET",
           credentials: "include",
         }
-      )
+      );
 
       if (res.ok) {
-        const json = await res.json()
-        const taskData = json.data || {}
-        setTaskText(taskData.taskAlloted || "")
-        setTaskLink(taskData.taskLink || "")
+        const json = await res.json();
+        const taskData = json.data || {};
+        setTaskText(taskData.taskAlloted || "");
+        setTaskLink(taskData.taskLink || "");
       } else {
-        setTaskText("")
-        setTaskLink("")
+        setTaskText("");
+        setTaskLink("");
       }
     } catch (error) {
-      console.error("Error fetching task:", error)
-      setTaskText("")
-      setTaskLink("")
+      console.error("Error fetching task:", error);
+      setTaskText("");
+      setTaskLink("");
     }
 
-    setIsTaskDialogOpen(true)
-  }
+    setIsTaskDialogOpen(true);
+  };
 
   // Handle user rejection
   const handleRejectUser = async (userId: number): Promise<void> => {
     try {
-      const user = users.find((u) => u.id === userId)
+      const user = users.find((u) => u.id === userId);
       if (!user) {
-        toast({ title: "User not found", variant: "destructive" })
-        return
+        toast({ title: "User not found", variant: "destructive" });
+        return;
       }
 
       // Fetch admin email from authenticated session
-      const adminRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`, {
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-      })
-      
-      if (!adminRes.ok) {
-        throw new Error("Failed to fetch admin details")
-      }
-      
-      const adminJson = await adminRes.json()
-      const adminEmail = adminJson.email
-
-      const auditionRound = user.auditionRounds?.find((r) => r.round === 1)
-
-      if (!auditionRound) {
-        const evalRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/evaluate`, {
-          method: "POST",
+      const adminRes = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
+        {
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: userId,
-            panel: null,
-            finalSelection: false,
-            remarks: "Rejected",
-            evaluatedBy: adminEmail,
-          }),
-        })
-        
+        }
+      );
+
+      if (!adminRes.ok) {
+        throw new Error("Failed to fetch admin details");
+      }
+
+      const adminJson = await adminRes.json();
+      const adminEmail = adminJson.email;
+
+      const auditionRound = user.auditionRounds?.find((r) => r.round === 1);
+
+      if (!auditionRound) {
+        const evalRes = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/evaluate`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: userId,
+              panel: null,
+              finalSelection: false,
+              remarks: "Rejected",
+              evaluatedBy: adminEmail,
+            }),
+          }
+        );
+
         if (!evalRes.ok) {
-          throw new Error(`Evaluation failed: ${evalRes.status}`)
+          throw new Error(`Evaluation failed: ${evalRes.status}`);
         }
       } else {
-        await submitEvaluation(auditionRound.id, null, false)
+        await submitEvaluation(auditionRound.id, null, false);
       }
 
       toast({ title: "User rejected successfully" });
       await fetchData();
     } catch {
-      toast({ title: "Error rejecting user", variant: "destructive" })
+      toast({ title: "Error rejecting user", variant: "destructive" });
     }
-  }
+  };
 
   // Statistics calculations
-  const totalRegistered = users.length
-  const hasGivenExam = users.filter((u) => u.hasGivenExam).length
+  const totalRegistered = users.length;
+  const hasGivenExam = users.filter((u) => u.hasGivenExam).length;
   const pendingReview = users.filter(
     (u) =>
       u.hasGivenExam &&
       (!u.auditionRounds?.some((r) => r.round === 1) ||
-        u.auditionRounds?.some((r) => r.round === 1 && r.finalSelection === null)),
-  ).length
+        u.auditionRounds?.some(
+          (r) => r.round === 1 && r.finalSelection === null
+        ))
+  ).length;
   const qualifiedRound2 = users.filter((u) =>
-    u.auditionRounds?.some((r) => r.round === 1 && r.finalSelection === true),
-  ).length
+    u.auditionRounds?.some((r) => r.round === 1 && r.finalSelection === true)
+  ).length;
   const rejected = users.filter((u) =>
-    u.auditionRounds?.some((r) => r.round === 1 && r.finalSelection === false),
-  ).length
+    u.auditionRounds?.some((r) => r.round === 1 && r.finalSelection === false)
+  ).length;
 
   const panelCounts = Array.from({ length: 6 }, (_, i) => ({
     panel: i + 1,
     count: users.filter((u) => u.roundTwo?.panel === i + 1).length,
-  }))
+  }));
 
   if (isLoading) {
     return (
@@ -718,7 +789,7 @@ export default function AdminDashboard() {
           <p className="mt-4 text-gray-600">Loading dashboard...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -930,7 +1001,6 @@ export default function AdminDashboard() {
                                         onClick={() => {
                                           setSelectedUser(user);
                                           setIsAssignDialogOpen(true);
-                                          
                                         }}
                                       >
                                         <CheckCircle className="h-4 w-4 mr-1" />
@@ -1069,7 +1139,10 @@ export default function AdminDashboard() {
                                           </div>
                                         </div>
                                         {userScore && (
-                                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 ml-2 flex-shrink-0">
+                                          <Badge
+                                            variant="outline"
+                                            className="text-[10px] px-1.5 py-0 ml-2 flex-shrink-0"
+                                          >
                                             {userScore.percentage}%
                                           </Badge>
                                         )}
@@ -1380,10 +1453,10 @@ export default function AdminDashboard() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setIsTaskDialogOpen(false)
-                  setTaskUser(null)
-                  setTaskText("")
-                  setTaskLink("")
+                  setIsTaskDialogOpen(false);
+                  setTaskUser(null);
+                  setTaskText("");
+                  setTaskLink("");
                 }}
               >
                 Cancel

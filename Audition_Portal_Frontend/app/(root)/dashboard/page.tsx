@@ -243,148 +243,176 @@ const Dashboard = () => {
               </div>
             </div>
           ) : isRoundTwo ? (
-            <div className="flex items-center justify-center h-full">
-              {/* Round 2 Card with Button */}
+            <div className="flex items-center justify-center h-full z-10 relative">
               <div className="relative">
-                {/* Decorative elements */}
-                <div className="absolute -top-8 left-1/2 transform -translate-x-1/2">
+                {/* Trophy Section */}
+                <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-20">
                   <div className="relative">
-                    <Trophy className="w-16 h-16 text-yellow-500 animate-bounce" />
+                    <Trophy className="w-16 h-16 text-blue-500 animate-bounce" />
                     <Sparkles className="w-6 h-6 text-yellow-400 absolute -top-1 -right-1 animate-pulse" />
                   </div>
                 </div>
 
-                <Card className="dark border-emerald-500/50 w-[85vw] md:w-[42vw] bg-slate-900 shadow-2xl shadow-emerald-500/20">
-                  <CardHeader className="pb-6 pt-12">
+                {/* Main Card: Changed from bg-card to a hardcoded dark slate to prevent the 'white' look */}
+                <div className="border border-slate-800 bg-[#020617]/90 backdrop-blur-md w-[85vw] md:w-[42vw] shadow-2xl relative rounded-none p-10 pt-16">
+                  {/* Signature Blue Top Line */}
+                  <div className="absolute top-0 left-0 w-full h-[2px] bg-blue-500" />
+
+                  <div className="text-center pb-6">
                     <div className="flex items-center justify-center mb-4">
-                      <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                        🎉 Qualified for Round 2
+                      <div className="bg-blue-500/10 border border-blue-500/50 text-blue-400 px-4 py-2 rounded-none text-[10px] font-black uppercase tracking-[0.3em]">
+                        ROUND 01 CLEARED
                       </div>
                     </div>
-                    <CardTitle className="text-2xl md:text-3xl text-center bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent font-bold">
-                      Congratulations!
-                    </CardTitle>
-                    <CardDescription className="text-center text-base text-slate-300 mt-3">
-                      You&apos;ve successfully advanced to the next stage
-                    </CardDescription>
-                  </CardHeader>
 
-                  <CardContent className="space-y-6 pb-8">
-                    {/* Achievement Stats */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-slate-800 rounded-lg p-4 text-center border border-slate-600">
-                        <div className="text-2xl font-bold text-emerald-400">
-                          2
-                        </div>
-                        <div className="text-xs text-slate-400 mt-1">
-                          Current Round
+                    {/* Header: Forced White Text */}
+                    <h2 className="text-3xl md:text-5xl font-light tracking-[0.2em] text-white uppercase font-sans">
+                      Congratulations!
+                    </h2>
+
+                    <p className="text-center text-[14px] font-black tracking-[0.2em] text-slate-300 mt-4 uppercase font-mono">
+                      You have qualified for Round 2
+                    </p>
+                  </div>
+
+                  <div className="space-y-8">
+                    {/* Stats Divider */}
+                    <div className="grid grid-cols-2 border-y border-slate-500/50 py-8 font-mono">
+                      <div className="border-r border-slate-500/50 text-center">
+                        <div className="text-3xl font-light text-white">02</div>
+                        <div className="text-[12px] text-slate-300 uppercase tracking-widest mt-1">
+                          Target Round
                         </div>
                       </div>
-                      <div className="bg-slate-800 rounded-lg p-4 text-center border border-slate-600">
-                        <div className="text-2xl font-bold text-blue-400">
-                          1
+                      <div className="text-center">
+                        <div className="text-3xl font-light text-emerald-500">
+                          01
                         </div>
-                        <div className="text-xs text-slate-400 mt-1">
+                        <div className="text-[12px] text-slate-300 uppercase tracking-widest mt-1">
                           Rounds Cleared
                         </div>
                       </div>
                     </div>
 
                     {/* Motivational Message */}
-                    <div className="bg-emerald-900/40 border border-emerald-500/50 rounded-lg p-4">
-                      <p className="text-slate-200 text-sm text-center leading-relaxed">
-                        You&apos;re doing great! Ready to take on the next
-                        challenge and prove your skills?
+                    <div className="space-y-6 pt-2">
+                      <div className="space-y-2">
+                        <p className="text-md  md:text-base text-slate-200 text-center leading-relaxed uppercase tracking-[0.25em] font-black font-mono px-4">
+                          You have successfully{" "}
+                          <span className="text-blue-400">advanced</span>
+                          <br />
+                          to the next stage of auditions
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-center gap-3">
+                        <div className="h-[1px] w-8 bg-slate-800" />
+                        <p className="text-[12px] text-slate-500 text-center uppercase tracking-[0.3em] font-bold font-mono">
+                          Protocol: Challenge 02 Ready
+                        </p>
+                        <div className="h-[1px] w-8 bg-slate-800" />
+                      </div>
+
+                      <p className="text-[12px] text-slate-200 text-center uppercase tracking-[0.1em] font-medium font-mono opacity-80 max-w-xs mx-auto">
+                        Ready to take on the next challenge and prove your
+                        skills?
                       </p>
                     </div>
 
-                    {/* Action Button */}
+                    {/* Action Button: High contrast White/Black */}
                     <button
                       onClick={handleRoundNavigation}
-                      className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold text-base py-6 rounded-md flex items-center justify-center gap-2 shadow-lg shadow-green-500/30 transition-all duration-300 hover:shadow-green-500/50 hover:scale-[1.02]"
+                      className="w-full bg-white text-black hover:bg-blue-600 hover:text-white font-black text-[13px] uppercase tracking-[0.4em] h-14 transition-all duration-300 flex items-center justify-center gap-2 rounded-none"
                     >
-                      <span>Begin Round 2</span>
-                      <ArrowRight className="w-5 h-5" />
+                      <span>Initialize Round 02</span>
+                      <ArrowRight className="w-4 h-4" />
                     </button>
-                  </CardContent>
-                </Card>
-
-                {/* Decorative glow effect */}
-                <div className="absolute inset-0 -z-10 bg-gradient-to-r from-green-500/10 to-emerald-500/10 blur-3xl rounded-full" />
-              </div>
-            </div>
-          ) : isRoundThreeOrHigher ? (
-            <div className="flex items-center justify-center h-full">
-              {/* Round 3+ Congratulations Card - No Button */}
-              <div className="relative">
-                {/* Decorative elements */}
-                <div className="absolute -top-8 left-1/2 transform -translate-x-1/2">
-                  <div className="relative">
-                    <Star className="w-16 h-16 text-yellow-400 animate-pulse" />
-                    <Trophy className="w-8 h-8 text-yellow-500 absolute -bottom-2 -right-2" />
                   </div>
                 </div>
 
-                <Card className="dark border-yellow-500/50 w-[85vw] md:w-[42vw] bg-slate-900 shadow-2xl shadow-yellow-500/20">
-                  <CardHeader className="pb-6 pt-12 text-center">
-                    <div className="flex items-center justify-center mb-4">
-                      <div className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                        🏆 Round {userInfo?.round} Cleared!
-                      </div>
-                    </div>
-                    <CardTitle className="text-2xl md:text-3xl text-center bg-gradient-to-r from-yellow-400 to-amber-400 bg-clip-text text-transparent font-bold">
-                      Outstanding Achievement!
-                    </CardTitle>
-                    <CardDescription className="text-center text-base text-slate-300 mt-3">
-                      Congratulations on clearing Round {userInfo?.round}
-                    </CardDescription>
-                  </CardHeader>
-
-                  <CardContent className="space-y-6 pb-8">
-                    {/* Achievement Stats */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-slate-800 rounded-lg p-4 text-center border border-slate-600">
-                        <div className="text-2xl font-bold text-yellow-400">
-                          {userInfo?.round}
-                        </div>
-                        <div className="text-xs text-slate-400 mt-1">
-                          Current Round
-                        </div>
-                      </div>
-                      <div className="bg-slate-800 rounded-lg p-4 text-center border border-slate-600">
-                        <div className="text-2xl font-bold text-amber-400">
-                          {userInfo?.round - 1}
-                        </div>
-                        <div className="text-xs text-slate-400 mt-1">
-                          Rounds Cleared
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Success Message */}
-                    <div className="bg-yellow-900/40 border border-yellow-500/50 rounded-lg p-6">
-                      <p className="text-slate-200 text-base text-center leading-relaxed font-medium">
-                        You&apos;ve successfully completed Round{" "}
-                        {userInfo?.round}! 🎉
-                      </p>
-                      <p className="text-slate-300 text-sm text-center mt-3">
-                        Wait for further instructions from the team.
-                      </p>
-                    </div>
-
-                    {/* Celebration Message */}
-                    <div className="text-center py-4">
-                      <p className="text-slate-400 text-sm">
-                        You&apos;re one step closer to joining the team!
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Decorative glow effect */}
-                <div className="absolute inset-0 -z-10 bg-gradient-to-r from-yellow-500/10 to-amber-500/10 blur-3xl rounded-full" />
+                {/* Background Glow */}
+                <div className="absolute inset-0 -z-10 bg-blue-500/5 blur-[120px] rounded-full" />
               </div>
             </div>
+          ) : isRoundThreeOrHigher ? (
+  <div className="flex items-center justify-center h-full z-10 relative">
+    <div className="relative">
+      {/* Achievement Icon */}
+      <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-20">
+        <div className="relative">
+          <Star className="w-16 h-16 text-blue-500 animate-pulse" />
+          <Trophy className="w-8 h-8 text-blue-400 absolute -bottom-2 -right-2" />
+        </div>
+      </div>
+
+      {/* Main Card: Fixed dark theme */}
+      <div className="border border-slate-800 bg-[#020617]/95 backdrop-blur-md w-[85vw] md:w-[42vw] shadow-2xl relative rounded-none p-10 pt-16">
+        {/* Signature Blue Top Line */}
+        <div className="absolute top-0 left-0 w-full h-[2px] bg-blue-500" />
+
+        <div className="text-center pb-8">
+          <div className="flex items-center justify-center mb-6">
+            <div className="bg-blue-500/10 border border-blue-500/50 text-blue-400 px-6 py-2 rounded-none text-[10px] font-black uppercase tracking-[0.4em]">
+              LEVEL {userInfo?.round} COMPLETE
+            </div>
+          </div>
+          
+          <h2 className="text-3xl md:text-5xl font-light tracking-[0.15em] text-white uppercase font-sans">
+            Outstanding Achievement
+          </h2>
+          
+          <p className="text-[11px] font-black tracking-[0.2em] text-slate-500 mt-4 uppercase font-mono">
+            Candidate verification for Round {userInfo?.round} successful
+          </p>
+        </div>
+
+        <div className="space-y-8">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 border-y border-slate-800/50 py-8 font-mono">
+            <div className="border-r border-slate-800/50 text-center">
+              <div className="text-3xl font-light text-white">{userInfo?.round}</div>
+              <div className="text-[9px] text-slate-500 uppercase tracking-widest mt-1">Current Round</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-light text-blue-400">{(userInfo?.round || 1) - 1}</div>
+              <div className="text-[9px] text-slate-500 uppercase tracking-widest mt-1">Rounds Cleared</div>
+            </div>
+          </div>
+
+          {/* Structured Success Message */}
+          <div className="space-y-6 pt-2">
+            <div className="space-y-3">
+              <p className="text-sm md:text-base text-slate-200 text-center leading-relaxed uppercase tracking-[0.15em] font-black font-mono px-4">
+                You have successfully <span className="text-blue-400 font-black">Concluded</span>
+                <br />
+                Round {userInfo?.round} Assessment
+              </p>
+            </div>
+
+            {/* Technical Separator */}
+            <div className="flex items-center justify-center gap-3">
+              <div className="h-[1px] w-8 bg-slate-800" />
+              <div className="w-1.5 h-1.5 bg-blue-500/50 rotate-45" />
+              <div className="h-[1px] w-8 bg-slate-800" />
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-[11px] text-slate-400 text-center uppercase tracking-[0.1em] font-bold font-mono px-6">
+                Please standby for further instructions. 
+                The recruitment team will process your performance data shortly.
+              </p>
+              <p className="text-[10px] text-blue-500/60 text-center uppercase tracking-[0.3em] font-black font-mono animate-pulse">
+                Awaiting Next Phase Initialization
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Decorative background glow */}
+      <div className="absolute inset-0 -z-10 bg-blue-500/5 blur-[120px] rounded-full" />
+    </div>
+  </div>
           ) : showStartButton ? (
             <div className="flex items-center justify-center h-full flex-col space-y-16">
               {/* Timer Section */}

@@ -243,86 +243,81 @@ const Dashboard = () => {
               </div>
             </div>
           ) : isRoundTwo ? (
-            <div className="flex items-center justify-center h-full z-10 relative">
-              <div className="relative">
-                {/* Trophy Section */}
-                <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-20">
+            <div className="flex items-center justify-center min-h-screen z-10 relative px-4 py-12">
+              <div className="relative w-full max-w-2xl">
+                {/* Trophy Section: Responsive scaling and positioning */}
+                <div className="absolute -top-6 md:-top-10 left-1/2 transform -translate-x-1/2 z-20">
                   <div className="relative">
-                    <Trophy className="w-16 h-16 text-blue-500 animate-bounce" />
-                    <Sparkles className="w-6 h-6 text-yellow-400 absolute -top-1 -right-1 animate-pulse" />
+                    {/* Added responsive w/h: w-12 on mobile, w-20 on desktop */}
+                    <Trophy className="w-12 h-12 md:w-20 md:h-20 text-blue-500 animate-bounce" />
+                    <Sparkles className="w-5 h-5 md:w-8 md:h-8 text-yellow-400 absolute -top-1 -right-1 animate-pulse" />
                   </div>
                 </div>
 
-                {/* Main Card: Changed from bg-card to a hardcoded dark slate to prevent the 'white' look */}
-                <div className="border border-slate-800 bg-[#020617]/90 backdrop-blur-md w-[85vw] md:w-[42vw] shadow-2xl relative rounded-none p-10 pt-16">
+                {/* Main Card */}
+                <div className="border border-slate-800 bg-[#020617]/90 backdrop-blur-md w-full shadow-2xl relative rounded-none p-6 pt-12 md:p-12 md:pt-20">
                   {/* Signature Blue Top Line */}
                   <div className="absolute top-0 left-0 w-full h-[2px] bg-blue-500" />
 
                   <div className="text-center pb-6">
                     <div className="flex items-center justify-center mb-4">
-                      <div className="bg-blue-500/10 border border-blue-500/50 text-blue-400 px-4 py-2 rounded-none text-[10px] font-black uppercase tracking-[0.3em]">
+                      <div className="bg-blue-500/10 border border-blue-500/50 text-blue-400 px-3 py-1.5 md:px-4 md:py-2 rounded-none text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em]">
                         ROUND 01 CLEARED
                       </div>
                     </div>
 
-                    {/* Header: Forced White Text */}
-                    <h2 className="text-3xl md:text-5xl font-light tracking-[0.2em] text-white uppercase font-sans">
+                    {/* Header: Responsive Font Size and Tracking */}
+                    <h2 className="text-2xl sm:text-3xl md:text-5xl font-light tracking-[0.1em] sm:tracking-[0.2em] text-white uppercase font-sans text-center px-2">
                       Congratulations!
                     </h2>
 
-                    <p className="text-center text-[14px] font-black tracking-[0.2em] text-slate-300 mt-4 uppercase font-mono">
+                    <p className="text-center text-[10px] md:text-[14px] font-black tracking-[0.15em] md:tracking-[0.2em] text-slate-300 mt-4 uppercase font-mono">
                       You have qualified for Round 2
                     </p>
                   </div>
 
-                  <div className="space-y-8">
-                    {/* Stats Divider */}
-                    <div className="grid grid-cols-2 border-y border-slate-500/50 py-8 font-mono">
+                  <div className="space-y-6 md:space-y-8">
+                    {/* Stats Divider: Responsive font sizes */}
+                    <div className="grid grid-cols-2 border-y border-slate-500/50 py-6 md:py-8 font-mono">
                       <div className="border-r border-slate-500/50 text-center">
-                        <div className="text-3xl font-light text-white">02</div>
-                        <div className="text-[12px] text-slate-300 uppercase tracking-widest mt-1">
+                        <div className="text-2xl md:text-3xl font-light text-white">
+                          02
+                        </div>
+                        <div className="text-[10px] md:text-[12px] text-slate-300 uppercase tracking-widest mt-1">
                           Target Round
                         </div>
                       </div>
                       <div className="text-center">
-                        <div className="text-3xl font-light text-emerald-500">
+                        <div className="text-2xl md:text-3xl font-light text-emerald-500">
                           01
                         </div>
-                        <div className="text-[12px] text-slate-300 uppercase tracking-widest mt-1">
+                        <div className="text-[10px] md:text-[12px] text-slate-300 uppercase tracking-widest mt-1">
                           Rounds Cleared
                         </div>
                       </div>
                     </div>
 
-                    {/* Motivational Message */}
-                    <div className="space-y-6 pt-2">
-                      <div className="space-y-2">
-                        <p className="text-md  md:text-base text-slate-200 text-center leading-relaxed uppercase tracking-[0.25em] font-black font-mono px-4">
-                          You have successfully{" "}
-                          <span className="text-blue-400">advanced</span>
-                          <br />
-                          to the next stage of auditions
-                        </p>
-                      </div>
+                    {/* Motivational Message: Better padding and text wrapping */}
+                    <div className="space-y-4 md:space-y-6 pt-2">
+                      <p className="text-xs sm:text-sm md:text-base text-slate-200 text-center leading-relaxed uppercase tracking-[0.2em] md:tracking-[0.25em] font-black font-mono px-2">
+                        You have successfully{" "}
+                        <span className="text-blue-400">advanced</span>
+                        <br className="hidden sm:block" /> to the next stage
+                      </p>
 
-                      <div className="flex items-center justify-center gap-3">
-                        <div className="h-[1px] w-8 bg-slate-800" />
-                        <p className="text-[12px] text-slate-500 text-center uppercase tracking-[0.3em] font-bold font-mono">
+                      <div className="flex items-center justify-center gap-2 md:gap-3">
+                        <div className="h-[1px] w-4 md:w-8 bg-slate-800" />
+                        <p className="text-[9px] md:text-[12px] text-slate-500 text-center uppercase tracking-[0.2em] md:tracking-[0.3em] font-bold font-mono">
                           Protocol: Challenge 02 Ready
                         </p>
-                        <div className="h-[1px] w-8 bg-slate-800" />
+                        <div className="h-[1px] w-4 md:w-8 bg-slate-800" />
                       </div>
-
-                      <p className="text-[12px] text-slate-200 text-center uppercase tracking-[0.1em] font-medium font-mono opacity-80 max-w-xs mx-auto">
-                        Ready to take on the next challenge and prove your
-                        skills?
-                      </p>
                     </div>
 
-                    {/* Action Button: High contrast White/Black */}
+                    {/* Action Button */}
                     <button
                       onClick={handleRoundNavigation}
-                      className="w-full bg-white text-black hover:bg-blue-600 hover:text-white font-black text-[13px] uppercase tracking-[0.4em] h-14 transition-all duration-300 flex items-center justify-center gap-2 rounded-none"
+                      className="w-full bg-white text-black hover:bg-blue-600 hover:text-white font-black text-[11px] md:text-[13px] uppercase tracking-[0.3em] md:tracking-[0.4em] h-12 md:h-14 transition-all duration-300 flex items-center justify-center gap-2 rounded-none"
                     >
                       <span>Initialize Round 02</span>
                       <ArrowRight className="w-4 h-4" />
@@ -331,88 +326,101 @@ const Dashboard = () => {
                 </div>
 
                 {/* Background Glow */}
-                <div className="absolute inset-0 -z-10 bg-blue-500/5 blur-[120px] rounded-full" />
+                <div className="absolute inset-0 -z-10 bg-blue-500/5 blur-[80px] md:blur-[120px] rounded-full" />
               </div>
             </div>
           ) : isRoundThreeOrHigher ? (
-  <div className="flex items-center justify-center h-full z-10 relative">
-    <div className="relative">
-      {/* Achievement Icon */}
-      <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-20">
-        <div className="relative">
-          <Star className="w-16 h-16 text-blue-500 animate-pulse" />
-          <Trophy className="w-8 h-8 text-blue-400 absolute -bottom-2 -right-2" />
-        </div>
-      </div>
+            <div className="flex items-center justify-center h-full z-10 relative">
+              <div className="relative">
+                {/* Achievement Icon */}
+                <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-20">
+                  <div className="relative">
+                    <Star className="w-16 h-16 text-blue-500 animate-pulse" />
+                    <Trophy className="w-8 h-8 text-blue-400 absolute -bottom-2 -right-2" />
+                  </div>
+                </div>
 
-      {/* Main Card: Fixed dark theme */}
-      <div className="border border-slate-800 bg-[#020617]/95 backdrop-blur-md w-[85vw] md:w-[42vw] shadow-2xl relative rounded-none p-10 pt-16">
-        {/* Signature Blue Top Line */}
-        <div className="absolute top-0 left-0 w-full h-[2px] bg-blue-500" />
+                {/* Main Card: Fixed dark theme */}
+                <div className="border border-slate-800 bg-[#020617]/95 backdrop-blur-md w-[85vw] md:w-[42vw] shadow-2xl relative rounded-none p-10 pt-16">
+                  {/* Signature Blue Top Line */}
+                  <div className="absolute top-0 left-0 w-full h-[2px] bg-blue-500" />
 
-        <div className="text-center pb-8">
-          <div className="flex items-center justify-center mb-6">
-            <div className="bg-blue-500/10 border border-blue-500/50 text-blue-400 px-6 py-2 rounded-none text-[10px] font-black uppercase tracking-[0.4em]">
-              LEVEL {userInfo?.round} COMPLETE
+                  <div className="text-center pb-8">
+                    <div className="flex items-center justify-center mb-6">
+                      <div className="bg-blue-500/10 border border-blue-500/50 text-blue-400 px-6 py-2 rounded-none text-[10px] font-black uppercase tracking-[0.4em]">
+                        LEVEL {userInfo?.round} COMPLETE
+                      </div>
+                    </div>
+
+                    <h2 className="text-3xl md:text-5xl font-light tracking-[0.15em] text-white uppercase font-sans">
+                      Outstanding Achievement
+                    </h2>
+
+                    <p className="text-[11px] font-black tracking-[0.2em] text-slate-500 mt-4 uppercase font-mono">
+                      Candidate verification for Round {userInfo?.round}{" "}
+                      successful
+                    </p>
+                  </div>
+
+                  <div className="space-y-8">
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 border-y border-slate-800/50 py-8 font-mono">
+                      <div className="border-r border-slate-800/50 text-center">
+                        <div className="text-3xl font-light text-white">
+                          {userInfo?.round}
+                        </div>
+                        <div className="text-[9px] text-slate-500 uppercase tracking-widest mt-1">
+                          Current Round
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-3xl font-light text-blue-400">
+                          {(userInfo?.round || 1) - 1}
+                        </div>
+                        <div className="text-[9px] text-slate-500 uppercase tracking-widest mt-1">
+                          Rounds Cleared
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Structured Success Message */}
+                    <div className="space-y-6 pt-2">
+                      <div className="space-y-3">
+                        <p className="text-sm md:text-base text-slate-200 text-center leading-relaxed uppercase tracking-[0.15em] font-black font-mono px-4">
+                          You have successfully{" "}
+                          <span className="text-blue-400 font-black">
+                            Concluded
+                          </span>
+                          <br />
+                          Round {userInfo?.round} Assessment
+                        </p>
+                      </div>
+
+                      {/* Technical Separator */}
+                      <div className="flex items-center justify-center gap-3">
+                        <div className="h-[1px] w-8 bg-slate-800" />
+                        <div className="w-1.5 h-1.5 bg-blue-500/50 rotate-45" />
+                        <div className="h-[1px] w-8 bg-slate-800" />
+                      </div>
+
+                      <div className="space-y-3">
+                        <p className="text-[11px] text-slate-400 text-center uppercase tracking-[0.1em] font-bold font-mono px-6">
+                          Please standby for further instructions. The
+                          recruitment team will process your performance data
+                          shortly.
+                        </p>
+                        <p className="text-[10px] text-blue-500/60 text-center uppercase tracking-[0.3em] font-black font-mono animate-pulse">
+                          Awaiting Next Phase Initialization
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Decorative background glow */}
+                <div className="absolute inset-0 -z-10 bg-blue-500/5 blur-[120px] rounded-full" />
+              </div>
             </div>
-          </div>
-          
-          <h2 className="text-3xl md:text-5xl font-light tracking-[0.15em] text-white uppercase font-sans">
-            Outstanding Achievement
-          </h2>
-          
-          <p className="text-[11px] font-black tracking-[0.2em] text-slate-500 mt-4 uppercase font-mono">
-            Candidate verification for Round {userInfo?.round} successful
-          </p>
-        </div>
-
-        <div className="space-y-8">
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 border-y border-slate-800/50 py-8 font-mono">
-            <div className="border-r border-slate-800/50 text-center">
-              <div className="text-3xl font-light text-white">{userInfo?.round}</div>
-              <div className="text-[9px] text-slate-500 uppercase tracking-widest mt-1">Current Round</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-light text-blue-400">{(userInfo?.round || 1) - 1}</div>
-              <div className="text-[9px] text-slate-500 uppercase tracking-widest mt-1">Rounds Cleared</div>
-            </div>
-          </div>
-
-          {/* Structured Success Message */}
-          <div className="space-y-6 pt-2">
-            <div className="space-y-3">
-              <p className="text-sm md:text-base text-slate-200 text-center leading-relaxed uppercase tracking-[0.15em] font-black font-mono px-4">
-                You have successfully <span className="text-blue-400 font-black">Concluded</span>
-                <br />
-                Round {userInfo?.round} Assessment
-              </p>
-            </div>
-
-            {/* Technical Separator */}
-            <div className="flex items-center justify-center gap-3">
-              <div className="h-[1px] w-8 bg-slate-800" />
-              <div className="w-1.5 h-1.5 bg-blue-500/50 rotate-45" />
-              <div className="h-[1px] w-8 bg-slate-800" />
-            </div>
-
-            <div className="space-y-3">
-              <p className="text-[11px] text-slate-400 text-center uppercase tracking-[0.1em] font-bold font-mono px-6">
-                Please standby for further instructions. 
-                The recruitment team will process your performance data shortly.
-              </p>
-              <p className="text-[10px] text-blue-500/60 text-center uppercase tracking-[0.3em] font-black font-mono animate-pulse">
-                Awaiting Next Phase Initialization
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Decorative background glow */}
-      <div className="absolute inset-0 -z-10 bg-blue-500/5 blur-[120px] rounded-full" />
-    </div>
-  </div>
           ) : showStartButton ? (
             <div className="flex items-center justify-center h-full flex-col space-y-16">
               {/* Timer Section */}

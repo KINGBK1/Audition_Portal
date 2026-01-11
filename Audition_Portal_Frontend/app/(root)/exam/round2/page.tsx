@@ -258,7 +258,7 @@ export default function Round2() {
           </div>
           <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-white uppercase ">
             TECH{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-800">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-blue-800">
               REVIEW
             </span>
           </h1>
@@ -353,7 +353,6 @@ export default function Round2() {
           {/* RIGHT: STATUS SELECTOR */}
           <div className="lg:col-span-5 self-start">
             <div className="border border-white/10 bg-white/5 backdrop-blur-3xl p-6 relative shadow-2xl overflow-hidden">
-              {/* Animated top bar that matches current status color */}
               <motion.div
                 animate={{
                   backgroundColor:

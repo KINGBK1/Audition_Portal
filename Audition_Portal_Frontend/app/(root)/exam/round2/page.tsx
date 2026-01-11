@@ -256,9 +256,9 @@ export default function Round2() {
             </p>
             <div className="h-[1px] w-12 bg-blue-400/50 shadow-[0_0_8px_#3b82f6]" />
           </div>
-          <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-white uppercase ">
+          <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-white uppercase leading-tight">
             TECH{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-blue-800">
+            <span className="relative inline-block pr-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-blue-800">
               REVIEW
             </span>
           </h1>

@@ -1,5 +1,3 @@
-// src/app/profile/page.tsx  (or src/pages/profile.tsx)
-
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -13,13 +11,6 @@ import {
 } from "@/lib/store/features/auth/authSlice";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -33,8 +24,9 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "@/components/ui/use-toast";
 import Loader from "@/components/Loader";
 import AnimatedGridPattern from "@/components/magicui/animated-grid-pattern";
-import { MagicCard, MagicContainer } from "@/components/magicui/magic-container";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { ShieldCheck, User, ChevronRight } from "lucide-react";
 
 export default function Profile() {
   const dispatch = useAppDispatch();
@@ -49,27 +41,20 @@ export default function Profile() {
   });
   const [contactError, setContactError] = useState<string | null>(null);
 
-//   useEffect(() => {
-//   console.log("Redux userInfo:", userInfo);
-// }, [userInfo]);
-
-
-  // If user already has all three fields, “isComplete” becomes truthy
+  // LOGIC: Derived state based on Redux userInfo
   const isComplete =
     Boolean(userInfo?.contact) &&
     Boolean(userInfo?.gender) &&
     Boolean(userInfo?.specialization);
 
   useEffect(() => {
-    // 1) Verify the JWT cookie (calls GET /auth/verify)
     dispatch(verifyToken())
       .unwrap()
       .then(() => {
-        // 2) If token is valid, fetch full user data (calls GET /api/user)
         dispatch(fetchUserData())
           .unwrap()
           .then((data) => {
-              const user = data ?? {};
+            const user = data ?? {};
             setFormData({
               contact: user.contact || "",
               gender: user.gender || "",
@@ -81,12 +66,10 @@ export default function Profile() {
       .catch((err) => {
         console.error("verifyToken failed:", err);
         setIsLoading(false);
-        // If token is invalid or missing, push to login (root)
         push("/");
       });
   }, [dispatch, push]);
 
-  // Input handlers
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
@@ -101,7 +84,7 @@ export default function Profile() {
 
   const isValidMobileNumber = (number: string) => /^\d{10}$/.test(number);
 
-  const     handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isValidMobileNumber(formData.contact)) {
@@ -110,21 +93,46 @@ export default function Profile() {
     }
 
     try {
+      // 1. Attempt to update
       await dispatch(updateUserInfo(formData)).unwrap();
+
+      // 2. Refresh local store so buttons update instantly
+      await dispatch(fetchUserData()).unwrap();
+
       toast({
         className: "dark",
         variant: "default",
         description: "User data updated successfully",
       });
-      // Optionally, you could refresh user data or disable the form:
-      // dispatch(fetchUserData())
-    } catch (error) {
-      console.error("Error updating user info:", error);
-      toast({
-        className: "dark",
-        variant: "destructive",
-        description: "Failed to update user data",
-      });
+    } catch (error: any) {
+      console.error("Update error:", error);
+
+      // Check for 400 Bad Request or Prisma Unique Constraint Error
+      const isDuplicate =
+        error?.status === 400 ||
+        error?.code === "P2002" ||
+        error?.message?.includes("400") ||
+        error?.message?.toLowerCase().includes("unique");
+
+      if (isDuplicate) {
+        // Update inline error text
+        setContactError("This contact number is already registered.");
+
+        // Trigger the specific toast message you asked for
+        toast({
+          className: "dark",
+          variant: "destructive",
+          title: "Duplicate Entry",
+          description: "This contact number already exists in our records.",
+        });
+      } else {
+        // General error handling
+        toast({
+          className: "dark",
+          variant: "destructive",
+          description: "Failed to update user data. Please try again.",
+        });
+      }
     }
   };
 
@@ -134,158 +142,251 @@ export default function Profile() {
   };
 
   return (
-    <div>
+    <div className="min-h-screen w-full bg-[#02010a] text-slate-200 font-mono relative flex items-center justify-center overflow-hidden">
+      {/* THEME BACKGROUND ORBS */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <motion.div
+          animate={{
+            top: ["10%", "40%", "10%"],
+            left: ["10%", "30%", "10%"],
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          className="absolute w-[40vw] h-[40vw] bg-blue-600/10 blur-[120px] rounded-full"
+        />
+        <motion.div
+          animate={{
+            bottom: ["10%", "30%", "10%"],
+            right: ["10%", "40%", "10%"],
+          }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          className="absolute w-[40vw] h-[40vw] bg-purple-600/10 blur-[120px] rounded-full"
+        />
+      </div>
+
       {isLoading || status === "loading" ? (
-        // Show loader while verifying token & fetching user data
         <Loader />
       ) : (
-        <div>
-          <MagicContainer className="relative z-10 dark w-[350px] flex items-center justify-center">
-            <MagicCard className="dark scale-110 w-[350px]">
-              <div className="flex items-start justify-center">
-                <Avatar className="relative top-[-40px] scale-150">
-                  <AvatarImage src={userInfo?.picture} alt="Profile Pic" />
-                  <AvatarFallback>Pic</AvatarFallback>
+        <div className="relative z-10 w-full max-w-xl px-6 py-12">
+          {/* PROFILE CARD */}
+          <div className="group relative border border-white/10 bg-white/5 backdrop-blur-2xl p-8 md:p-10 shadow-[0_0_50px_rgba(0,0,0,0.5)] transition-all hover:border-blue-500/30">
+            {/* Top Identity Line */}
+            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-blue-500 via-blue-300 to-blue-700 shadow-[0_0_15px_#3b82f6]" />
+
+            {/* Avatar Header */}
+            <div className="flex flex-col items-center mb-6">
+              {" "}
+              <div className="relative mb-3">
+                <div className="absolute inset-0 bg-blue-500 blur-[20px] opacity-20 rounded-full " />
+                <Avatar className="w-28 h-28 border-2 border-blue-500/50 p-1 bg-black shadow-[0_0_20px_rgba(59,130,246,0.2)]">
+                  <AvatarImage
+                    src={userInfo?.picture}
+                    alt="Profile"
+                    className="rounded-full"
+                  />
+                  <AvatarFallback className="bg-slate-900 text-blue-400">
+                    <User className="w-10 h-10" />
+                  </AvatarFallback>
                 </Avatar>
+                <div className="absolute bottom-0 right-0 bg-blue-600 p-2 rounded-none border border-black shadow-lg">
+                  <ShieldCheck className="w-5 h-5 text-white" />
+                </div>
               </div>
-              <Card className="dark">
-                <CardHeader>
-                  <CardTitle>Complete Your Profile</CardTitle>
-                </CardHeader>
-                <form onSubmit={handleSubmit}>
-                  <CardContent>
-                    <div className="grid w-full items-center gap-4">
-                      {/* Name (read-only) */}
-                      <div className="flex flex-col space-y-1.5">
-                        <Label htmlFor="name">Name</Label>
-                        <Input
-                          id="name"
-                          value={userInfo?.username || ""}
-                          disabled
-                          placeholder="Name"
-                        />
-                      </div>
+              <div className="text-center">
+                <p className="text-blue-400 tracking-[0.4em] text-[12px] uppercase font-black mb-2 opacity-80">
+                  Access Level: User
+                </p>
+                <h2 className="text-4xl font-mono font-bold tracking-tight text-white uppercase">
+                  PROFILE
+                </h2>
+              </div>
+            </div>
 
-                      {/* Email (read-only) */}
-                      <div className="flex flex-col space-y-1.5">
-                        <Label htmlFor="email">Email</Label>
-                        <Input
-                          id="email"
-                          value={userInfo?.email || ""}
-                          disabled
-                          placeholder="Email"
-                        />
-                      </div>
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* READ ONLY FIELDS */}
+              <div className="space-y-3">
+                {" "}
+                <div className="space-y-1">
+                  <Label className="text-[15px] uppercase tracking-wider text-slate-400 font-semibold">
+                    Name
+                  </Label>
+                  <Input
+                    className="bg-black/40 border-slate-800 text-slate-100 h-12 text-[15px] rounded-none cursor-not-allowed font-bold"
+                    value={userInfo?.username || ""}
+                    disabled
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[15px] uppercase tracking-wider text-slate-400 font-semibold">
+                    Email
+                  </Label>
+                  <Input
+                    className="bg-black/40 border-slate-800 text-slate-100 h-12 text-[15px] rounded-none cursor-not-allowed font-bold"
+                    value={userInfo?.email || ""}
+                    disabled
+                  />
+                </div>
+              </div>
 
-                      {/* Contact No. */}
-                      <div className="flex flex-col space-y-1.5">
-                        <Label htmlFor="contact">Contact No.</Label>
-                        <Input
-                          id="contact"
-                          disabled={Boolean(userInfo?.contact)}
-                          value={
-                            userInfo?.contact ? userInfo.contact : formData.contact
-                          }
-                          onChange={handleInputChange}
-                          placeholder="Enter your contact number"
-                          required
-                        />
-                        {contactError && (
-                          <span className="text-red-500 text-sm">{contactError}</span>
-                        )}
-                      </div>
+              {/* EDITABLE FIELDS */}
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="contact"
+                    className="text-[15px] uppercase tracking-wider text-blue-400 font-black"
+                  >
+                    Contact NO
+                  </Label>
+                  <Input
+                    id="contact"
+                    className="bg-black/60 border-slate-700 hover:border-blue-800 focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-blue-500 focus:outline-none h-14 rounded-none transition-all placeholder:text-slate-600 text-white font-mono font-bold text-[18px]"
+                    disabled={Boolean(userInfo?.contact)}
+                    value={
+                      userInfo?.contact ? userInfo.contact : formData.contact
+                    }
+                    onChange={handleInputChange}
+                    placeholder="Enter 10-digit number"
+                    required
+                  />
+                  {contactError && (
+                    <span className="text-red-500 text-[12px] uppercase font-black tracking-tighter">
+                      {contactError}
+                    </span>
+                  )}
+                </div>
 
-                      {/* Gender */}
-                      <div className="flex flex-col space-y-1.5">
-                        <Label htmlFor="gender">Gender</Label>
-                        <Select
-                          disabled={Boolean(userInfo?.gender)}
-                          value={userInfo?.gender ? userInfo.gender : formData.gender}
-                          onValueChange={(val: string) => handleSelectChange("gender", val)}
-                          required
-                        >
-                          <SelectTrigger id="gender">
-                            <SelectValue placeholder="Select Gender" />
-                          </SelectTrigger>
-                          <SelectContent className="dark" position="popper">
-                            <SelectItem value="Male">Male</SelectItem>
-                            <SelectItem value="Female">Female</SelectItem>
-                            <SelectItem value="Other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Specialization */}
-                      <div className="flex flex-col space-y-1.5">
-                        <Label htmlFor="specialization">Specialization</Label>
-                        <Select
-                          disabled={Boolean(userInfo?.specialization)}
-                          value={
-                            userInfo?.specialization
-                              ? userInfo.specialization
-                              : formData.specialization
-                          }
-                          onValueChange={(val: string) =>
-                            handleSelectChange("specialization", val)
-                          }
-                          required
-                        >
-                          <SelectTrigger id="specialization">
-                            <SelectValue placeholder="Select Specialization" />
-                          </SelectTrigger>
-                          <SelectContent className="dark" position="popper">
-                            <SelectItem value="Computer Science">
-                              Computer Science
-                            </SelectItem>
-                            <SelectItem value="Maths and Computing">
-                              Maths and Computing
-                            </SelectItem>
-                            <SelectItem value="Electronics">Electronics</SelectItem>
-                            <SelectItem value="Electrical">Electrical</SelectItem>
-                            <SelectItem value="Mechanical">Mechanical</SelectItem>
-                            <SelectItem value="Chemical">Chemical</SelectItem>
-                            <SelectItem value="Metallurgy">Metallurgy</SelectItem>
-                            <SelectItem value="Civil">Civil</SelectItem>
-                            <SelectItem value="Biotechnology">
-                              Biotechnology
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex items-center justify-between">
-                    {/* "Go to Dashboard" only enabled if all fields are already complete */}
-                    <Button
-                      variant="outline"
-                      onClick={navigateToDashBoard}
-                      disabled={!isComplete}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-[15px] uppercase tracking-wider text-blue-400 font-black">
+                      Gender
+                    </Label>
+                    <Select
+                      disabled={Boolean(userInfo?.gender)}
+                      value={
+                        userInfo?.gender ? userInfo.gender : formData.gender
+                      }
+                      onValueChange={(val: string) =>
+                        handleSelectChange("gender", val)
+                      }
+                      required
                     >
-                      Go to Dashboard
-                    </Button>
+                      <SelectTrigger className="bg-black/60 border-slate-700 h-14 rounded-none font-bold text-white text-[15px]">
+                        <SelectValue placeholder="SELECT" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#0a0a0f] border-slate-800 text-slate-300 rounded-none">
+                        <SelectItem
+                          value="Male"
+                          className="font-bold text-[16px]"
+                        >
+                          MALE
+                        </SelectItem>
+                        <SelectItem
+                          value="Female"
+                          className="font-bold text-[16px]"
+                        >
+                          FEMALE
+                        </SelectItem>
+                        <SelectItem
+                          value="Other"
+                          className="font-bold text-[16px]"
+                        >
+                          OTHER
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                    {/* "Save" only enabled if userInfo is not already complete */}
-                    <Button type="submit" disabled={Boolean(isComplete)}>
-                      Save
-                    </Button>
-                  </CardFooter>
-                </form>
-              </Card>
-            </MagicCard>
-          </MagicContainer>
+                  <div className="space-y-2">
+                    <Label className="text-[15px] uppercase tracking-wider text-blue-400 font-black">
+                      DEPARTMENT
+                    </Label>
+                    <Select
+                      disabled={Boolean(userInfo?.specialization)}
+                      value={
+                        userInfo?.specialization
+                          ? userInfo.specialization
+                          : formData.specialization
+                      }
+                      onValueChange={(val: string) =>
+                        handleSelectChange("specialization", val)
+                      }
+                      required
+                    >
+                      <SelectTrigger className="bg-black/60 border-slate-700 h-14 rounded-none font-bold text-white text-[15px]">
+                        <SelectValue placeholder="BRANCH" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#0a0a0f] border-slate-800 text-slate-300 rounded-none h-64">
+                        {[
+                          "Computer Science",
+                          "Maths and Computing",
+                          "Electronics",
+                          "Electrical",
+                          "Mechanical",
+                          "Chemical",
+                          "Metallurgy",
+                          "Civil",
+                          "Biotechnology",
+                        ].map((branch) => (
+                          <SelectItem
+                            key={branch}
+                            value={branch}
+                            className="font-bold text-[16px]"
+                          >
+                            {branch.toUpperCase()}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
 
-          <AnimatedGridPattern
-            numSquares={30}
-            maxOpacity={0.5}
-            duration={3}
-            repeatDelay={2}
-            className={cn(
-              "[mask-image:radial-gradient(1024px_circle_at_center,white,transparent)]",
-              " h-[94%] overflow-hidden skew-y-3"
-            )}
-          />
+              {/* BUTTONS */}
+              <div className="flex flex-col gap-3 pt-2">
+                {" "}
+                <Button
+                  type="submit"
+                  disabled={Boolean(isComplete)}
+                  className={cn(
+                    "w-full h-14 rounded-none font-black uppercase tracking-[0.25em] transition-all text-[15px]",
+                    isComplete
+                      ? "bg-emerald-900/20 text-emerald-400 border border-emerald-500/50 cursor-not-allowed"
+                      : "bg-blue-800 text-white hover:bg-blue-600 transition-all shadow-[0_0_20px_rgba(37,99,235,0.4)]"
+                  )}
+                >
+                  {isComplete ? (
+                    <span className="flex items-center gap-2">
+                      PROFILE COMPLETED ✓
+                    </span>
+                  ) : (
+                    "COMPLETE YOUR PROFILE"
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={navigateToDashBoard}
+                  disabled={!isComplete}
+                  className="group w-full h-14 border-slate-700 hover:border-white rounded-none font-black uppercase tracking-[0.2em] text-slate-400 hover:text-white bg-transparent transition-all text-[14px]"
+                >
+                  GO TO DASHBOARD{" "}
+                  <ChevronRight className="ml-2 w-6 h-6 group-hover:translate-x-2 transition-transform" />
+                </Button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
+
+      {/* BACKGROUND GRID PATTERN */}
+      <AnimatedGridPattern
+        numSquares={40}
+        maxOpacity={0.15}
+        duration={3}
+        repeatDelay={2}
+        className={cn(
+          "[mask-image:radial-gradient(900px_circle_at_center,white,transparent)]",
+          "inset-y-[-10%] h-[120%] skew-y-3"
+        )}
+      />
     </div>
   );
 }

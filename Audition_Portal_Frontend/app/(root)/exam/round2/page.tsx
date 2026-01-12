@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaGithub, FaPhotoVideo } from "react-icons/fa";
 import { HiCheck, HiExclamation, HiClock } from "react-icons/hi";

@@ -71,11 +71,18 @@ const Exam = () => {
   // Timer logic for the modal
   useEffect(() => {
     let interval: NodeJS.Timeout;
+
     if (showSubmitModal && confirmTimer > 0) {
+      // If modal is open and time remains, count down
       interval = setInterval(() => setConfirmTimer((prev) => prev - 1), 1000);
+    } else if (showSubmitModal && confirmTimer === 0) {
+      // TRIGGER AUTO-SUBMIT WHEN MODAL TIMER EXPIRES
+      handleFinalSubmit();
+      setShowSubmitModal(false);
     }
+
     return () => clearInterval(interval);
-  }, [showSubmitModal, confirmTimer]);
+  }, [showSubmitModal, confirmTimer]); // Both dependencies are needed
 
   const openSubmitModal = () => {
     setShowSubmitModal(true);
@@ -792,10 +799,18 @@ const Exam = () => {
                 Final Authorization
               </h3>
               <p className="text-xs font-black uppercase tracking-widest text-slate-400">
-                Manual override required. System lock:{" "}
-                <span className="text-red-500 font-mono text-base">
-                  {confirmTimer}s
-                </span>
+                {confirmTimer > 0 ? (
+                  <>
+                    Manual override required. System lock:{" "}
+                    <span className="text-red-500 font-mono text-base">
+                      {confirmTimer}s
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-red-500 animate-pulse">
+                    AUTO-SUBMITTING NOW...
+                  </span>
+                )}
               </p>
             </div>
 

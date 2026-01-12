@@ -230,9 +230,27 @@ const Exam = () => {
     }
 
     return () => {
-      if (timer) clearInterval(timer); // Clear the interval when component unmounts
+      if (timer) clearInterval(timer);
     };
   }, [isExamStarted]);
+
+  // Cleanup effect for security measures and fullscreen
+  useEffect(() => {
+    return () => {
+      // Only cleanup when component unmounts
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener("contextmenu", handleContextMenu);
+      document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("blur", handleWindowBlur);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("mousemove", handleMouseMove);
+      
+      // Exit fullscreen on unmount
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(err => console.error("Failed to exit fullscreen:", err));
+      }
+    };
+  }, []);
 
   // Security handlers
   const handleVisibilityChange = () => {
@@ -333,16 +351,29 @@ const Exam = () => {
     setIsLoading(true);
     // Simulate loading
     await new Promise((resolve) => setTimeout(resolve, 1500));
+    
+    // Request fullscreen mode
+    try {
+      await document.documentElement.requestFullscreen();
+    } catch (err) {
+      console.error("Failed to enter fullscreen:", err);
+      toast({
+        className: "dark",
+        variant: "destructive",
+        description: "Please allow fullscreen mode to continue.",
+      });
+    }
+    
     setIsExamStarted(true);
     setIsLoading(false);
 
     // Add event listeners for security
-    // document.addEventListener("visibilitychange", handleVisibilityChange)
-    // document.addEventListener("contextmenu", handleContextMenu)
-    // document.addEventListener("keydown", handleKeyDown)
-    // window.addEventListener("blur", handleWindowBlur)
-    // window.addEventListener("beforeunload", handleBeforeUnload)
-    // document.addEventListener("mousemove", handleMouseMove)
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("contextmenu", handleContextMenu);
+    document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("blur", handleWindowBlur);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("mousemove", handleMouseMove);
   };
 
   const submitAnswer = async (questionId: number) => {
@@ -545,6 +576,9 @@ const Exam = () => {
                     onChange={(e) =>
                       setRulesAccepted(e.target.value.toLowerCase() === "start")
                     }
+                    onCopy={(e) => e.preventDefault()}
+                    onCut={(e) => e.preventDefault()}
+                    onPaste={(e) => e.preventDefault()}
                   />
                 </div>
                 <Button
@@ -728,6 +762,9 @@ const Exam = () => {
                                     e.target.value
                                   )
                                 }
+                                onCopy={handleCopyPaste}
+                                onCut={handleCopyPaste}
+                                onPaste={handleCopyPaste}
                               />
                             )}
                           </div>
@@ -817,7 +854,7 @@ const Exam = () => {
             <div className="space-y-4">
               <label className="block text-center text-[12px] uppercase tracking-[0.1em] text-slate-500 font-black">
                 Verification Phrase:{" "}
-                <span className="text-white">"SUBMIT"</span>
+                <span className="text-white">&quot;SUBMIT&quot;</span>
               </label>
               <input
                 type="text"
@@ -828,6 +865,9 @@ const Exam = () => {
                 /* Changed: Increased font weight and adjusted tracking for the placeholder */
                 placeholder="TYPE HERE"
                 className="w-full bg-background border-2 border-slate-800 p-4 text-white focus:outline-none focus:border-red-500/50 transition-all font-mono text-center text-lg font-black tracking-[0.3em] placeholder:text-slate-700 placeholder:tracking-[0.2em] placeholder:font-bold"
+                onCopy={(e) => e.preventDefault()}
+                onCut={(e) => e.preventDefault()}
+                onPaste={(e) => e.preventDefault()}
               />
             </div>
 

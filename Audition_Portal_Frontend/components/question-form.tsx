@@ -23,7 +23,7 @@ interface QuestionFormProps {
 
 export function QuestionForm({ onSubmit, initialData }: QuestionFormProps) {
   const [description, setDescription] = useState("")
-  const [type, setType] = useState<"MCQ" | "Descriptive">("MCQ")
+  const [type, setType] = useState<"MCQ" | "Descriptive" | "Pictorial">("MCQ")
   const [picture, setPicture] = useState("")
   const [options, setOptions] = useState<Option[]>([
     { text: "", isCorrect: false },

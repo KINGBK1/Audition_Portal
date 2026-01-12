@@ -47,9 +47,14 @@ export interface Option {
 export interface Question {
   id: string
   description: string
-  type: "MCQ" | "Descriptive"
+  text?: string
+  type: "MCQ" | "Descriptive" | "Pictorial"
   picture?: string
+  imageUrl?: string
   options?: Option[]
+  marks?: number
+  difficulty?: string
+  correctAnswer?: string
   createdAt?: string
   updatedAt?: string
 }

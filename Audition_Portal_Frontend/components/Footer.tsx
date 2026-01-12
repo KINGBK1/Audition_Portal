@@ -6,7 +6,7 @@ export const Footer = () => {
       <div className="container mx-auto px-6 text-center text-white">
         <p>© 2025 All rights reserved.</p>
         <p className="mt-2 flex items-center justify-center"> 
-            GNU/LINUX USERS' GROUP
+            GNU/LINUX USERS&apos; GROUP
         </p>
       </div>
     </footer>

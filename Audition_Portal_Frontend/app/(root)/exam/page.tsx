@@ -681,7 +681,7 @@ const Exam = () => {
                             {questions[currentQuestionIndex].picture && (
                               <div className="w-full h-64 md:h-80 bg-black/40 border border-slate-800 flex items-center justify-center overflow-hidden">
                                 <img
-                                  src={questions[currentQuestionIndex].picture}
+                                  src={questions[currentQuestionIndex].picture || ''}
                                   alt="Question asset"
                                   className="max-w-full max-h-full object-contain p-2"
                                 />

@@ -182,3 +182,37 @@
     opacity: 0;
   }
 }
+
+/* GSAP Animation Styles */
+.animated-title {
+  position: relative;
+}
+
+.animated-word {
+  display: inline-block;
+  opacity: 0;
+  transform: translate3d(0, -80px, 0) rotateY(-90deg) rotateX(10deg);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+body::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+body {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

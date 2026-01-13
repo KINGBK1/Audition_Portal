@@ -1,10 +1,9 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../prisma.config"; // adjust path
 import jwt from "jsonwebtoken";
 import { CookieOptions } from "express";
 require("dotenv").config();
 
-const prisma = new PrismaClient();
 
 // Helper to create cookie options
 const cookieOptions:CookieOptions = {

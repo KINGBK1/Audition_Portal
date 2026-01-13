@@ -1,7 +1,7 @@
 import express from "express";
 import passport from "../passport/passport";
 import jwt from "jsonwebtoken";
-import prisma from "../prisma.config"; // adjust path
+import { PrismaClient } from "@prisma/client";
 require("dotenv").config();
 
 const app = express();

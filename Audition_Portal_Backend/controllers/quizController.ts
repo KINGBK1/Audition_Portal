@@ -231,4 +231,5 @@ const deleteQuiz = async (req: Request, res: Response): Promise<Response> => {
 
 
 
+
 export { getQuizzes, createQuizzes, answerQuiz, getQuizz, deleteQuiz };

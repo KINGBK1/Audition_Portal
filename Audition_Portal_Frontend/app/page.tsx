@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import { Spotlight } from "@/components/ascertainityui/Spotlight";
 import Particles from "@/components/magicui/particles";
@@ -12,11 +12,37 @@ import Loader from "@/components/Loader";
 import { useAppDispatch } from "@/lib/hooks";
 import { verifyToken } from "@/lib/store/features/auth/authSlice";
 
-const slugs = [ 
-  "typescript","javascript","dart","java","react","flutter","android","html5","css3",
-  "nodedotjs","express","nextdotjs","prisma","amazonaws","postgresql","firebase","nginx",
-  "vercel","testinglibrary","jest","cypress","docker","git","jira","github","gitlab",
-  "visualstudiocode","androidstudio","sonarqube","figma", 
+const slugs = [
+  "typescript",
+  "javascript",
+  "dart",
+  "java",
+  "react",
+  "flutter",
+  "android",
+  "html5",
+  "css3",
+  "nodedotjs",
+  "express",
+  "nextdotjs",
+  "prisma",
+  "amazonaws",
+  "postgresql",
+  "firebase",
+  "nginx",
+  "vercel",
+  "testinglibrary",
+  "jest",
+  "cypress",
+  "docker",
+  "git",
+  "jira",
+  "github",
+  "gitlab",
+  "visualstudiocode",
+  "androidstudio",
+  "sonarqube",
+  "figma",
 ];
 
 export default function Home() {
@@ -24,44 +50,43 @@ export default function Home() {
   const dispatch = useAppDispatch();
   const router = useRouter();
 
-useEffect(() => {
-  const checkAuth = async () => {
-    try {
-      //Verify token
-      const verified = await dispatch(verifyToken()).unwrap();
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        //Verify token
+        const verified = await dispatch(verifyToken()).unwrap();
 
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
-        {
-          method: "GET",
-          credentials: "include",
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
+        const user = await res.json();
+
+        // Redirect logic
+        if (verified.role === "ADMIN") {
+          router.push("/admin/profile");
+          return;
         }
-      );
-      const user = await res.json();
 
-      // Redirect logic
-      if (verified.role === "ADMIN") {
-        router.push("/admin/profile");
-        return;
+        // round-based redirect
+        if (user.round >= 2) {
+          console.log(user.round);
+          router.replace("/exam/round2");
+          return;
+        }
+
+        router.push("/dashboard");
+      } catch (err) {
+        console.error("Auth failed:", err);
+        setLoading(false);
       }
+    };
 
-      // round-based redirect
-      if (user.round >= 2) {
-        console.log(user.round);
-        router.replace("/exam/round2");
-        return;
-      }
-
-      router.push("/dashboard");
-    } catch (err) {
-      console.error("Auth failed:", err);
-      setLoading(false);
-    }
-  };
-
-  checkAuth();
-}, [dispatch, router]);
-
+    checkAuth();
+  }, [dispatch, router]);
 
   function Signin() {
     const oauthUrl = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_URL;
@@ -79,11 +104,20 @@ useEffect(() => {
         <Loader />
       ) : (
         <div className="h-[100vh] w-full rounded-md flex md:items-center md:justify-center bg-black antialiased bg-grid-white/[0.02] relative overflow-hidden">
-          <Spotlight className="-top-20 left-0 md:left-96 md:-top-86" fill="#fff" />
-          <Particles className="absolute inset-0" quantity={300} ease={80} color="#ffffff" refresh />
+          <Spotlight
+            className="-top-20 left-0 md:left-96 md:-top-86"
+            fill="#fff"
+          />
+          <Particles
+            className="absolute inset-0"
+            quantity={300}
+            ease={80}
+            color="#ffffff"
+            refresh
+          />
 
           {/* Left side icons */}
-          <div className="hidden md:flex relative h-full w-full max-w-[40rem] items-center justify-center overflow-hidden rounded-lg px-20 pb-20 pt-8">
+          <div className="hidden md:flex relative h-full w-full max-w-[40rem] items-center justify-center overflow-hidden rounded-lg px-20 pb-20 pt-8 translate-x-12">
             <IconCloud iconSlugs={slugs} />
           </div>
 
@@ -91,8 +125,8 @@ useEffect(() => {
           <div className="relative flex flex-col h-full w-full items-center justify-center overflow-hidden rounded-lg p-4">
             <div className="w-full flex flex-col items-center justify-center overflow-hidden rounded-md">
               <BlurIn
-                word="Glug Auditions"
-                className="md:text-7xl text-6xl lg:text-8xl font-bold text-center relative z-20 pointer-events-none whitespace-pre-wrap bg-gradient-to-b from-slate-600 to-gray-300/80 bg-clip-text leading-none text-transparent dark:from-white dark:to-slate-900/10"
+                word="GLUG AUDITONS"
+                className="md:text-7xl text-6xl lg:text-8xl font-black text-center relative z-20 pointer-events-none whitespace-pre-wrap bg-gradient-to-b from-slate-600 to-gray-300/80 bg-clip-text leading-none text-transparent dark:from-white dark:to-slate-900/10"
               />
               <div className="w-[40rem] transition-opacity fade-in-5 h-32 relative">
                 <div className="absolute inset-x-20 top-0 bg-gradient-to-r from-transparent via-indigo-500 to-transparent h-[3px] w-3/4 blur-sm" />
@@ -130,6 +164,21 @@ useEffect(() => {
                   />
                 </div>
               </div>
+            </div>
+          </div>
+          {/* TELEMETRY HUD */}
+          <div className="absolute bottom-8 w-full px-12 flex justify-between items-end pointer-events-none opacity-40 hidden md:flex z-50">
+            <div className="text-[12px] space-y-1 tracking-[0.2em] uppercase">
+              <p className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />{" "}
+                STATUS: STABLE
+              </p>
+              <p>SECTOR: 7G-XC</p>
+              <p>VELOCITY: 28,000 KM/H</p>
+            </div>
+            <div className="text-[12px] text-right tracking-[0.2em] uppercase">
+              <p>AUDITION PORTAL TERMINAL: V2.0.4</p>
+              <p>© 2026 GNU/LINUX USERS GROUP</p>
             </div>
           </div>
         </div>

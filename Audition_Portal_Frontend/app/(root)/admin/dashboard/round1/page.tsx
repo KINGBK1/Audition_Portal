@@ -1,13 +1,26 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useEffect, useState } from "react"
-import Image from "next/image"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import type React from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -15,7 +28,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -26,12 +39,18 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
   AlertDialogAction,
-} from "@/components/ui/alert-dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
-import { toast } from "@/components/ui/use-toast"
+} from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/use-toast";
 import {
   Users,
   CheckCircle,
@@ -46,168 +65,191 @@ import {
   FileText,
   Trophy,
   Calculator,
-} from "lucide-react"
-import { ThemeToggle } from "@/components/theme-toggle"
+} from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { fetchUserData } from "@/lib/store/features/auth/authSlice";
 
 // Types
 interface QuestionOption {
-  id: number
-  text: string
-  isCorrect: boolean
+  id: number;
+  text: string;
+  isCorrect: boolean;
 }
 
 export interface Question {
-  id: number
-  type: string
-  description: string
-  picture?: string | null
-  options: QuestionOption[]
+  id: number;
+  type: string;
+  description: string;
+  picture?: string | null;
+  options: QuestionOption[];
 }
 
 interface Answer {
-  questionId: number
-  optionId?: number
-  description?: string
-  option?: QuestionOption
-  question?: Question
+  questionId: number;
+  optionId?: number;
+  description?: string;
+  option?: QuestionOption;
+  question?: Question;
 }
 
 interface AuditionRound {
-  id: number
-  round: number
-  finalSelection: boolean | null
-  panel?: number
-  reviews?: any[]
+  id: number;
+  round: number;
+  finalSelection: boolean | null;
+  panel?: number;
+  reviews?: any[];
 }
 
 interface User {
-  id: number
-  username: string
-  email: string
-  contact: string
-  gender?: string
-  specialization?: string
-  hasGivenExam: boolean
-  createdAt: string
-  auditionRounds?: AuditionRound[]
-  roundTwo?: { panel: number; status: string } | null
+  id: number;
+  username: string;
+  email: string;
+  contact: string;
+  gender?: string;
+  specialization?: string;
+  hasGivenExam: boolean;
+  createdAt: string;
+  auditionRounds?: AuditionRound[];
+  roundTwo?: {
+    panel: number;
+    status: string;
+    taskAlloted?: string;
+    taskLink?: string;
+  } | null;
 }
 
 interface UserScore {
-  userId: number
-  correct: number
-  total: number
-  percentage: number
+  userId: number;
+  correct: number;
+  total: number;
+  percentage: number;
 }
 
 export default function AdminDashboard() {
   // State
-  const [users, setUsers] = useState<User[]>([])
-  const [questions, setQuestions] = useState<Question[]>([])
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([])
-  const [userScores, setUserScores] = useState<UserScore[]>([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [filterStatus, setFilterStatus] = useState("all")
-  const [viewingUser, setViewingUser] = useState<User | null>(null)
-  const [viewingResponses, setViewingResponses] = useState<Answer[]>([])
-  const [isResponsesDialogOpen, setIsResponsesDialogOpen] = useState(false)
-  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const [selectedPanel, setSelectedPanel] = useState<string>("")
-  const [loadingScores, setLoadingScores] = useState<number[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [users, setUsers] = useState<User[]>([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [userScores, setUserScores] = useState<UserScore[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [viewingUser, setViewingUser] = useState<User | null>(null);
+  const [viewingResponses, setViewingResponses] = useState<Answer[]>([]);
+  const [isResponsesDialogOpen, setIsResponsesDialogOpen] = useState(false);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedPanel, setSelectedPanel] = useState<string>("");
+  const [loadingScores, setLoadingScores] = useState<number[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
+  const [taskUser, setTaskUser] = useState<User | null>(null);
+  const [taskText, setTaskText] = useState("");
+  const [taskLink, setTaskLink] = useState("");
 
-  // Fetch initial data
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setIsLoading(true)
-        
-        const [usersRes, questionsRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/candidate`, {
-            method: "GET",
-            credentials: "include",
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz`, {
-            method: "GET",
-            credentials: "include",
-          }),
-        ]);
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
 
-        if (!usersRes.ok) {
-          console.error("Failed to fetch users:", usersRes.status, usersRes.statusText);
-          toast({ title: "Error fetching users", variant: "destructive" });
-          setUsers([]);
-        } else {
-          const usersJson = await usersRes.json();
-          const usersData: User[] = Array.isArray(usersJson) ? usersJson : (usersJson.data || []);
-          setUsers(usersData);
-          
-          // Calculate scores if we have users who took the exam
-          if (usersData.length > 0) {
-            const examTakenUsers = usersData.filter((u) => u.hasGivenExam);
-            if (examTakenUsers.length > 0) {
-              // Wait for questions first
-              if (questionsRes.ok) {
-                const questionsJson = await questionsRes.json();
-                const questionsData: Question[] = Array.isArray(questionsJson) 
-                  ? questionsJson 
-                  : (questionsJson.data || []);
-                setQuestions(questionsData);
-                
-                // Now calculate scores
-                if (questionsData.length > 0) {
-                  calculateAllScores(examTakenUsers, questionsData);
-                }
+      const [usersRes, questionsRes] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/candidate`, {
+          method: "GET",
+          credentials: "include",
+        }),
+        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz`, {
+          method: "GET",
+          credentials: "include",
+        }),
+      ]);
+
+      if (!usersRes.ok) {
+        console.error(
+          "Failed to fetch users:",
+          usersRes.status,
+          usersRes.statusText
+        );
+        toast({ title: "Error fetching users", variant: "destructive" });
+        setUsers([]);
+      } else {
+        const usersJson = await usersRes.json();
+        const usersData: User[] = Array.isArray(usersJson)
+          ? usersJson
+          : usersJson.data || [];
+        setUsers(usersData);
+
+        // Calculate scores if we have users who took the exam
+        if (usersData.length > 0) {
+          const examTakenUsers = usersData.filter((u) => u.hasGivenExam);
+          if (examTakenUsers.length > 0) {
+            // Wait for questions first
+            if (questionsRes.ok) {
+              const questionsJson = await questionsRes.json();
+              const questionsData: Question[] = Array.isArray(questionsJson)
+                ? questionsJson
+                : questionsJson.data || [];
+              setQuestions(questionsData);
+
+              // Now calculate scores
+              if (questionsData.length > 0) {
+                calculateAllScores(examTakenUsers, questionsData);
               }
             }
           }
         }
-
-        if (!questionsRes.ok) {
-          console.error("Failed to fetch questions:", questionsRes.status, questionsRes.statusText);
-          toast({ title: "Error fetching questions", variant: "destructive" });
-          setQuestions([]);
-        } else if (questions.length === 0) {
-          // Only set questions if not already set
-          const questionsJson = await questionsRes.json();
-          const questionsData: Question[] = Array.isArray(questionsJson) 
-            ? questionsJson 
-            : (questionsJson.data || []);
-          setQuestions(questionsData);
-        }
-
-      } catch (err) {
-        console.error("Fetch error:", err);
-        toast({ title: "Error fetching data", variant: "destructive" });
-      } finally {
-        setIsLoading(false)
       }
-    }
 
+      if (!questionsRes.ok) {
+        console.error(
+          "Failed to fetch questions:",
+          questionsRes.status,
+          questionsRes.statusText
+        );
+        toast({ title: "Error fetching questions", variant: "destructive" });
+        setQuestions([]);
+      } else if (questions.length === 0) {
+        // Only set questions if not already set
+        const questionsJson = await questionsRes.json();
+        const questionsData: Question[] = Array.isArray(questionsJson)
+          ? questionsJson
+          : questionsJson.data || [];
+        setQuestions(questionsData);
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+      toast({ title: "Error fetching data", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  useEffect(() => {
     fetchData();
   }, []);
 
   // Calculate scores for all users who have taken the exam
-  const calculateAllScores = async (examUsers: User[], questionsData: Question[]) => {
-    const scores: UserScore[] = []
+  const calculateAllScores = async (
+    examUsers: User[],
+    questionsData: Question[]
+  ) => {
+    const scores: UserScore[] = [];
 
     for (const user of examUsers) {
       try {
-        setLoadingScores((prev) => [...prev, user.id])
-        const score = await calculateUserScore(user.id, questionsData)
-        scores.push(score)
+        setLoadingScores((prev) => [...prev, user.id]);
+        const score = await calculateUserScore(user.id, questionsData);
+        scores.push(score);
       } catch (error) {
-        console.error(`Error calculating score for user ${user.id}:`, error)
+        console.error(`Error calculating score for user ${user.id}:`, error);
       } finally {
-        setLoadingScores((prev) => prev.filter((id) => id !== user.id))
+        setLoadingScores((prev) => prev.filter((id) => id !== user.id));
       }
     }
 
-    setUserScores(scores)
-  }
+    setUserScores(scores);
+  };
 
-  const calculateUserScore = async (userId: number, questionsData: Question[]): Promise<UserScore> => {
+  const calculateUserScore = async (
+    userId: number,
+    questionsData: Question[]
+  ): Promise<UserScore> => {
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/responses/${userId}`,
@@ -267,56 +309,63 @@ export default function AdminDashboard() {
 
   // Filter logic
   useEffect(() => {
-    let list = [...users]
+    let list = [...users];
 
     if (searchTerm) {
       list = list.filter(
         (u) =>
           u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
           u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          u.specialization?.toLowerCase().includes(searchTerm.toLowerCase()),
-      )
+          u.specialization?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
 
     if (filterStatus !== "all") {
       list = list.filter((user) => {
-        const round1 = user.auditionRounds?.find((r) => r.round === 1)
+        const round1 = user.auditionRounds?.find((r) => r.round === 1);
         switch (filterStatus) {
           case "pending":
-            return user.hasGivenExam && (!round1 || round1.finalSelection === null)
+            return (
+              user.hasGivenExam && (!round1 || round1.finalSelection === null)
+            );
           case "qualified":
-            return round1?.finalSelection === true
+            return round1?.finalSelection === true;
           case "rejected":
-            return round1?.finalSelection === false
+            return round1?.finalSelection === false;
           case "assigned":
-            return !!user.roundTwo
+            return !!user.roundTwo;
           default:
-            return true
+            return true;
         }
-      })
+      });
     }
 
-    setFilteredUsers(list)
-  }, [users, searchTerm, filterStatus])
+    setFilteredUsers(list);
+  }, [users, searchTerm, filterStatus]);
 
   // Get score badge for a user
   const getScoreBadge = (userId: number): React.ReactNode => {
-    const user = users.find((u) => u.id === userId)
+    const user = users.find((u) => u.id === userId);
     if (!user || !user.hasGivenExam) {
-      return <Badge variant="outline">Not Taken</Badge>
+      return <Badge variant="outline">Not Taken</Badge>;
     }
 
     if (loadingScores.includes(userId)) {
-      return <Badge variant="secondary">Calculating...</Badge>
+      return <Badge variant="secondary">Calculating...</Badge>;
     }
 
-    const userScore = userScores.find((s) => s.userId === userId)
+    const userScore = userScores.find((s) => s.userId === userId);
     if (!userScore) {
-      return <Badge variant="secondary">Loading...</Badge>
+      return <Badge variant="secondary">Loading...</Badge>;
     }
 
-    const { correct, total, percentage } = userScore
-    const variant = percentage >= 70 ? "default" : percentage >= 50 ? "secondary" : "destructive"
+    const { correct, total, percentage } = userScore;
+    const variant =
+      percentage >= 70
+        ? "default"
+        : percentage >= 50
+        ? "secondary"
+        : "destructive";
 
     return (
       <div className="flex flex-col items-center gap-1">
@@ -325,57 +374,64 @@ export default function AdminDashboard() {
           {correct}/{total}
         </span>
       </div>
-    )
-  }
+    );
+  };
 
   // Get status badge for a user
   const getStatusBadge = (user: User): React.ReactNode => {
     if (!user.hasGivenExam) {
-      return <Badge variant="outline">Not Taken</Badge>
+      return <Badge variant="outline">Not Taken</Badge>;
     }
 
-    const round1 = user.auditionRounds?.find((r) => r.round === 1)
+    const round1 = user.auditionRounds?.find((r) => r.round === 1);
 
     if (!round1) {
-      return <Badge variant="secondary">Pending Review</Badge>
+      return <Badge variant="secondary">Pending Review</Badge>;
     }
 
     if (round1.finalSelection === null) {
-      return <Badge variant="secondary">Pending Review</Badge>
+      return <Badge variant="secondary">Pending Review</Badge>;
     }
 
     if (round1.finalSelection === true) {
       if (user.roundTwo) {
-        return <Badge variant="default">Panel {user.roundTwo.panel}</Badge>
+        return <Badge variant="default">Panel {user.roundTwo.panel}</Badge>;
       }
-      return <Badge variant="default">Qualified</Badge>
+      return <Badge variant="default">Qualified</Badge>;
     }
 
     if (round1.finalSelection === false) {
-      return <Badge variant="destructive">Rejected</Badge>
+      return <Badge variant="destructive">Rejected</Badge>;
     }
 
-    return <Badge variant="secondary">Pending Review</Badge>
-  }
+    return <Badge variant="secondary">Pending Review</Badge>;
+  };
 
   // Open response dialog and fetch answers
   const handleViewResponses = async (user: User) => {
-    setViewingUser(user)
+    setViewingUser(user);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/responses/${user.id}`, {
-        method: "GET",
-        credentials: "include",
-      })
-      const json = await res.json()
-      setViewingResponses(json.data || [])
-      setIsResponsesDialogOpen(true)
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/responses/${user.id}`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+      const json = await res.json();
+      setViewingResponses(json.data || []);
+      setIsResponsesDialogOpen(true);
     } catch {
-      toast({ title: "Error fetching responses", variant: "destructive" })
+      toast({ title: "Error fetching responses", variant: "destructive" });
     }
-  }
+  };
 
   // Submit evaluation via API
-  const submitEvaluation = async (auditionRoundId: number, panel: number | null, finalSelection: boolean) => {
+  const submitEvaluation = async (
+    auditionRoundId: number,
+    panel: number | null,
+    finalSelection: boolean
+  ) => {
     try {
       const adminRes = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
@@ -388,20 +444,21 @@ export default function AdminDashboard() {
       const adminEmail: string = adminJson.email;
 
       const evalRes = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/evaluate`, {
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/evaluate`,
+        {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            auditionRoundId, 
-            panel, 
-            finalSelection, 
-            remarks: finalSelection ? "Selected" : "Rejected", 
-            evaluatedBy: adminEmail 
+          body: JSON.stringify({
+            auditionRoundId,
+            panel,
+            finalSelection,
+            remarks: finalSelection ? "Selected" : "Rejected",
+            evaluatedBy: adminEmail,
           }),
         }
       );
-      
+
       if (!evalRes.ok) {
         throw new Error(`Evaluation failed: ${evalRes.status}`);
       }
@@ -410,229 +467,319 @@ export default function AdminDashboard() {
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/candidate`,
         { method: "GET", credentials: "include" }
       );
-      
+
       if (updatedRes.ok) {
         const updated: User[] = await updatedRes.json();
         setUsers(updated);
       }
-      
+
       toast({ title: "Evaluation submitted successfully" });
     } catch (err) {
       console.error(err);
-      toast({ 
-        title: `Error: ${err instanceof Error ? err.message : "Submitting evaluation"}`, 
-        variant: "destructive" 
+      toast({
+        title: `Error: ${
+          err instanceof Error ? err.message : "Submitting evaluation"
+        }`,
+        variant: "destructive",
       });
     }
   };
 
   // Handle random assignment
-  const handleRandomAssignment = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>): Promise<void> => {
-    event.preventDefault()
+  const handleRandomAssignment = async (
+    event: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ): Promise<void> => {
+    event.preventDefault();
 
     try {
       const qualifiedUsers = users.filter(
-        (user) => user.auditionRounds?.some((r) => r.round === 1 && r.finalSelection === true) && !user.roundTwo,
-      )
+        (user) =>
+          user.auditionRounds?.some(
+            (r) => r.round === 1 && r.finalSelection === true
+          ) && !user.roundTwo
+      );
 
       if (qualifiedUsers.length === 0) {
-        toast({ title: "No qualified users to assign", variant: "destructive" })
-        return
+        toast({
+          title: "No qualified users to assign",
+          variant: "destructive",
+        });
+        return;
       }
 
       const panelCounts = Array.from({ length: 6 }, (_, i) => ({
         panel: i + 1,
         count: users.filter((u) => u.roundTwo?.panel === i + 1).length,
-      }))
+      }));
 
-      const shuffledUsers = [...qualifiedUsers].sort(() => Math.random() - 0.5)
+      const shuffledUsers = [...qualifiedUsers].sort(() => Math.random() - 0.5);
 
       for (let i = 0; i < shuffledUsers.length; i++) {
-        const user = shuffledUsers[i]
-        const minCount = Math.min(...panelCounts.map((p) => p.count))
-        const availablePanels = panelCounts.filter((p) => p.count === minCount)
-        const selectedPanel = availablePanels[Math.floor(Math.random() * availablePanels.length)]
+        const user = shuffledUsers[i];
+        const minCount = Math.min(...panelCounts.map((p) => p.count));
+        const availablePanels = panelCounts.filter((p) => p.count === minCount);
+        const selectedPanel =
+          availablePanels[Math.floor(Math.random() * availablePanels.length)];
 
-        const auditionRound = user.auditionRounds?.find((r) => r.round === 1)
+        const auditionRound = user.auditionRounds?.find((r) => r.round === 1);
         if (auditionRound) {
-          await submitEvaluation(auditionRound.id, selectedPanel.panel, true)
+          await submitEvaluation(auditionRound.id, selectedPanel.panel, true);
         }
 
-        const panelIndex = panelCounts.findIndex((p) => p.panel === selectedPanel.panel)
-        panelCounts[panelIndex].count++
+        const panelIndex = panelCounts.findIndex(
+          (p) => p.panel === selectedPanel.panel
+        );
+        panelCounts[panelIndex].count++;
       }
 
       toast({
         title: "Random assignment completed",
         description: `Assigned ${shuffledUsers.length} users across panels with equal distribution`,
-      })
+      });
     } catch (error) {
-      console.error("Random assignment error:", error)
-      toast({ title: "Error during random assignment", variant: "destructive" })
+      console.error("Random assignment error:", error);
+      toast({
+        title: "Error during random assignment",
+        variant: "destructive",
+      });
     }
-  }
+  };
 
   // Handle manual panel assignment
-  const handleAssignPanel = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>): Promise<void> => {
-    event.preventDefault()
+  const handleAssignPanel = async (
+    event: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ): Promise<void> => {
+    event.preventDefault();
 
     if (!selectedUser || !selectedPanel) {
-      toast({ title: "Please select a user and a panel", variant: "destructive" })
-      return
+      toast({
+        title: "Please select a user and a panel",
+        variant: "destructive",
+      });
+      return;
     }
 
     try {
       // Fetch admin email from authenticated session
-      const adminRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`, {
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-      })
-      
-      if (!adminRes.ok) {
-        throw new Error("Failed to fetch admin details")
-      }
-      
-      const adminJson = await adminRes.json()
-      const adminEmail = adminJson.email
+      const adminRes = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
+        {
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
 
-      const auditionRound = selectedUser.auditionRounds?.find((r) => r.round === 1)
+      if (!adminRes.ok) {
+        throw new Error("Failed to fetch admin details");
+      }
+
+      const adminJson = await adminRes.json();
+      const adminEmail = adminJson.email;
+
+      const auditionRound = selectedUser.auditionRounds?.find(
+        (r) => r.round === 1
+      );
 
       if (!auditionRound) {
-        const evalRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/evaluate`, {
+        const evalRes = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/evaluate`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: selectedUser.id,
+              panel: Number.parseInt(selectedPanel, 10),
+              finalSelection: true,
+              remarks: "Selected",
+              evaluatedBy: adminEmail,
+            }),
+          }
+        );
+
+        if (!evalRes.ok) {
+          throw new Error(`Evaluation failed: ${evalRes.status}`);
+        }
+      } else {
+        await submitEvaluation(
+          auditionRound.id,
+          Number.parseInt(selectedPanel, 10),
+          true
+        );
+      }
+
+      // Refresh the dashboard data to reflect the assignment
+      await fetchData();
+
+      setIsAssignDialogOpen(false);
+      setSelectedUser(null);
+      setSelectedPanel("");
+
+      toast({ title: `Successfully assigned to Panel ${selectedPanel}` });
+    } catch {
+      toast({ title: "Error assigning panel", variant: "destructive" });
+    }
+  };
+
+  // Handle task allocation
+  const handleAllotTask = async (): Promise<void> => {
+    if (!taskUser) {
+      toast({ title: "No user selected", variant: "destructive" });
+      return;
+    }
+
+    if (!taskText.trim()) {
+      toast({ title: "Please enter a task", variant: "destructive" });
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/task`,
+        {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            userId: selectedUser.id,
-            panel: Number.parseInt(selectedPanel, 10),
-            finalSelection: true,
-            remarks: "Selected",
-            evaluatedBy: adminEmail,
+            userId: taskUser.id,
+            taskAlloted: taskText.trim(),
+            taskLink: taskLink.trim() || "",
           }),
-        })
-        
-        if (!evalRes.ok) {
-          throw new Error(`Evaluation failed: ${evalRes.status}`)
         }
-      } else {
-        await submitEvaluation(auditionRound.id, Number.parseInt(selectedPanel, 10), true)
+      );
+
+      if (!res.ok) {
+        throw new Error(`Failed to allot task: ${res.status}`);
       }
 
-      // Refetch updated user data to reflect round column changes
-      const updatedRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/candidate`, {
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-      })
-      
-      if (updatedRes.ok) {
-        const updatedData = await updatedRes.json()
-        const round1Users = updatedData.filter((u: User) => {
-          const hasRound1 = u.auditionRounds && u.auditionRounds.some((r: AuditionRound) => r.round === 1)
-          const noRounds = !u.auditionRounds || u.auditionRounds.length === 0
-          return hasRound1 || noRounds
-        })
-        setUsers(round1Users)
-      }
-
-      setIsAssignDialogOpen(false)
-      setSelectedUser(null)
-      setSelectedPanel("")
-
-      toast({ title: `Successfully assigned to Panel ${selectedPanel}` })
+      toast({ title: "Task allotted successfully" });
+      setIsTaskDialogOpen(false);
+      setTaskUser(null);
+      setTaskText("");
+      setTaskLink("");
+      await fetchData();
     } catch (error) {
-      console.error("Error assigning panel:", error)
-      toast({ title: "Error assigning panel", variant: "destructive" })
+      console.error("Error allotting task:", error);
+      toast({
+        title: "Error allotting task",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
     }
-  }
+  };
+
+  // Open task dialog and fetch existing task if present
+  const handleOpenTaskDialog = async (user: User): Promise<void> => {
+    setTaskUser(user);
+
+    // Fetch existing task data
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/task/${user.id}`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+
+      if (res.ok) {
+        const json = await res.json();
+        const taskData = json.data || {};
+        setTaskText(taskData.taskAlloted || "");
+        setTaskLink(taskData.taskLink || "");
+      } else {
+        setTaskText("");
+        setTaskLink("");
+      }
+    } catch (error) {
+      console.error("Error fetching task:", error);
+      setTaskText("");
+      setTaskLink("");
+    }
+
+    setIsTaskDialogOpen(true);
+  };
 
   // Handle user rejection
   const handleRejectUser = async (userId: number): Promise<void> => {
     try {
-      const user = users.find((u) => u.id === userId)
+      const user = users.find((u) => u.id === userId);
       if (!user) {
-        toast({ title: "User not found", variant: "destructive" })
-        return
+        toast({ title: "User not found", variant: "destructive" });
+        return;
       }
 
       // Fetch admin email from authenticated session
-      const adminRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`, {
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-      })
-      
-      if (!adminRes.ok) {
-        throw new Error("Failed to fetch admin details")
-      }
-      
-      const adminJson = await adminRes.json()
-      const adminEmail = adminJson.email
-
-      const auditionRound = user.auditionRounds?.find((r) => r.round === 1)
-
-      if (!auditionRound) {
-        const evalRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/evaluate`, {
-          method: "POST",
+      const adminRes = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
+        {
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: userId,
-            panel: null,
-            finalSelection: false,
-            remarks: "Rejected",
-            evaluatedBy: adminEmail,
-          }),
-        })
-        
+        }
+      );
+
+      if (!adminRes.ok) {
+        throw new Error("Failed to fetch admin details");
+      }
+
+      const adminJson = await adminRes.json();
+      const adminEmail = adminJson.email;
+
+      const auditionRound = user.auditionRounds?.find((r) => r.round === 1);
+
+      if (!auditionRound) {
+        const evalRes = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/evaluate`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: userId,
+              panel: null,
+              finalSelection: false,
+              remarks: "Rejected",
+              evaluatedBy: adminEmail,
+            }),
+          }
+        );
+
         if (!evalRes.ok) {
-          throw new Error(`Evaluation failed: ${evalRes.status}`)
+          throw new Error(`Evaluation failed: ${evalRes.status}`);
         }
       } else {
-        await submitEvaluation(auditionRound.id, null, false)
+        await submitEvaluation(auditionRound.id, null, false);
       }
 
-      // Refetch updated user data
-      const updatedRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/candidate`, {
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-      })
-      
-      if (updatedRes.ok) {
-        const updatedData = await updatedRes.json()
-        const round1Users = updatedData.filter((u: User) => {
-          const hasRound1 = u.auditionRounds && u.auditionRounds.some((r: AuditionRound) => r.round === 1)
-          const noRounds = !u.auditionRounds || u.auditionRounds.length === 0
-          return hasRound1 || noRounds
-        })
-        setUsers(round1Users)
-      }
-
-      toast({ title: "User rejected successfully" })
-    } catch (error) {
-      console.error("Error rejecting user:", error)
-      toast({ title: "Error rejecting user", variant: "destructive" })
+      toast({ title: "User rejected successfully" });
+      await fetchData();
+    } catch {
+      toast({ title: "Error rejecting user", variant: "destructive" });
     }
-  }
+  };
 
   // Statistics calculations
-  const totalRegistered = users.length
-  const hasGivenExam = users.filter((u) => u.hasGivenExam).length
+  const totalRegistered = users.length;
+  const hasGivenExam = users.filter((u) => u.hasGivenExam).length;
   const pendingReview = users.filter(
     (u) =>
       u.hasGivenExam &&
       (!u.auditionRounds?.some((r) => r.round === 1) ||
-        u.auditionRounds?.some((r) => r.round === 1 && r.finalSelection === null)),
-  ).length
+        u.auditionRounds?.some(
+          (r) => r.round === 1 && r.finalSelection === null
+        ))
+  ).length;
   const qualifiedRound2 = users.filter((u) =>
-    u.auditionRounds?.some((r) => r.round === 1 && r.finalSelection === true),
-  ).length
+    u.auditionRounds?.some((r) => r.round === 1 && r.finalSelection === true)
+  ).length;
   const rejected = users.filter((u) =>
-    u.auditionRounds?.some((r) => r.round === 1 && r.finalSelection === false),
-  ).length
+    u.auditionRounds?.some((r) => r.round === 1 && r.finalSelection === false)
+  ).length;
 
   const panelCounts = Array.from({ length: 6 }, (_, i) => ({
     panel: i + 1,
     count: users.filter((u) => u.roundTwo?.panel === i + 1).length,
-  }))
+  }));
 
   if (isLoading) {
     return (
@@ -642,12 +789,11 @@ export default function AdminDashboard() {
           <p className="mt-4 text-gray-600">Loading dashboard...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="min-h-screen bg-background w-full">
-      {/* toggle position */}
       <div className="container mx-auto p-6">
         <div className="flex justify-between items-start mb-8">
           <div>
@@ -660,7 +806,6 @@ export default function AdminDashboard() {
           </div>
           <ThemeToggle />
         </div>
-
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <Card>
@@ -799,13 +944,20 @@ export default function AdminDashboard() {
                         filteredUsers.map((user) => (
                           <TableRow key={user.id}>
                             <TableCell>
-                              <div>
-                                <div className="font-medium">
-                                  {user.username}
+                              <div className="flex items-center gap-2">
+                                <div>
+                                  <div className="font-medium">
+                                    {user.username}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {user.email}
+                                  </div>
                                 </div>
-                                <div className="text-sm text-muted-foreground">
-                                  {user.email}
-                                </div>
+                                {user.roundTwo?.taskAlloted && (
+                                  <Badge variant="default" className="text-xs">
+                                    Task Allotted
+                                  </Badge>
+                                )}
                               </div>
                             </TableCell>
                             <TableCell>
@@ -893,6 +1045,22 @@ export default function AdminDashboard() {
                                       </AlertDialog>
                                     </>
                                   )}
+
+                                {user.auditionRounds?.some(
+                                  (round) =>
+                                    round.round === 1 &&
+                                    round.finalSelection === true
+                                ) && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleOpenTaskDialog(user)}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <FileText className="h-4 w-4" />
+                                    Allot Task
+                                  </Button>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -935,57 +1103,64 @@ export default function AdminDashboard() {
 
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Panel Members</h3>
-                  {Array.from({ length: 6 }, (_, i) => {
-                    const panelNum = i + 1;
-                    const panelMembers = users.filter(
-                      (user) => user.roundTwo?.panel === panelNum
-                    );
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Array.from({ length: 6 }, (_, i) => {
+                      const panelNum = i + 1;
+                      const panelMembers = users.filter(
+                        (user) => user.roundTwo?.panel === panelNum
+                      );
 
-                    return (
-                      <Card key={panelNum}>
-                        <CardHeader>
-                          <CardTitle className="text-base">
-                            Panel {panelNum} ({panelMembers.length} members)
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          {panelMembers.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                              {panelMembers.map((user) => {
-                                const userScore = userScores.find(
-                                  (s) => s.userId === user.id
-                                );
-                                return (
-                                  <div
-                                    key={user.id}
-                                    className="flex items-center justify-between p-3 bg-gray-50 rounded"
-                                  >
-                                    <div className="flex-1">
-                                      <div className="text-sm font-medium">
-                                        {user.username}
+                      return (
+                        <Card key={panelNum}>
+                          <CardHeader>
+                            <CardTitle className="text-base">
+                              Panel {panelNum} ({panelMembers.length} members)
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            {panelMembers.length > 0 ? (
+                              <ScrollArea className="h-[400px] pr-2">
+                                <div className="space-y-1">
+                                  {panelMembers.map((user) => {
+                                    const userScore = userScores.find(
+                                      (s) => s.userId === user.id
+                                    );
+                                    return (
+                                      <div
+                                        key={user.id}
+                                        className="flex items-center justify-between px-3 py-2 bg-muted rounded hover:bg-muted/80 transition-colors"
+                                      >
+                                        <div className="flex-1 min-w-0">
+                                          <div className="text-xs font-medium truncate">
+                                            {user.username}
+                                          </div>
+                                          <div className="text-[10px] text-muted-foreground truncate">
+                                            {user.specialization}
+                                          </div>
+                                        </div>
+                                        {userScore && (
+                                          <Badge
+                                            variant="outline"
+                                            className="text-[10px] px-1.5 py-0 ml-2 flex-shrink-0"
+                                          >
+                                            {userScore.percentage}%
+                                          </Badge>
+                                        )}
                                       </div>
-                                      <div className="text-xs text-muted-foreground">
-                                        {user.specialization}
-                                      </div>
-                                    </div>
-                                    {userScore && (
-                                      <Badge variant="outline" className="ml-2">
-                                        {userScore.percentage}%
-                                      </Badge>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-muted-foreground">
-                              No members assigned yet
-                            </p>
-                          )}
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                                    );
+                                  })}
+                                </div>
+                              </ScrollArea>
+                            ) : (
+                              <p className="text-sm text-muted-foreground">
+                                No members assigned yet
+                              </p>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -1115,19 +1290,25 @@ export default function AdminDashboard() {
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="space-y-4">
-                            <div>
-                              {question.picture && (
-                                <div className="mb-4">
-                                  <Image
-                                    src={question.picture || "/placeholder.svg"}
-                                    alt="Question diagram"
-                                    width={384}
-                                    height={288}
-                                    className="max-w-sm rounded border"
-                                  />
-                                </div>
-                              )}
+                            {/* Question Description */}
+                            <div className="p-3 bg-muted/50 border rounded">
+                              <p className="text-sm font-medium text-foreground">
+                                {question.description}
+                              </p>
                             </div>
+
+                            {/* Question Image if exists */}
+                            {question.picture && (
+                              <div className="flex justify-center">
+                                <Image
+                                  src={question.picture || "/placeholder.svg"}
+                                  alt="Question diagram"
+                                  width={384}
+                                  height={288}
+                                  className="max-w-sm rounded border"
+                                />
+                              </div>
+                            )}
 
                             {question.type === "MCQ" ||
                             question.type === "Pictorial" ? (
@@ -1138,14 +1319,14 @@ export default function AdminDashboard() {
                                 {question.options.map((option) => (
                                   <div
                                     key={option.id}
-                                    className={`p-2 rounded border ${
+                                    className={`p-2 rounded border text-foreground ${
                                       option.id === userAnswer?.optionId
                                         ? option.isCorrect
-                                          ? "bg-green-50 border-green-200"
-                                          : "bg-red-50 border-red-200"
+                                          ? "bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-600"
+                                          : "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-600"
                                         : option.isCorrect
-                                        ? "bg-green-50 border-green-200"
-                                        : "bg-gray-50"
+                                        ? "bg-green-50 dark:bg-green-950/10 border-green-200 dark:border-green-800"
+                                        : "bg-muted dark:bg-muted/50"
                                     }`}
                                   >
                                     <div className="flex items-center gap-2">
@@ -1189,8 +1370,8 @@ export default function AdminDashboard() {
                                 <p className="text-sm font-medium text-muted-foreground">
                                   User&apos;s Answer:
                                 </p>
-                                <div className="p-3 bg-gray-50 rounded border">
-                                  <p className="text-sm">
+                                <div className="p-3 bg-muted border rounded">
+                                  <p className="text-sm text-foreground">
                                     {userAnswer?.description ||
                                       "No answer provided"}
                                   </p>
@@ -1233,6 +1414,55 @@ export default function AdminDashboard() {
                 )}
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Task Allocation Dialog */}
+        <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Allot Task</DialogTitle>
+              <DialogDescription>
+                Assign a task for {taskUser?.username} in Round 2
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="task">Task Description *</Label>
+                <textarea
+                  id="task"
+                  rows={4}
+                  value={taskText}
+                  onChange={(e) => setTaskText(e.target.value)}
+                  placeholder="Enter the task description for the candidate..."
+                  className="w-full p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="taskLink">Task Link (Optional)</Label>
+                <Input
+                  id="taskLink"
+                  type="text"
+                  value={taskLink}
+                  onChange={(e) => setTaskLink(e.target.value)}
+                  placeholder="https://github.com/repo/task or Google Drive link"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsTaskDialogOpen(false);
+                  setTaskUser(null);
+                  setTaskText("");
+                  setTaskLink("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleAllotTask}>Allot Task</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

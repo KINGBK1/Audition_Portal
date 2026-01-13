@@ -11,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
-import { Plus, X, ImageIcon, Save } from "lucide-react"
+import { Plus, X, ImageIcon, Save, Loader2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import toast from "react-hot-toast"
 import type { Question, Option } from "@/lib/types" // Declare the Question variable
 
 interface QuestionFormProps {
@@ -22,12 +23,13 @@ interface QuestionFormProps {
 
 export function QuestionForm({ onSubmit, initialData }: QuestionFormProps) {
   const [description, setDescription] = useState("")
-  const [type, setType] = useState<"MCQ" | "TEXT">("MCQ")
+  const [type, setType] = useState<"MCQ" | "Descriptive">("MCQ")
   const [picture, setPicture] = useState("")
   const [options, setOptions] = useState<Option[]>([
     { text: "", isCorrect: false },
     { text: "", isCorrect: false },
   ])
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (initialData) {
@@ -56,29 +58,43 @@ export function QuestionForm({ onSubmit, initialData }: QuestionFormProps) {
     setOptions(newOptions)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!description.trim()) return
 
-    const question: Question = {
-      id: initialData?.id || "",
-      description: description.trim(),
-      type,
-      picture: picture.trim() || undefined,
-      options: type === "MCQ" ? options.filter((opt) => opt.text.trim()) : undefined,
-    }
+    setIsSubmitting(true)
 
-    onSubmit(question)
+    try {
+      const question: Question = {
+        id: initialData?.id || "",
+        description: description.trim(),
+        type,
+        picture: picture.trim() || undefined,
+        options: type === "MCQ" ? options.filter((opt) => opt.text.trim()) : undefined,
+      }
 
-    // Reset form if not editing
-    if (!initialData) {
-      setDescription("")
-      setPicture("")
-      setOptions([
-        { text: "", isCorrect: false },
-        { text: "", isCorrect: false },
-      ])
+      await onSubmit(question)
+
+      toast.success(
+        initialData 
+          ? "Question has been updated successfully." 
+          : "Question has been created successfully."
+      )
+
+      // Reset form if not editing
+      if (!initialData) {
+        setDescription("")
+        setPicture("")
+        setOptions([
+          { text: "", isCorrect: false },
+          { text: "", isCorrect: false },
+        ])
+      }
+    } catch (error) {
+      toast.error("Failed to save question. Please try again.")
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -87,13 +103,13 @@ export function QuestionForm({ onSubmit, initialData }: QuestionFormProps) {
       {/* Question Type */}
       <div className="space-y-2">
         <Label htmlFor="type">Question Type</Label>
-        <Select value={type} onValueChange={(value: "MCQ" | "TEXT") => setType(value)}>
+        <Select value={type} onValueChange={(value: "MCQ" | "Descriptive") => setType(value)} disabled={isSubmitting}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="MCQ">Multiple Choice (MCQ)</SelectItem>
-            <SelectItem value="TEXT">Text Answer</SelectItem>
+            <SelectItem value="Descriptive">Text Answer</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -108,6 +124,7 @@ export function QuestionForm({ onSubmit, initialData }: QuestionFormProps) {
           onChange={(e) => setDescription(e.target.value)}
           className="min-h-[100px]"
           required
+          disabled={isSubmitting}
         />
       </div>
 
@@ -123,6 +140,7 @@ export function QuestionForm({ onSubmit, initialData }: QuestionFormProps) {
           placeholder="https://example.com/image.jpg"
           value={picture}
           onChange={(e) => setPicture(e.target.value)}
+          disabled={isSubmitting}
         />
       </div>
 
@@ -156,6 +174,7 @@ export function QuestionForm({ onSubmit, initialData }: QuestionFormProps) {
                         checked={option.isCorrect}
                         onCheckedChange={(checked) => updateOption(index, "isCorrect", checked as boolean)}
                         className="mt-1"
+                        disabled={isSubmitting}
                       />
                       <Input
                         placeholder={`Option ${index + 1}`}
@@ -163,6 +182,7 @@ export function QuestionForm({ onSubmit, initialData }: QuestionFormProps) {
                         onChange={(e) => updateOption(index, "text", e.target.value)}
                         className="flex-1"
                         required
+                        disabled={isSubmitting}
                       />
                       {options.length > 2 && (
                         <Button
@@ -171,6 +191,7 @@ export function QuestionForm({ onSubmit, initialData }: QuestionFormProps) {
                           size="sm"
                           onClick={() => removeOption(index)}
                           className="text-red-600 hover:text-red-700"
+                          disabled={isSubmitting}
                         >
                           <X className="w-4 h-4" />
                         </Button>
@@ -186,6 +207,7 @@ export function QuestionForm({ onSubmit, initialData }: QuestionFormProps) {
               variant="outline"
               onClick={addOption}
               className="w-full flex items-center gap-2 bg-transparent"
+              disabled={isSubmitting}
             >
               <Plus className="w-4 h-4" />
               Add Option
@@ -196,9 +218,18 @@ export function QuestionForm({ onSubmit, initialData }: QuestionFormProps) {
 
       {/* Submit Button */}
       <div className="flex justify-end pt-4">
-        <Button type="submit" className="flex items-center gap-2">
-          <Save className="w-4 h-4" />
-          {initialData ? "Update Question" : "Create Question"}
+        <Button type="submit" className="flex items-center gap-2" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              {initialData ? "Updating..." : "Creating..."}
+            </>
+          ) : (
+            <>
+              <Save className="w-4 h-4" />
+              {initialData ? "Update Question" : "Create Question"}
+            </>
+          )}
         </Button>
       </div>
     </form>

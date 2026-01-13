@@ -47,7 +47,7 @@ export interface Option {
 export interface Question {
   id: string
   description: string
-  type: "MCQ" | "TEXT"
+  type: "MCQ" | "Descriptive"
   picture?: string
   options?: Option[]
   createdAt?: string

@@ -32,6 +32,8 @@ export const fetchAllCandidates = asyncHandler(async (req: Request, res: Respons
         select: {
           panel: true,
           status: true,
+          taskAlloted: true,
+          taskLink: true,
         },
       },
     },
@@ -109,89 +111,88 @@ export const getCandidateResponses = asyncHandler(async (req: Request, res: Resp
 
 
 // submitting evaluation of candidate by member/admin
-export const submitEvaluation = asyncHandler(async (req: Request, res: Response) => {
-  let {
-    auditionRoundId,
-    userId,
-    panel,
-    remarks,
-    finalSelection,
-    evaluatedBy,
-  } = req.body as {
-    auditionRoundId?: number;
-    userId?: number;
-    panel: number | null;
-    remarks: string;
-    finalSelection: boolean;
-    evaluatedBy: string;
-  };
-
-  if (typeof evaluatedBy !== "string" || !evaluatedBy.trim()) {
-    throw new ApiError(400, "`evaluatedBy` must be a non-empty string");
-  }
-  if (typeof remarks !== "string" || !remarks.trim()) {
-    throw new ApiError(400, "`remarks` must be a non-empty string");
-  }
-
-  // 1) Ensure we have an auditionRoundId (create round 1 if needed)
-  if (!auditionRoundId) {
-    if (!userId) {
-      throw new ApiError(
-        400,
-        "userId is required when auditionRoundId is not provided",
-      );
-    }
-
-    const createdRound = await prisma.auditionRound.create({
-      data: {
-        userId: Number(userId),
-        round: 1,
-        finalSelection,
-        panel: panel ?? null,
-      },
-    });
-    auditionRoundId = createdRound.id;
-  } else {
-    // Update existing auditionRound
-    await prisma.auditionRound.update({
-      where: { id: Number(auditionRoundId) },
-      data: {
-        finalSelection,
-        panel: panel ?? null,
-      },
-    });
-  }
-
-  // 2) Create a review entry
-  const review = await prisma.review.create({
-    data: {
-      auditionRoundId: Number(auditionRoundId),
-      panel: panel ?? 0,
+export const submitEvaluation = asyncHandler(
+  async (req: Request, res: Response) => {
+    let {
+      auditionRoundId,
+      userId,
+      panel,
       remarks,
+      finalSelection,
       evaluatedBy,
-    },
-  });
+    } = req.body;
 
-  // 3) If selected for round 2 and panel given, upsert RoundTwo
-  if (finalSelection && panel !== null) {
-    // ensure we know userId (if it wasn't in body, fetch from auditionRound)
-    if (!userId) {
-      const round = await prisma.auditionRound.findUnique({
-        where: { id: Number(auditionRoundId) },
-        select: { userId: true },
-      });
-      userId = round?.userId;
+    // validate basic fields
+    if (!evaluatedBy || typeof evaluatedBy !== "string") {
+      throw new ApiError(400, "`evaluatedBy` must be a string");
+    }
+    if (!remarks || typeof remarks !== "string") {
+      throw new ApiError(400, "`remarks` must be a string");
     }
 
-    if (userId) {
+    // Create auditionRound if not existing
+    if (!auditionRoundId) {
+      if (!userId) throw new ApiError(400, "userId required");
+
+      const created = await prisma.auditionRound.create({
+        data: {
+          userId,
+          round: 1,
+          finalSelection,
+          panel: panel ?? null,
+        },
+      });
+
+      auditionRoundId = created.id;
+    } else {
+      await prisma.auditionRound.update({
+        where: { id: auditionRoundId },
+        data: {
+          finalSelection,
+          panel: panel ?? null,
+        },
+      });
+    }
+
+    // Create review log
+    await prisma.review.create({
+      data: {
+        auditionRoundId,
+        panel: panel ?? 0,
+        remarks,
+        evaluatedBy,
+      },
+    });
+
+    //promotion to round2
+
+    if (finalSelection === true && panel !== null) {
+      //userId
+      if (!userId) {
+        const r = await prisma.auditionRound.findUnique({
+          where: { id: auditionRoundId },
+          select: { userId: true },
+        });
+        userId = r?.userId;
+      }
+
+      if (!userId) throw new ApiError(400, "Unable to resolve userId");
+      const userIdNumber = Number(userId);
+      // update user.round -> set to 2
+      await prisma.user.update({
+        where: { id: userIdNumber },
+        data: { round: 2 },
+      });
+
+      // create RoundTwo row OR update existing
       await prisma.roundTwo.upsert({
-        where: { userId: Number(userId) },
+        where: { userId },
         update: {
           panel,
           status: "ASSIGNED",
         },
         create: {
-          userId: Number(userId),
+          userId,
           panel,
           status: "ASSIGNED",
           taskAlloted: "",
@@ -206,18 +207,12 @@ export const submitEvaluation = asyncHandler(async (req: Request, res: Response)
         data: { round: 2 },
       });
     }
-  }
 
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        { review, auditionRoundId },
-        "Evaluation submitted",
-      ),
-    );
-});
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "Evaluation submitted successfully"));
+  }
+);
 
 
 // getting full progress of candidate
@@ -243,5 +238,81 @@ export const getCandidateProgress = asyncHandler(async (req, res) => {
   }
 
   res.status(200).json(new ApiResponse(200, rounds));
+});
+
+// get task details for a user
+export const getTaskDetails = asyncHandler(async (req: Request, res: Response) => {
+  const { userId } = req.params;
+
+  if (!userId || typeof userId !== "string") {
+    throw new ApiError(400, "Valid userId is required");
+  }
+
+  const roundTwo = await prisma.roundTwo.findUnique({
+    where: { userId: Number(userId) },
+    select: {
+      taskAlloted: true,
+      taskLink: true,
+    },
+  });
+
+  if (!roundTwo) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { taskAlloted: "", taskLink: "" }, "No task found"));
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, roundTwo, "Task details fetched successfully"));
+});
+
+// allot task to a candidate for round 2
+export const allotTask = asyncHandler(async (req: Request, res: Response) => {
+  const { userId, taskAlloted, taskLink } = req.body;
+
+  if (!userId || typeof userId !== "number") {
+    throw new ApiError(400, "Valid userId is required");
+  }
+
+  if (!taskAlloted || typeof taskAlloted !== "string") {
+    throw new ApiError(400, "Task description is required");
+  }
+
+  try {
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    // Create or update RoundTwo record with task
+    const roundTwo = await prisma.roundTwo.upsert({
+      where: { userId },
+      update: {
+        taskAlloted,
+        taskLink: taskLink || "",
+      },
+      create: {
+        userId,
+        taskAlloted,
+        taskLink: taskLink || "",
+        panel: 0,
+        status: "ASSIGNED",
+        addOns: [],
+        tags: [],
+      },
+    });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, roundTwo, "Task allotted successfully"));
+  } catch (error) {
+    console.error("Error allotting task:", error);
+    throw new ApiError(500, "Failed to allot task");
+  }
 });
 

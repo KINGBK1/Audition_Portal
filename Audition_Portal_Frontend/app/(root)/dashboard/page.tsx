@@ -497,9 +497,10 @@ const Dashboard = () => {
                   <Button
                     onClick={() => push("/exam")}
                     className={cn(
-                      "w-full h-14 text-[11px] font-black uppercase tracking-[0.3em] transition-colors rounded-none",
+                      "w-full h-14 text-[16px] font-black uppercase tracking-[0.3em] transition-colors rounded-none cursor-pointer ",
                       "bg-[#f1f5f9] text-slate-950 hover:bg-white", // Sharp Off-white
                       "animate-futuristic"
+
                     )}
                   >
                     Start Test

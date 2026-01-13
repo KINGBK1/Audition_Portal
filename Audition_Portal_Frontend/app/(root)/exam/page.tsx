@@ -804,7 +804,7 @@ const Exam = () => {
                     {/* FINAL SUBMIT - Changed to blue outline for better contrast */}
                     <Button
                       onClick={openSubmitModal} // Now opens the modal first
-                      className="w-full md:w-auto px-10 h-12 bg-blue-600 text-white hover:bg-blue-500 transition-all rounded-none font-black uppercase tracking-[0.2em] text-[11px]"
+                      className="w-full md:w-auto px-10 h-12 bg-blue-600 text-white hover:bg-blue-500 transition-all rounded-none font-black uppercase tracking-[0.2em] text-[16px]"
                     >
                       Final Submission
                     </Button>

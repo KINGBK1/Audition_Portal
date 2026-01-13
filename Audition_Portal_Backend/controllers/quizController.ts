@@ -1,14 +1,11 @@
 import { Request, Response } from "express";
-import { PrismaClient, Option } from "@prisma/client";
+import { PrismaClient, Option, User } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 interface AuthenticatedRequest extends Request {
-  user?: {
-    id: number;
-    email: string;
-  };
-}
+  user?: User;
+  }
 
 const getQuizzes = async (req: Request, res: Response): Promise<Response> => {
   const quizId = parseInt(req.params.id, 10);

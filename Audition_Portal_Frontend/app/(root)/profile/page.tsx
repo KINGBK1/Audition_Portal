@@ -159,7 +159,7 @@ export default function Profile() {
             right: ["10%", "40%", "10%"],
           }}
           transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-          className="absolute w-[40vw] h-[40vw] bg-purple-600/10 blur-[120px] rounded-full"
+          className="absolute w-[40vw] h-[40vw]  blur-[120px] rounded-full"
         />
       </div>
 

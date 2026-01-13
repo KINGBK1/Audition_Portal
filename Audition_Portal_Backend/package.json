@@ -19,8 +19,8 @@
   },
   "homepage": "https://github.com/lugnitdgp/Audition_Portal_Backend#readme",
   "dependencies": {
-    "@prisma/client": "^5.22.0",
     "prisma": "^5.22.0",
+    "@prisma/client": "^5.22.0",
     "@types/multer": "^1.4.13",
     "bcrypt": "^5.1.1",
     "cloudinary": "^1.41.3",
@@ -39,6 +39,7 @@
   },
   "devDependencies": {
     "@prisma/internals": "^5.22.0",
+    "@prisma/client": "^5.22.0",
     "@types/bcrypt": "^5.0.2",
     "@types/cookie-parser": "^1.4.7",
     "@types/cors": "^2.8.17",

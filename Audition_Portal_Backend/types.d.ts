@@ -1,23 +1,24 @@
-import { User as PrismaUser, Role as PrismaRole } from "@prisma/client";
-import * as express from "express";
+import { User as PrismaUser } from "@prisma/client";
+import "multer";
 
 declare global {
   namespace Express {
-    // This connects Express's User type directly to your Prisma User model,
-    // which already includes your custom Role enum.
+    // Passport uses Express.User internally
     interface User extends PrismaUser {}
 
     interface Request {
       user?: PrismaUser;
+      file?: Express.Multer.File;
+      files?:
+        | Express.Multer.File[]
+        | { [fieldname: string]: Express.Multer.File[] }; // Adds multiple file support
 
-      // Fixes the Passport logout() overloads
       logout(
         options: { keepSessionInfo?: boolean },
         done: (err: any) => void
       ): void;
       logout(done: (err: any) => void): void;
 
-      // Fixes the express-session property error
       session: any;
     }
   }

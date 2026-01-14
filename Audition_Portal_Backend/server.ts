@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import passport from "./passport/passport";
 import session from "express-session";
-import { PrismaClient, Prisma, User } from "@prisma/client"; // Added 'Prisma' for error handling
+import { PrismaClient, Prisma, User as PrismaUser } from "@prisma/client"; // Added 'Prisma' for error handling
 import registerRouter from "./routes/register";
 import authRouter from "./routes/auth";
 import quizRouter from "./routes/quiz";
@@ -57,10 +57,10 @@ async function connectToDatabase() {
 
 app.get("/api/user", verifyJWT, async (req: Request, res: Response) => {
   try {
-    // No more casting needed!
-    const user = req.user;
+    // Cast req.user to your PrismaUser model specifically
+    const user = req.user as PrismaUser | undefined;
 
-    if (!user?.id) {
+    if (!user || !user.id) {
       return res.status(401).json({ error: "User not authenticated" });
     }
 
@@ -74,6 +74,7 @@ app.get("/api/user", verifyJWT, async (req: Request, res: Response) => {
 
     res.json(userData);
   } catch (error) {
+    console.error("Failed to fetch user:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -108,7 +109,7 @@ app.put(
       // Get user ID from authenticated request
       if (req?.user) {
         // Use destructuring and type assertion for clarity
-        const { id: userId } = req.user as User;
+        const { id: userId } = req.user as PrismaUser;
 
         // Update user in database using Prisma
         const updatedUser = await prisma.user.update({

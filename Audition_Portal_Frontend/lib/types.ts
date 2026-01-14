@@ -10,16 +10,17 @@ export interface MCQOption {
   isCorrect: boolean
 }
 
-// export interface Question {
-//   id: string
-//   type: QuestionType
-//   text: string
-//   imageUrl?: string
-//   options?: MCQOption[]
-//   correctAnswer?: string
-//   marks: number
-//   difficulty: string
-// }
+export interface Question {
+  id: string
+  type: QuestionType
+  text: string
+  marks: number
+  difficulty: "easy" | "medium" | "hard"
+
+  imageUrl?: string | null
+  options?: Option[]
+  correctAnswer?: string
+}
 
 // export interface Option {
 //   id: number

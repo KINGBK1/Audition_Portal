@@ -14,18 +14,22 @@ export interface Question {
   id: string
   description: string
   type: QuestionType
-  picture?: string
+  picture?: string      // corresponds to imageUrl
+  text?: string         // add this if needed
+  marks?: number        // add this
+  correctAnswer?: string
   options?: Option[]
   difficulty?: "easy" | "medium" | "hard"
   createdAt?: string
   updatedAt?: string
+  imageUrl?: string
 }
 
+
 // export interface Option {
-//   id: number
+//   id: string || null    
 //   text: string
 //   isCorrect: boolean
-//   questionId: number
 // }
 
 export interface QuestionWithOptions {

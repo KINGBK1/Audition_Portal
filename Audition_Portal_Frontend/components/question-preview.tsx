@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { type Question, QuestionType } from "@/lib/types"
+import { type Question, QuestionType , Option } from "@/lib/types"
 
 interface QuestionPreviewProps {
   question: Question
@@ -34,8 +34,8 @@ export function QuestionPreview({ question }: QuestionPreviewProps) {
                 ? "Descriptive"
                 : "Pictorial"}
           </Badge>
-          <Badge className={`${getDifficultyColor(question.difficulty)} border-0`}>
-            {question.difficulty.charAt(0).toUpperCase() + question.difficulty.slice(1)}
+          <Badge className={`${getDifficultyColor(question.difficulty || "easy")} border-0`}>
+            {(question.difficulty || "easy").charAt(0).toUpperCase() + (question.difficulty || "easy").slice(1)}
           </Badge>
         </div>
         <Badge variant="secondary">
@@ -65,10 +65,14 @@ export function QuestionPreview({ question }: QuestionPreviewProps) {
       {question.type === QuestionType.MCQ && question.options && (
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Options:</h3>
-          <RadioGroup defaultValue={question.options.find((o) => o.isCorrect)?.id}>
+          <RadioGroup
+            defaultValue={
+              question.options.find((o) => o.isCorrect)?.id || question.options[0]?.id || ""
+            }
+          >
             {question.options.map((option) => (
               <div key={option.id} className="flex items-start space-x-2 p-2 rounded hover:bg-gray-50">
-                <RadioGroupItem value={option.id} id={`preview-${option.id}`} />
+                <RadioGroupItem value={option.id || ""} id={`preview-${option.id}`} />
                 <Label htmlFor={`preview-${option.id}`} className="cursor-pointer">
                   {option.text}
                 </Label>

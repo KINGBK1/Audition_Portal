@@ -1,8 +1,9 @@
 import { ApiError } from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
 import { asyncHandler } from "../utils/AsyncHandler";
-import { PrismaClient, Option, Role } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
+import { Role } from "@prisma/client";
 
 const prisma = new PrismaClient();
 

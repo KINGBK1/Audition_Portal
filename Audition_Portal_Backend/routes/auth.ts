@@ -1,7 +1,7 @@
 import express, { Request, Response, Router } from "express";
 import passport from "../passport/passport";
 import jwt from "jsonwebtoken";
-import { Role } from "../types";
+import { Role } from "@prisma/client";
 import { verifyJWT } from "../middleware/verifyJWT";
 
 const router = Router();

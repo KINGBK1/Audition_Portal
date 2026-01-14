@@ -1,4 +1,4 @@
-import jwt, { Secret, JwtPayload } from "jsonwebtoken";
+import jwt, { Secret, JwtPayload, VerifyErrors } from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 require("dotenv").config();
 
@@ -16,14 +16,14 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
   jwt.verify(
     token,
     process.env.ACCESS_TOKEN_SECRET as Secret,
-    (err, decoded) => {
+    (err: VerifyErrors | null, decoded: string | JwtPayload | undefined) => {
       if (err || !decoded) {
         console.error("JWT verification error:", err);
         return res.status(403).json({ message: "Forbidden: Invalid token" });
       }
 
       // Save decoded user in req.user
-req.user = (decoded as any).user;
+      req.user = (decoded as any).user;
       next();
     }
   );

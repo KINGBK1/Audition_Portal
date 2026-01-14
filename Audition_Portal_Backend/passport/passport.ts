@@ -3,6 +3,10 @@ import { PrismaClient, Role } from "@prisma/client";
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import dotenv from "dotenv";
 import { verifyEmail } from "../controllers/verifyEmail";
+import {
+  Profile,
+  VerifyCallback,
+} from "passport-google-oauth20";
 
 dotenv.config();
 
@@ -69,13 +73,14 @@ passport.use(
         return done(null, user); // Type-safe user return
       } catch (err) {
         console.error("GoogleStrategy Error:", err);
-        return done(err); // Explicitly return null if error
+        return done(err as Error); // Explicitly return null if error
       }
     }
   )
 );
 
-passport.serializeUser((user: any, done: any) => {
+// Serialization with explicit types
+passport.serializeUser((user: any, done: (err: any, id?: any) => void) => {
   done(null, user.id);
 });
 

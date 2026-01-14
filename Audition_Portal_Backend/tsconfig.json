@@ -4,13 +4,13 @@
     "module": "CommonJS",
     "moduleResolution": "node",
     "outDir": "./dist",
-    "rootDir": "./",
+    "rootDir": ".",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
-    "types": ["node", "express", "multer", "passport"]
+    "baseUrl": "."
   },
   "include": ["**/*.ts", "types.d.ts"],
   "exclude": ["node_modules", "dist"]

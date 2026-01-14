@@ -16,6 +16,7 @@ export interface Question {
   type: QuestionType
   picture?: string
   options?: Option[]
+  difficulty?: "easy" | "medium" | "hard"
   createdAt?: string
   updatedAt?: string
 }

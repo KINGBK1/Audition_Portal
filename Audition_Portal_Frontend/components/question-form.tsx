@@ -25,6 +25,7 @@ interface QuestionFormProps {
 export function QuestionForm({ onSubmit, initialData }: QuestionFormProps) {
   const [description, setDescription] = useState("")
   const [type, setType] = useState<QuestionType>(QuestionType.MCQ);
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("easy");
   const [picture, setPicture] = useState("")
   const [options, setOptions] = useState<Option[]>([
     { text: "", isCorrect: false },
@@ -75,6 +76,7 @@ export function QuestionForm({ onSubmit, initialData }: QuestionFormProps) {
         type,
         picture: picture.trim() || undefined,
         options: type === QuestionType.MCQ ? options.filter(opt => opt.text.trim()) : undefined,
+        difficulty,
       };
 
       await onSubmit(question)

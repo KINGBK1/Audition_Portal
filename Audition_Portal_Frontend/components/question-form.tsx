@@ -14,7 +14,8 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, X, ImageIcon, Save, Loader2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import toast from "react-hot-toast"
-import type { Question, Option } from "@/lib/types" // Declare the Question variable
+import type { Question, Option } from "@/lib/types" 
+import { QuestionType } from "@/lib/types"
 
 interface QuestionFormProps {
   onSubmit: (question: Question) => void

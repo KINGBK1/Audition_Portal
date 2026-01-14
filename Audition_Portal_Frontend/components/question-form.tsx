@@ -31,16 +31,24 @@ export function QuestionForm({ onSubmit, initialData }: QuestionFormProps) {
   ])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  useEffect(() => {
-    if (initialData) {
-      setDescription(initialData.description)
-      setType(initialData.type)
-      setPicture(initialData.picture || "")
-      if (initialData.options && initialData.options.length > 0) {
-        setOptions(initialData.options)
-      }
+useEffect(() => {
+  if (initialData) {
+    setDescription(initialData.description);
+    
+    if (initialData.type === "MCQ" || initialData.type === "Descriptive") {
+      setType(initialData.type);
+    } else {
+      console.warn(`Unsupported question type: ${initialData.type}`);
+      setType("MCQ"); 
     }
-  }, [initialData])
+
+    setPicture(initialData.picture || "");
+
+    if (initialData.options && initialData.options.length > 0) {
+      setOptions(initialData.options);
+    }
+  }
+}, [initialData]);
 
   const addOption = () => {
     setOptions([...options, { text: "", isCorrect: false }])

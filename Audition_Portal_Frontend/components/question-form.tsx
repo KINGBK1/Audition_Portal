@@ -23,7 +23,7 @@ interface QuestionFormProps {
 
 export function QuestionForm({ onSubmit, initialData }: QuestionFormProps) {
   const [description, setDescription] = useState("")
-  const [type, setType] = useState<"MCQ" | "Descriptive">("MCQ")
+  const [type, setType] = useState<QuestionType>(QuestionType.MCQ);
   const [picture, setPicture] = useState("")
   const [options, setOptions] = useState<Option[]>([
     { text: "", isCorrect: false },
@@ -31,24 +31,18 @@ export function QuestionForm({ onSubmit, initialData }: QuestionFormProps) {
   ])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-useEffect(() => {
-  if (initialData) {
-    setDescription(initialData.description);
-    
-    if (initialData.type === "MCQ" || initialData.type === "Descriptive") {
+  useEffect(() => {
+    if (initialData) {
+      setDescription(initialData.description);
       setType(initialData.type);
-    } else {
-      console.warn(`Unsupported question type: ${initialData.type}`);
-      setType("MCQ"); 
+      setPicture(initialData.picture || "");
+      if (initialData.options && initialData.options.length > 0) {
+        setOptions(initialData.options);
+      }
     }
+  }, [initialData]);
 
-    setPicture(initialData.picture || "");
 
-    if (initialData.options && initialData.options.length > 0) {
-      setOptions(initialData.options);
-    }
-  }
-}, [initialData]);
 
   const addOption = () => {
     setOptions([...options, { text: "", isCorrect: false }])
@@ -79,14 +73,14 @@ useEffect(() => {
         description: description.trim(),
         type,
         picture: picture.trim() || undefined,
-        options: type === "MCQ" ? options.filter((opt) => opt.text.trim()) : undefined,
-      }
+        options: type === QuestionType.MCQ ? options.filter(opt => opt.text.trim()) : undefined,
+      };
 
       await onSubmit(question)
 
       toast.success(
-        initialData 
-          ? "Question has been updated successfully." 
+        initialData
+          ? "Question has been updated successfully."
           : "Question has been created successfully."
       )
 
@@ -111,15 +105,22 @@ useEffect(() => {
       {/* Question Type */}
       <div className="space-y-2">
         <Label htmlFor="type">Question Type</Label>
-        <Select value={type} onValueChange={(value: "MCQ" | "Descriptive") => setType(value)} disabled={isSubmitting}>
+        <Select
+          value={type}
+          onValueChange={(value: QuestionType) => setType(value)}
+          disabled={isSubmitting}
+        >
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="MCQ">Multiple Choice (MCQ)</SelectItem>
-            <SelectItem value="Descriptive">Text Answer</SelectItem>
+            <SelectItem value={QuestionType.MCQ}>Multiple Choice (MCQ)</SelectItem>
+            <SelectItem value={QuestionType.Descriptive}>Text Answer</SelectItem>
+            <SelectItem value={QuestionType.Pictorial}>Pictorial</SelectItem>
           </SelectContent>
         </Select>
+
+
       </div>
 
       {/* Question Description */}

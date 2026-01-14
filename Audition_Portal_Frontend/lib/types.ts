@@ -12,14 +12,12 @@ export interface MCQOption {
 
 export interface Question {
   id: string
+  description: string
   type: QuestionType
-  text: string
-  marks: number
-  difficulty: "easy" | "medium" | "hard"
-
-  imageUrl?: string | null
+  picture?: string
   options?: Option[]
-  correctAnswer?: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 // export interface Option {
@@ -45,12 +43,12 @@ export interface Option {
   isCorrect: boolean
 }
 
-export interface Question {
-  id: string
-  description: string
-  type: "MCQ" | "Descriptive"
-  picture?: string
-  options?: Option[]
-  createdAt?: string
-  updatedAt?: string
-}
+// export interface Question {
+//   id: string
+//   description: string
+//   type: "MCQ" | "Descriptive"
+//   picture?: string
+//   options?: Option[]
+//   createdAt?: string
+//   updatedAt?: string
+// }

@@ -57,23 +57,23 @@ async function connectToDatabase() {
 
 app.get("/api/user", verifyJWT, async (req: Request, res: Response) => {
   try {
-    const userWithId = (req as Request & { user?: User }).user;
+    // No more casting needed!
+    const user = req.user;
 
-    if (!userWithId?.id) {
+    if (!user?.id) {
       return res.status(401).json({ error: "User not authenticated" });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userWithId.id },
+    const userData = await prisma.user.findUnique({
+      where: { id: user.id },
     });
 
-    if (!user) {
+    if (!userData) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    res.json(user);
+    res.json(userData);
   } catch (error) {
-    console.error("Failed to fetch user:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });

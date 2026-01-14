@@ -4,7 +4,8 @@ import { User as PrismaUser } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export interface AuthenticatedRequest extends Express.Request {
+// Correct: Extends the Request imported from "express"
+export interface AuthenticatedRequest extends Request {
   user?: PrismaUser;
 }
 

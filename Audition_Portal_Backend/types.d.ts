@@ -2,6 +2,9 @@ import { User as PrismaUser } from "@prisma/client";
 import { Request } from "express";
 import "multer";
 
+export interface AuthenticatedRequest extends Request {
+  user?: PrismaUser;
+}
 declare global {
   namespace Express {
     // Passport uses Express.User internally

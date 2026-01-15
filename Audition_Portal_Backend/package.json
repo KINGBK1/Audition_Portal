@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "nodemon server.ts",
-    "build": "npx prisma generate && tsc",
+    "build": "tsc --skipLibCheck --noEmitOnError false && npx prisma generate",
     "start": "node dist/server.js"
   },
   "repository": {

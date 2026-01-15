@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import StoreProvider from "@/app/storeProvider";
-import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from "@/components/theme-provider";
 
 
@@ -24,7 +23,6 @@ export default function RootLayout({
         <StoreProvider>
           <ThemeProvider>{children}</ThemeProvider>
         </StoreProvider>
-        <Toaster />
       </body>
     </html>
   );

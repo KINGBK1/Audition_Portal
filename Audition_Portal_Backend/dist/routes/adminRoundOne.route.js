@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const adminRoundOne_controller_1 = require("../controllers/adminRoundOne.controller");
+const verifyJWT_1 = require("../middleware/verifyJWT");
+const router = (0, express_1.Router)();
+router.get("/candidate", verifyJWT_1.verifyAdmin, adminRoundOne_controller_1.fetchAllCandidates);
+router.get("/responses/:userId", verifyJWT_1.verifyAdmin, adminRoundOne_controller_1.getCandidateResponses);
+router.post("/evaluate", verifyJWT_1.verifyAdmin, adminRoundOne_controller_1.submitEvaluation);
+router.get("/candidate-personal-details/:userId", verifyJWT_1.verifyAdmin, adminRoundOne_controller_1.getCandidatePersonalDetails);
+router.get("/progress/:userId", verifyJWT_1.verifyAdmin, adminRoundOne_controller_1.getCandidateProgress);
+router.get("/task/:userId", verifyJWT_1.verifyAdmin, adminRoundOne_controller_1.getTaskDetails);
+router.post("/task", verifyJWT_1.verifyAdmin, adminRoundOne_controller_1.allotTask);
+exports.default = router;

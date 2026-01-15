@@ -27,7 +27,13 @@ router.get(
       { expiresIn: "1d" }
     );
 
-    res.cookie("token", token, { httpOnly: true });
+  const isProduction = process.env.NODE_ENV === "production";
+
+res.cookie("token", token, {
+  httpOnly: true,
+  sameSite: isProduction ? "none" : "lax",
+  secure: isProduction,
+});
 
     const role = (req.user as any).role;
     if (role === "ADMIN") {

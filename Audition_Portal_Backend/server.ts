@@ -26,8 +26,8 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: ["http://localhost:3001"  , "http://localhost:3000" , "https://audition-portal-ke8e.vercel.app" , "https://audition-portal-ke8e-i4q7qtepi-kingbk1s-projects.vercel.app"
-],
+    origin: ["http://localhost:3001", "http://localhost:3000", "https://audition-portal-ke8e.vercel.app", "https://audition-portal-ke8e-i4q7qtepi-kingbk1s-projects.vercel.app"
+    ],
     methods: "GET,POST,PUT,DELETE",
     allowedHeaders: "Content-Type,Authorization",
     credentials: true,

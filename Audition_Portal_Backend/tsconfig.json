@@ -11,8 +11,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
-    "baseUrl": ".",
-    "types": ["node"]   
+    "baseUrl": "."
   },
   "include": ["**/*.ts", "types.d.ts"],
   "exclude": ["node_modules", "dist"]

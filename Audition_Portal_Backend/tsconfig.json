@@ -5,11 +5,11 @@
     "moduleResolution": "node",
     "outDir": "./dist",
     "rootDir": ".",
-    "strict": false,
+    "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "noEmitOnError": false
+    "types": ["node", "express", "jsonwebtoken", "cors", "express-session", "cookie-parser", "multer", "passport", "passport-google-oauth20"]
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules", "dist"]

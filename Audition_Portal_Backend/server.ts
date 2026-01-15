@@ -14,7 +14,8 @@ import { Request, Response } from "express";
 import round2Router from "./routes/round2";
 import adminRoundOneRouter from "./routes/adminRoundOne.route";
 import adminRoundTwoRouter from "./routes/adminRoundTwo.route";
-require("dotenv").config();
+import dotenv from "dotenv";
+dotenv.config();
 
 const app = express();
 

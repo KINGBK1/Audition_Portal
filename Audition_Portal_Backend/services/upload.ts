@@ -1,4 +1,5 @@
-require("dotenv").config();
+import dotenv from "dotenv";
+dotenv.config();
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";

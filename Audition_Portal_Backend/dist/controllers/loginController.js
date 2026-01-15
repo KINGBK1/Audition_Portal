@@ -6,7 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const passport_1 = __importDefault(require("../passport/passport"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-require("dotenv").config();
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.get("/auth/google", passport_1.default.authenticate("google", { scope: ["profile", "email"] }));
 // app.get(

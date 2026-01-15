@@ -2,7 +2,8 @@ import express from "express";
 import passport from "../passport/passport";
 import jwt from "jsonwebtoken";
 import { User as PrismaUser } from "@prisma/client";
-require("dotenv").config();
+import dotenv from "dotenv";
+dotenv.config();
 
 const app = express();
 

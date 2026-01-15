@@ -1,6 +1,7 @@
 import jwt, { Secret, JwtPayload, VerifyErrors } from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
-require("dotenv").config();
+import dotenv from "dotenv";
+dotenv.config();
 
 const getTokenFromCookies = (req: Request): string | undefined => {
   return req.cookies?.token;

@@ -18,20 +18,25 @@ passport.use(
       clientID: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       //change this to your callback URL
-      callbackURL:"/auth/google/callback",
-      // callbackURL: process.env.GOOGLE_CALLBACK_URL || "http://localhost:3000/api/auth/google/callback",
-      // scope: ["profile", "email"],
+      callbackURL:
+        process.env.NODE_ENV === "production"
+          ? "https://audition-portal-jj3t.onrender.com/auth/google/callback"
+          : "/auth/google/callback",
       passReqToCallback: true,
     },
     async (req, accessToken, refreshToken, profile, done) => {
       try {
         //  Validate profile.emails and photos exist
         if (!profile.emails || profile.emails.length === 0) {
-          return done(null, false, { message: "Email not found in Google profile." });
+          return done(null, false, {
+            message: "Email not found in Google profile.",
+          });
         }
 
         if (!profile.photos || profile.photos.length === 0) {
-          return done(null, false, { message: "Photo not found in Google profile." });
+          return done(null, false, {
+            message: "Photo not found in Google profile.",
+          });
         }
 
         const userEmail = profile.emails[0].value;
@@ -39,15 +44,22 @@ passport.use(
 
         //  1. Validate email domain
         if (!verifyEmail(userEmail)) {
-          console.log("Attempted login with:", userEmail, "Valid:", verifyEmail(userEmail));
-          
+          console.log(
+            "Attempted login with:",
+            userEmail,
+            "Valid:",
+            verifyEmail(userEmail)
+          );
+
           return done(null, false, {
             message: "You are not a first-year student at NIT Durgapur.",
           });
         }
 
         //  2. Fetch or create user
-        let user = await prisma.user.findUnique({ where: { email: userEmail } });
+        let user = await prisma.user.findUnique({
+          where: { email: userEmail },
+        });
 
         const isAdmin = userEmail === process.env.ADMIN_EMAIL;
 

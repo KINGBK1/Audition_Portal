@@ -51,69 +51,40 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    // const checkAuth = async () => {
-    //   try {
-    //     //Verify token
-    //     const verified = await dispatch(verifyToken()).unwrap();
-
-    //     const res = await fetch(
-    //       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
-    //       {
-    //         method: "GET",
-    //         credentials: "include",
-    //       }
-    //     );
-    //     const user = await res.json();
-
-    //     // Redirect logic
-    //     if (verified.role === "ADMIN") {
-    //       router.push("/admin/profile");
-    //       return;
-    //     }
-
-    //     // round-based redirect
-    //     if (user.round >= 2) {
-    //       console.log(user.round);
-    //       router.replace("/exam/round2");
-    //       return;
-    //     }
-
-    //     router.push("/dashboard");
-    //   } catch (err) {
-    //     console.error("Auth failed:", err);
-    //     setLoading(false);
-    //   }
-    // };
     const checkAuth = async () => {
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
-      {
-        method: "GET",
-        credentials: "include",
+      try {
+        //Verify token
+        const verified = await dispatch(verifyToken()).unwrap();
+
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
+        const user = await res.json();
+
+        // Redirect logic
+        if (verified.role === "ADMIN") {
+          router.push("/admin/profile");
+          return;
+        }
+
+        // round-based redirect
+        if (user.round >= 2) {
+          console.log(user.round);
+          router.replace("/exam/round2");
+          return;
+        }
+
+        router.push("/dashboard");
+      } catch (err) {
+        console.error("Auth failed:", err);
+        setLoading(false);
       }
-    );
-
-    if (!res.ok) throw new Error("Unauthorized");
-
-    const user = await res.json();
-
-    if (user.role === "ADMIN") {
-      router.replace("/admin/profile");
-      return;
-    }
-
-    if (user.round >= 2) {
-      router.replace("/exam/round2");
-      return;
-    }
-
-    router.replace("/dashboard");
-  } catch (err) {
-    console.error("Auth failed:", err);
-    setLoading(false);
-  }
-};
+    };
+  
 
     checkAuth();
   }, [dispatch, router]);

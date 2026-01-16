@@ -17,11 +17,13 @@ router.get("/google", passport_1.default.authenticate("google", {
 // GOOGLE AUTH CALLBACK
 router.get("/google/callback", passport_1.default.authenticate("google", { failureRedirect: "/", session: false }), (req, res) => {
     const token = jsonwebtoken_1.default.sign({ user: req.user }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "1d" });
-    const isProduction = process.env.NODE_ENV === "production";
+    // const isProduction = process.env.NODE_ENV === "production";
     res.cookie("token", token, {
         httpOnly: true,
-        sameSite: isProduction ? "none" : "lax",
-        secure: isProduction,
+        // sameSite: isProduction ? "none" : "lax",
+        // secure: isProduction,
+        sameSite: "none",
+        secure: true,
     });
     const role = req.user.role;
     if (role === "ADMIN") {
@@ -40,8 +42,9 @@ router.get("/logout", (req, res) => {
         // Clear the token cookie
         res.clearCookie("token", {
             httpOnly: true,
-            sameSite: "strict",
-            secure: process.env.NODE_ENV === "production",
+            sameSite: "none",
+            // secure: process.env.NODE_ENV === "production",
+            secure: true,
         });
         // DON'T redirect - return JSON instead
         res.json({ success: true, message: "Logged out successfully" });

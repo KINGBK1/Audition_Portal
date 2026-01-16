@@ -5,8 +5,11 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "nodemon server.ts",
-    "build": "tsc --skipLibCheck --noEmitOnError false && npx prisma generate",
-    "start": "node dist/server.js"
+    "build": "prisma generate && tsc",
+    "start": "node dist/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy",
+    "postinstall": "prisma generate"
   },
   "repository": {
     "type": "git",
@@ -19,37 +22,38 @@
   },
   "homepage": "https://github.com/lugnitdgp/Audition_Portal_Backend#readme",
   "dependencies": {
-    "@prisma/client": "5.22.0",
-    "@types/bcrypt": "^5.0.2",
-    "bcrypt": "^5.1.1",
-    "cloudinary": "^1.41.3",
-    "cookie-parser": "^1.4.7",
-    "cors": "^2.8.5",
-    "dotenv": "^16.6.1",
-    "express": "^4.22.1",
-    "express-session": "^1.18.2",
-    "jsonwebtoken": "^9.0.3",
-    "multer": "^1.4.5-lts.1",
-    "multer-storage-cloudinary": "^4.0.0",
-    "passport": "^0.7.0",
-    "passport-google-oauth20": "^2.0.0",
-    "prisma": "5.22.0",
-    "pug": "^3.0.3"
+    "@prisma/client": "^5.x.x",
+    "express": "^4.x.x",
+    "passport": "^0.7.x",
+    "passport-google-oauth20": "^2.x.x",
+    "jsonwebtoken": "^9.x.x",
+    "cookie-parser": "^1.x.x",
+    "dotenv": "^16.x.x"
   },
   "devDependencies": {
-    "@prisma/internals": "5.22.0",
-    "@types/bcrypt": "^5.0.2",
-    "@types/node": "^20.19.30",
-    "@types/cookie-parser": "^1.4.10",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^4.17.25",
-    "@types/express-session": "^1.18.2",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/multer": "^2.0.0",
-    "@types/passport": "^1.0.17",
-    "@types/passport-google-oauth20": "^2.0.17",
-    "nodemon": "^3.1.3",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
-  }
+    "@types/node": "^20.x.x",
+    "@types/express": "^4.17.x",
+    "@types/passport": "^1.0.x",
+    "@types/passport-google-oauth20": "^2.0.x",
+    "@types/jsonwebtoken": "^9.0.x",
+    "@types/cookie-parser": "^1.4.x",
+    "typescript": "^5.3.x",
+    "ts-node": "^10.9.x",
+    "nodemon": "^3.0.x",
+    "prisma": "^5.x.x"
+  },
+  "buildCommand": "npm install && npm run build",
+  "startCommand": "npm start",
+  "builds": [
+    {
+      "src": "server.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "server.ts"
+    }
+  ]
 }

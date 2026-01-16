@@ -54,8 +54,9 @@ router.get("/logout", (req, res) => {
     // Clear the token cookie
     res.clearCookie("token", {
       httpOnly: true,
-      sameSite: "strict",
-      secure: process.env.NODE_ENV === "production",
+      sameSite: "none",
+      // secure: process.env.NODE_ENV === "production",
+      secure: true,
     });
 
     // DON'T redirect - return JSON instead

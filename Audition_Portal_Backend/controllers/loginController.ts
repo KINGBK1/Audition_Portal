@@ -61,11 +61,11 @@ app.use("/login", (req, res) => {
 });
 
 app.get("/logout", (req, res, next) => {
-  req.logout((err) => {
+  req.logout((err: any) => {
     if (err) {
       return next(err);
     }
-    req.session.destroy((err) => {
+    req.session.destroy((err: any) => {
       if (err) {
         return next(err);
       }

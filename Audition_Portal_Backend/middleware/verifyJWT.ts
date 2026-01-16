@@ -3,12 +3,18 @@ import { Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
 dotenv.config();
 
-const getTokenFromCookies = (req: Request): string | undefined => {
+const getTokenFromRequest = (req: Request): string | undefined => {
+  // Check Authorization header first
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    return authHeader.substring(7);
+  }
+  // Fallback to cookie
   return req.cookies?.token;
 };
 
 export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
-  const token = getTokenFromCookies(req);
+  const token = getTokenFromRequest(req);
 
   if (!token) {
     return res.status(401).json({ message: "Unauthorized: Missing token" });
@@ -32,7 +38,7 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
 
 // Middleware to verify ADMIN role
 export const verifyAdmin = (req: Request, res: Response, next: NextFunction) => {
-  const token = getTokenFromCookies(req);
+  const token = getTokenFromRequest(req);
   if (!token) return res.status(401).json({ message: "Unauthorized: Missing token" });
 
   try {

@@ -38,10 +38,18 @@ export const verifyToken = createAsyncThunk<
   "auth/verifyToken",
   async (_, { rejectWithValue }) => {
     try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        throw new Error("No token found");
+      }
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/verify`,
         {
           method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
           credentials: "include",
         }
       );
@@ -73,10 +81,18 @@ export const fetchUserData = createAsyncThunk<
   "auth/fetchUserData",
   async (_, { rejectWithValue }) => {
     try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        throw new Error("No token found");
+      }
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
         {
           method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
           credentials: "include",
         }
       );

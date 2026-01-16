@@ -12,9 +12,19 @@ export const Navbar = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+          throw new Error("No token found");
+        }
+
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/verify`,
-          { credentials: "include" }
+          {
+            headers: {
+              "Authorization": `Bearer ${token}`,
+            },
+            credentials: "include",
+          }
         );
         const data = await res.json();
         setUser({ username: data.username, email: data.email });

@@ -53,13 +53,32 @@ export default function Home() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Check if token is in URL (from OAuth redirect)
+        const urlParams = new URLSearchParams(window.location.search);
+        const tokenFromUrl = urlParams.get("token");
+        
+        if (tokenFromUrl) {
+          // Store token in localStorage
+          localStorage.setItem("authToken", tokenFromUrl);
+          // Clean up URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
         //Verify token
         const verified = await dispatch(verifyToken()).unwrap();
+
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+          throw new Error("No token found");
+        }
 
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
           {
             method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+            },
             credentials: "include",
           }
         );

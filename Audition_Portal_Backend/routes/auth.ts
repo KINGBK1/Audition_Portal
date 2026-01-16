@@ -27,22 +27,20 @@ router.get(
       { expiresIn: "1d" }
     );
 
-  // const isProduction = process.env.NODE_ENV === "production";
-
-res.cookie("token", token, {
-  httpOnly: true,
-  // sameSite: isProduction ? "none" : "lax",
-  // secure: isProduction,
-  sameSite: "none",
-  secure: true,
-});
+    // Set cookie as backup for same-origin requests
+    res.cookie("token", token, {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+    });
 
     const role = (req.user as any).role;
-    if (role === "ADMIN") {
-      res.redirect(process.env.FRONTEND_ADMIN_REDIRECT_URL || "/admin/profile");
-    } else {
-      res.redirect(process.env.FRONTEND_REDIRECT_URL || "/profile");
-    }
+    // Redirect with token in URL for cross-origin setup
+    const redirectUrl = role === "ADMIN" 
+      ? process.env.FRONTEND_ADMIN_REDIRECT_URL || "/admin/profile"
+      : process.env.FRONTEND_REDIRECT_URL || "/profile";
+    
+    res.redirect(`${redirectUrl}?token=${token}`);
   }
 );
 

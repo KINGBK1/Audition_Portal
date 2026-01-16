@@ -27,7 +27,7 @@ router.get(
       { expiresIn: "1d" }
     );
 
-  const isProduction = process.env.NODE_ENV === "production";
+  // const isProduction = process.env.NODE_ENV === "production";
 
 res.cookie("token", token, {
   httpOnly: true,

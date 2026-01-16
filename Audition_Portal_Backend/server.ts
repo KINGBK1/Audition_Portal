@@ -25,12 +25,32 @@ const prisma = new PrismaClient();
 
 app.use(cookieParser());
 
+// Dynamic CORS configuration
+const allowedOrigins = [
+  "http://localhost:3001",
+  "http://localhost:3000",
+  process.env.FRONTEND_URL,
+].filter(Boolean); // Remove any undefined values
+
 app.use(
   cors({
-    origin: ["http://localhost:3001", "http://localhost:3000", "https://audition-portal-ke8e.vercel.app", "https://audition-portal-ke8e-i4q7qtepi-kingbk1s-projects.vercel.app"
-    ],
-    methods: "GET,POST,PUT,DELETE",
-    allowedHeaders: "Content-Type,Authorization",
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      // Allow all Vercel preview deployments and localhost
+      if (
+        origin.includes("vercel.app") ||
+        origin.includes("localhost") ||
+        allowedOrigins.includes(origin)
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: "GET,POST,PUT,DELETE,PATCH,OPTIONS",
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );

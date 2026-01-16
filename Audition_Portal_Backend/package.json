@@ -28,9 +28,7 @@
     "passport-google-oauth20": "^2.x.x",
     "jsonwebtoken": "^9.x.x",
     "cookie-parser": "^1.x.x",
-    "dotenv": "^16.x.x"
-  },
-  "devDependencies": {
+    "dotenv": "^16.x.x",
     "@types/node": "^20.x.x",
     "@types/express": "^4.17.x",
     "@types/passport": "^1.0.x",
@@ -38,9 +36,11 @@
     "@types/jsonwebtoken": "^9.0.x",
     "@types/cookie-parser": "^1.4.x",
     "typescript": "^5.3.x",
-    "ts-node": "^10.9.x",
-    "nodemon": "^3.0.x",
     "prisma": "^5.x.x"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.x",
+    "nodemon": "^3.0.x"
   },
   "buildCommand": "npm install && npm run build",
   "startCommand": "npm start",

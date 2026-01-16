@@ -31,8 +31,10 @@ router.get(
 
 res.cookie("token", token, {
   httpOnly: true,
-  sameSite: isProduction ? "none" : "lax",
-  secure: isProduction,
+  // sameSite: isProduction ? "none" : "lax",
+  // secure: isProduction,
+  sameSite: none,
+  secure: true,
 });
 
     const role = (req.user as any).role;

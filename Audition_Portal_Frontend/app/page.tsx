@@ -54,7 +54,7 @@ export default function Home() {
     const checkAuth = async () => {
       try {
         //Verify token
-        const verified = await dispatch(verifyToken()).unwrap();
+        // const verified = await dispatch(verifyToken()).unwrap();
 
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,

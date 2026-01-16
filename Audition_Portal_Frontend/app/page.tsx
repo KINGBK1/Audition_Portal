@@ -64,13 +64,16 @@ export default function Home() {
           window.history.replaceState({}, document.title, window.location.pathname);
         }
 
-        //Verify token
-        const verified = await dispatch(verifyToken()).unwrap();
-
+        // Check if we have a token before trying to verify
         const token = localStorage.getItem("authToken");
         if (!token) {
-          throw new Error("No token found");
+          // No token means user is not logged in - show login page
+          setLoading(false);
+          return;
         }
+
+        //Verify token
+        const verified = await dispatch(verifyToken()).unwrap();
 
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
@@ -100,6 +103,8 @@ export default function Home() {
         router.push("/dashboard");
       } catch (err) {
         console.error("Auth failed:", err);
+        // Clear invalid token
+        localStorage.removeItem("authToken");
         setLoading(false);
       }
     };

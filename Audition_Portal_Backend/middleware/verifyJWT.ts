@@ -57,7 +57,7 @@ export const verifyAdmin = (req: Request, res: Response, next: NextFunction) => 
 
 // Middleware to verify MEMBER role
 export const verifyMember = (req: Request, res: Response, next: NextFunction) => {
-  const token = getTokenFromCookies(req);
+  const token = getTokenFromRequest(req);
 
   if (!token) {
     return res.status(401).json({ message: "Unauthorized: Missing token" });

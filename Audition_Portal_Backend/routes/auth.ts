@@ -33,7 +33,7 @@ res.cookie("token", token, {
   httpOnly: true,
   // sameSite: isProduction ? "none" : "lax",
   // secure: isProduction,
-  sameSite: none,
+  sameSite: "none",
   secure: true,
 });
 

@@ -30,6 +30,8 @@ const allowedOrigins = [
   "http://localhost:3001",
   "http://localhost:3000",
   process.env.FRONTEND_URL,
+  process.env.FRONTEND_ADMIN_REDIRECT_URL,
+  process.env.FRONTEND_REDIRECT_URL,
 ].filter(Boolean); // Remove any undefined values
 
 app.use(
@@ -51,7 +53,7 @@ app.use(
     },
     methods: "GET,POST,PUT,DELETE,PATCH,OPTIONS",
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
+    credentials: true, // CRITICAL: Must be true for cookies
   })
 );
 

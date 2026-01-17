@@ -4,12 +4,12 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const getTokenFromRequest = (req: Request): string | undefined => {
-  // Check Authorization header first
+  // Check Authorization header first (for cross-origin requests)
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith("Bearer ")) {
     return authHeader.substring(7);
   }
-  // Fallback to cookie
+  // Fallback to cookie (for same-origin requests)
   return req.cookies?.token;
 };
 
@@ -36,7 +36,6 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
   );
 };
 
-// Middleware to verify ADMIN role
 export const verifyAdmin = (req: Request, res: Response, next: NextFunction) => {
   const token = getTokenFromRequest(req);
   if (!token) return res.status(401).json({ message: "Unauthorized: Missing token" });
@@ -48,7 +47,7 @@ export const verifyAdmin = (req: Request, res: Response, next: NextFunction) => 
       return res.status(403).json({ message: "Forbidden: Admins only" });
     }
 
-    (req as Request & { user?: any }).user = (decoded as any).user;
+    req.user = (decoded as any).user;
     next();
   } catch (error) {
     return res.status(403).json({ message: "Forbidden: Invalid token" });
@@ -71,7 +70,7 @@ export const verifyMember = (req: Request, res: Response, next: NextFunction) =>
       return res.status(403).json({ message: "Forbidden: Members only." });
     }
 
-req.user = (decoded as any).user;
+    req.user = (decoded as any).user;
     next();
   } catch (error) {
     return res.status(403).json({ message: "Forbidden: Invalid token" });

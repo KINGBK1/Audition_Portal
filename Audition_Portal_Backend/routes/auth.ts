@@ -72,10 +72,11 @@ router.get(
       ========================= */
       const cookieOptions = {
         httpOnly: true,
-        sameSite: isProduction ? ("none" as const) : ("lax" as const),
-        secure: isProduction,
+        sameSite: "none" as const,
+        secure: true,
         maxAge: 24 * 60 * 60 * 1000,
         path: "/",
+        // domain: 
       };
 
       console.log("Cookie options being used:", cookieOptions);

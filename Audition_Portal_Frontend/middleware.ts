@@ -17,6 +17,9 @@ function decodeJWT(token: string) {
     return null
   }
 }
+{
+  console.log('Middleware module loaded')
+}
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value

@@ -1,216 +1,222 @@
-// src/lib/store/features/auth/authSlice.ts
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { RootState } from '../../store';
 
-//
-// 1) Define the UserInfo interface. It must match exactly what your backend returns.
-//
-interface UserInfo {
-  id: string;
-  email: string;
+interface User {
+  id: number;
   username: string;
-  picture: string;
-  role: "ADMIN" | "USER";
+  email: string;
+  picture?: string;
   contact?: string;
   gender?: string;
   specialization?: string;
+  round?: number;
+  role: string;
+  hasGivenExam: boolean;
 }
 
 interface AuthState {
-  userInfo: UserInfo | null;
-  status: "idle" | "loading" | "succeeded" | "failed";
+  userInfo: User | null;
+  isAuthenticated: boolean;
+  loading: boolean;
+  status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
 }
 
 const initialState: AuthState = {
   userInfo: null,
-  status: "idle",
+  isAuthenticated: false,
+  loading: false,
+  status: 'idle',
   error: null,
 };
 
-//
-// 2) Thunk: verifyToken → GET /auth/verify
-//
-export const verifyToken = createAsyncThunk<
-  UserInfo,   // Return type
-  void,       // No argument
-  { rejectValue: string }
->(
-  "auth/verifyToken",
+// Verify token from cookie
+export const verifyToken = createAsyncThunk(
+  'auth/verifyToken',
   async (_, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        throw new Error("No token found");
-      }
-
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/verify`,
         {
-          method: "GET",
+          method: 'GET',
+          credentials: 'include', // CRITICAL
           headers: {
-            "Authorization": `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
-          credentials: "include",
         }
       );
 
       if (!response.ok) {
-        throw new Error("Unauthorized");
+        throw new Error('Token verification failed');
       }
 
       const data = await response.json();
-      if (!data || typeof data !== "object") {
-        throw new Error("Malformed response from /auth/verify");
-      }
-
-      return data as UserInfo;
-    } catch (err: any) {
-      return rejectWithValue(err.message);
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Verification failed');
     }
   }
 );
 
-//
-// 3) Thunk: fetchUserData → GET /api/user
-//
-export const fetchUserData = createAsyncThunk<
-  UserInfo,
-  void,
-  { rejectValue: string }
->(
-  "auth/fetchUserData",
+// Fetch user data
+export const fetchUserData = createAsyncThunk(
+  'auth/fetchUserData',
   async (_, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        throw new Error("No token found");
-      }
-
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
         {
-          method: "GET",
+          method: 'GET',
+          credentials: 'include', // CRITICAL
           headers: {
-            "Authorization": `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
-          credentials: "include",
         }
       );
 
       if (!response.ok) {
-        throw new Error("Failed to fetch user data");
+        throw new Error('Failed to fetch user data');
       }
 
       const data = await response.json();
-      if (!data || typeof data !== "object") {
-        throw new Error("Malformed response from /api/user");
-      }
-
-      return data as UserInfo;
-    } catch (err: any) {
-      return rejectWithValue(err.message);
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Fetch failed');
     }
   }
 );
 
-//
-// 4) Thunk: updateUserInfo → PUT /api/update-user-info
-//
-export const updateUserInfo = createAsyncThunk<
-  UserInfo,
-  { contact: string; gender: string; specialization: string },
-  { rejectValue: string }
->(
-  "auth/updateUserInfo",
-  async (formData, { rejectWithValue }) => {
+// Update user info
+export const updateUserInfo = createAsyncThunk(
+  'auth/updateUserInfo',
+  async (
+    userData: {
+      contact?: string;
+      gender?: string;
+      specialization?: string;
+    },
+    { rejectWithValue }
+  ) => {
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/update-user-info`,
         {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(formData),
+          method: 'PUT',
+          credentials: 'include', // CRITICAL
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(userData),
         }
       );
 
       if (!response.ok) {
-        throw new Error("Failed to update user info");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update user info');
       }
 
       const data = await response.json();
-      if (!data || typeof data !== "object") {
-        throw new Error("Malformed response from PUT /api/update-user-info");
-      }
-
-      return data as UserInfo;
-    } catch (err: any) {
-      return rejectWithValue(err.message);
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Update failed');
     }
   }
 );
 
-//
-// 5) Create the auth slice
-//
+// Logout
+export const logout = createAsyncThunk(
+  'auth/logout',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`,
+        {
+          method: 'GET',
+          credentials: 'include', // CRITICAL
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Logout failed');
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Logout failed');
+    }
+  }
+);
+
 const authSlice = createSlice({
-  name: "auth",
+  name: 'auth',
   initialState,
   reducers: {
-    logout(state) {
+    clearError: (state) => {
+      state.error = null;
+    },
+    resetAuth: (state) => {
       state.userInfo = null;
-      state.status = "idle";
+      state.isAuthenticated = false;
+      state.status = 'idle';
       state.error = null;
     },
   },
   extraReducers: (builder) => {
     builder
-      // verifyToken
       .addCase(verifyToken.pending, (state) => {
-        state.status = "loading";
+        state.loading = true;
+        state.status = 'loading';
         state.error = null;
       })
-      .addCase(verifyToken.fulfilled, (state, action) => {
-        state.status = "succeeded";
+      .addCase(verifyToken.fulfilled, (state, action: PayloadAction<User>) => {
+        state.loading = false;
+        state.status = 'succeeded';
+        state.isAuthenticated = true;
         state.userInfo = action.payload;
       })
       .addCase(verifyToken.rejected, (state, action) => {
-        state.status = "failed";
+        state.loading = false;
+        state.status = 'failed';
+        state.isAuthenticated = false;
         state.error = action.payload as string;
-        state.userInfo = null;
-      });
-
-    builder
-      // fetchUserData
-      .addCase(fetchUserData.pending, (state) => {
-        state.status = "loading";
       })
-      .addCase(fetchUserData.fulfilled, (state, action) => {
-        state.status = "succeeded";
+      .addCase(fetchUserData.pending, (state) => {
+        state.loading = true;
+        state.status = 'loading';
+      })
+      .addCase(fetchUserData.fulfilled, (state, action: PayloadAction<User>) => {
+        state.loading = false;
+        state.status = 'succeeded';
         state.userInfo = action.payload;
+        state.isAuthenticated = true;
       })
       .addCase(fetchUserData.rejected, (state, action) => {
-        state.status = "failed";
+        state.loading = false;
+        state.status = 'failed';
         state.error = action.payload as string;
-        state.userInfo = null;
-      });
-
-    builder
-      // updateUserInfo
-      .addCase(updateUserInfo.pending, (state) => {
-        state.status = "loading";
       })
-      .addCase(updateUserInfo.fulfilled, (state, action) => {
-        state.status = "succeeded";
+      .addCase(updateUserInfo.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(updateUserInfo.fulfilled, (state, action: PayloadAction<User>) => {
+        state.status = 'succeeded';
         state.userInfo = action.payload;
       })
       .addCase(updateUserInfo.rejected, (state, action) => {
-        state.status = "failed";
+        state.status = 'failed';
+        state.error = action.payload as string;
+      })
+      .addCase(logout.fulfilled, (state) => {
+        state.userInfo = null;
+        state.isAuthenticated = false;
+        state.status = 'idle';
+      })
+      .addCase(logout.rejected, (state, action) => {
         state.error = action.payload as string;
       });
   },
 });
 
-export const { logout } = authSlice.actions;
-export const selectAuthState = (state: any) => state.auth;
+export const { clearError, resetAuth } = authSlice.actions;
+export const selectAuthState = (state: RootState) => state.auth;
 export default authSlice.reducer;

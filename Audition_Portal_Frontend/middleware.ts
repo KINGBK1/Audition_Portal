@@ -5,6 +5,8 @@ import type { NextRequest } from 'next/server'
 function decodeJWT(token: string) {
   try {
     const base64Url = token.split('.')[1]
+    if (!base64Url) return null
+    
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
     const jsonPayload = decodeURIComponent(
       atob(base64)
@@ -13,62 +15,90 @@ function decodeJWT(token: string) {
         .join('')
     )
     return JSON.parse(jsonPayload)
-  } catch {
+  } catch (error) {
+    console.error('JWT decode error:', error)
     return null
   }
 }
-{
-  console.log('Middleware module loaded')
-}
 
 export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  console.log('Middleware executed for path:', pathname)
+
   const token = request.cookies.get('token')?.value
-  console.log('Middleware executed for path:', request.nextUrl.pathname)
+  console.log('Token exists:', !!token)
 
-  const isAuthPage = request.nextUrl.pathname === '/'
-  const isProtectedRoute = request.nextUrl.pathname.startsWith('/dashboard') ||
-    request.nextUrl.pathname.startsWith('/exam') ||
-    request.nextUrl.pathname.startsWith('/profile') ||
-    request.nextUrl.pathname.startsWith('/round-info')
+  const isAuthPage = pathname === '/'
+  const isProtectedRoute = pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/exam') ||
+    pathname.startsWith('/profile') ||
+    pathname.startsWith('/round-info')
 
-  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
+  const isAdminRoute = pathname.startsWith('/admin')
 
-  // Redirect to home if accessing protected route without token
-  if (isProtectedRoute && !token) {
-    console.log('No token, redirecting to home')
-    return NextResponse.redirect(new URL('/', request.url))
+  // Allow access to auth page
+  if (isAuthPage) {
+    if (token) {
+      const decoded = decodeJWT(token)
+      console.log('Decoded token on auth page:', decoded)
+      
+      // Redirect authenticated users away from auth page
+      if (decoded?.user?.role === 'ADMIN') {
+        console.log('Admin logged in, redirecting to admin dashboard')
+        return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+      }
+      
+      if (decoded?.user) {
+        console.log('User logged in, redirecting to dashboard')
+        return NextResponse.redirect(new URL('/dashboard', request.url))
+      }
+    }
+    // No token or invalid token, allow access to auth page
+    return NextResponse.next()
   }
 
-  // Check admin role for admin routes
-  if (isAdminRoute) {
+  // Protect routes that require authentication
+  if (isProtectedRoute || isAdminRoute) {
     if (!token) {
-      console.log('Admin route: No token, redirecting to home')
+      console.log('No token found, redirecting to home')
       return NextResponse.redirect(new URL('/', request.url))
     }
-    
+
     const decoded = decodeJWT(token)
-    console.log('Decoded token:', decoded)
     
-    // Check if user has ADMIN role - role is nested in user object
-    if (!decoded || !decoded.user || decoded.user.role !== 'ADMIN') {
-      console.log('Not an admin, redirecting to dashboard')
+    if (!decoded || !decoded.user) {
+      console.log('Invalid token, redirecting to home')
+      // Clear invalid cookie
+      const response = NextResponse.redirect(new URL('/', request.url))
+      response.cookies.delete('token')
+      return response
+    }
+
+    // Check admin routes
+    if (isAdminRoute && decoded.user.role !== 'ADMIN') {
+      console.log('Non-admin trying to access admin route, redirecting to dashboard')
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
-  }
 
-  // Redirect to dashboard if accessing auth page with token
-  if (isAuthPage && token) {
-    const decoded = decodeJWT(token)
-    // Redirect admin to admin dashboard, regular users to user dashboard
-    if (decoded?.user?.role === 'ADMIN') {
+    // Check if regular user is trying to access admin route
+    if (!isAdminRoute && decoded.user.role === 'ADMIN' && pathname.startsWith('/dashboard')) {
+      console.log('Admin trying to access user dashboard, redirecting to admin dashboard')
       return NextResponse.redirect(new URL('/admin/dashboard', request.url))
     }
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+
+    console.log('Authentication successful, allowing access')
   }
 
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/exam/:path*', '/profile/:path*', '/round-info/:path*', '/admin/:path*', '/']
+  matcher: [
+    '/',
+    '/dashboard/:path*',
+    '/exam/:path*',
+    '/profile/:path*',
+    '/round-info/:path*',
+    '/admin/:path*'
+  ]
 }

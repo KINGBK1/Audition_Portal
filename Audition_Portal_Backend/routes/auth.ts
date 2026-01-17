@@ -89,7 +89,7 @@ router.get(
       /* =========================
          REDIRECT LOGIC
       ========================= */
-      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3001";
+      const frontendUrl = process.env.FRONTEND_URL;
       const redirectPath =
         user.role === "ADMIN" ? "/admin/dashboard" : "/dashboard";
       const redirectUrl = `${frontendUrl}${redirectPath}`;
@@ -100,7 +100,7 @@ router.get(
       res.redirect(redirectUrl);
     } catch (error) {
       console.error("AUTH CALLBACK ERROR:", error);
-      res.redirect(process.env.FRONTEND_URL || "http://localhost:3001");
+      res.redirect(process.env.FRONTEND_HOME_URL || "/");
     }
   }
 );

@@ -39,7 +39,7 @@ export const verifyToken = createAsyncThunk(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/verify`,
         {
           method: 'GET',
-          credentials: 'include', // CRITICAL
+          credentials: 'include', 
           headers: {
             'Content-Type': 'application/json',
           },

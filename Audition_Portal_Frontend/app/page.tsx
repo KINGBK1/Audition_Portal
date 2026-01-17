@@ -50,78 +50,58 @@ export default function Home() {
   const dispatch = useAppDispatch();
   const router = useRouter();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Check if token is in URL (from OAuth redirect)
-        const urlParams = new URLSearchParams(window.location.search);
-        const tokenFromUrl = urlParams.get("token");
-        
-        if (tokenFromUrl) {
-          // Store token in localStorage
-          localStorage.setItem("authToken", tokenFromUrl);
-          // Clean up URL
-          window.history.replaceState({}, document.title, window.location.pathname);
+useEffect(() => {
+  const checkAuth = async () => {
+    try {
+      const verified = await dispatch(verifyToken()).unwrap();
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
+        {
+          method: "GET",
+          credentials: "include", 
         }
+      );
 
-        // Check if we have a token before trying to verify
-        const token = localStorage.getItem("authToken");
-        if (!token) {
-          // No token means user is not logged in - show login page
-          setLoading(false);
-          return;
-        }
-
-        //Verify token
-        const verified = await dispatch(verifyToken()).unwrap();
-
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
-          {
-            method: "GET",
-            headers: {
-              "Authorization": `Bearer ${token}`,
-            },
-            credentials: "include",
-          }
-        );
-        const user = await res.json();
-
-        // Redirect logic
-        if (verified.role === "ADMIN") {
-          router.push("/admin/profile");
-          return;
-        }
-
-        // round-based redirect
-        if (user.round >= 2) {
-          console.log(user.round);
-          router.replace("/exam/round2");
-          return;
-        }
-
-        router.push("/dashboard");
-      } catch (err) {
-        console.error("Auth failed:", err);
-        // Clear invalid token
-        localStorage.removeItem("authToken");
-        setLoading(false);
+      if (!res.ok) {
+        throw new Error("Failed to fetch user");
       }
-    };
-  
 
-    checkAuth();
-  }, [dispatch, router]);
+      const user = await res.json();
 
-  function Signin() {
-    const oauthUrl = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_URL;
-    if (oauthUrl) {
-      setLoading(true); // show loader while redirecting
-      window.location.href = oauthUrl;
-    } else {
-      console.error("OAuth URL is not defined");
+      if (verified.role === "ADMIN") {
+        router.replace("/admin/profile");
+        return;
+      }
+
+      if (user.round && user.round >= 2) {
+        router.replace("/exam/round2");
+        return;
+      }
+
+      router.replace("/dashboard");
+    } catch (err) {
+      console.error("Auth failed:", err);
+      setLoading(false); 
     }
+  };
+
+  checkAuth();
+}, [dispatch, router]);
+
+
+function Signin() {
+  const oauthUrl = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_URL;
+
+  if (!oauthUrl) {
+    console.error("OAuth URL is not defined");
+    return;
   }
+
+  setLoading(true); // show loader during redirect
+  window.location.href = oauthUrl;
+}
+
 
   return (
     <div className="h-[100vh] w-full rounded-md flex md:items-center md:justify-center bg-slate-900">

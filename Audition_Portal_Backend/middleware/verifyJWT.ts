@@ -4,12 +4,10 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const getTokenFromRequest = (req: Request): string | undefined => {
-  // Check Authorization header first (for cross-origin requests)
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    return authHeader.substring(7);
-  }
-  // Fallback to cookie (for same-origin requests)
+  // Log cookie presence for debugging
+  console.log("Cookies received:", req.cookies);
+  console.log("Token cookie:", req.cookies?.token ? "present" : "missing");
+  
   return req.cookies?.token;
 };
 
@@ -17,6 +15,7 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
   const token = getTokenFromRequest(req);
 
   if (!token) {
+    console.log("No token found in request");
     return res.status(401).json({ message: "Unauthorized: Missing token" });
   }
 
@@ -29,8 +28,8 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
         return res.status(403).json({ message: "Forbidden: Invalid token" });
       }
 
-      // Save decoded user in req.user
       req.user = (decoded as any).user;
+      console.log("Token verified for user:", req.user?.email);
       next();
     }
   );
@@ -38,23 +37,28 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
 
 export const verifyAdmin = (req: Request, res: Response, next: NextFunction) => {
   const token = getTokenFromRequest(req);
-  if (!token) return res.status(401).json({ message: "Unauthorized: Missing token" });
+  if (!token) {
+    console.log("Admin check: No token");
+    return res.status(401).json({ message: "Unauthorized: Missing token" });
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET as Secret) as JwtPayload;
 
     if (!decoded || (decoded as any).user?.role !== "ADMIN") {
+      console.log("Admin check failed: not admin");
       return res.status(403).json({ message: "Forbidden: Admins only" });
     }
 
     req.user = (decoded as any).user;
+    console.log("Admin verified:", req.user?.email);
     next();
   } catch (error) {
+    console.error("Admin verification error:", error);
     return res.status(403).json({ message: "Forbidden: Invalid token" });
   }
 };
 
-// Middleware to verify MEMBER role
 export const verifyMember = (req: Request, res: Response, next: NextFunction) => {
   const token = getTokenFromRequest(req);
 

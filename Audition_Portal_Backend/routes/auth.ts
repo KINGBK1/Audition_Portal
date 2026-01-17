@@ -16,39 +16,57 @@ router.get(
   })
 );
 
-// GOOGLE AUTH CALLBACK
+// GOOGLE AUTH CALLBACK - WITH DETAILED LOGGING
 router.get(
   "/google/callback",
   passport.authenticate("google", { failureRedirect: "/", session: false }),
   (req: Request, res: Response) => {
-    const user = req.user as any;
-    
-    const token = jwt.sign(
-      { user: req.user },
-      process.env.ACCESS_TOKEN_SECRET as string,
-      { expiresIn: "1d" }
-    );
+    try {
+      const user = req.user as any;
+      
+      console.log("=== AUTH CALLBACK START ===");
+      console.log("User authenticated:", user?.email);
+      console.log("User role:", user?.role);
+      console.log("NODE_ENV:", process.env.NODE_ENV);
+      console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
+      
+      const token = jwt.sign(
+        { user: req.user },
+        process.env.ACCESS_TOKEN_SECRET as string,
+        { expiresIn: "1d" }
+      );
 
-    const isProduction = process.env.NODE_ENV === "production";
-    
-    // Set cookie with correct settings for production
-    res.cookie("token", token, {
-      httpOnly: true,
-      sameSite: isProduction ? "none" : "lax",
-      secure: isProduction, // Must be true for sameSite: "none"
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
-      domain: isProduction ? undefined : undefined, // Let browser handle it
-    });
+      const isProduction = process.env.NODE_ENV === "production";
+      
+      // Cookie configuration
+      const cookieOptions = {
+        httpOnly: true,
+        sameSite: isProduction ? ("none" as const) : ("lax" as const),
+        secure: isProduction,
+        maxAge: 24 * 60 * 60 * 1000, // 1 day
+        path: "/", // IMPORTANT: Add this
+      };
+      
+      console.log("Cookie options:", cookieOptions);
+      
+      // Set cookie
+      res.cookie("token", token, cookieOptions);
+      
+      console.log("Cookie set successfully");
 
-    const role = user.role;
-    
-    // Redirect with token in URL as primary method for cross-origin
-    const redirectUrl = role === "ADMIN" 
-      ? process.env.FRONTEND_ADMIN_REDIRECT_URL || "/admin/profile"
-      : process.env.FRONTEND_REDIRECT_URL || "/profile";
-    
-    // Include token in URL for cross-origin scenario
-    res.redirect(`${redirectUrl}?token=${token}`);
+      // Determine redirect URL
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+      const redirectPath = user.role === "ADMIN" ? "/admin/dashboard" : "/dashboard";
+      const redirectUrl = `${frontendUrl}${redirectPath}`;
+      
+      console.log("Redirecting to:", redirectUrl);
+      console.log("=== AUTH CALLBACK END ===");
+      
+      res.redirect(redirectUrl);
+    } catch (error) {
+      console.error("Auth callback error:", error);
+      res.redirect(process.env.FRONTEND_URL || "http://localhost:3000");
+    }
   }
 );
 
@@ -58,14 +76,14 @@ router.get("/logout", (req, res) => {
     if (err) {
       return res.status(500).json({ success: false, message: "Logout failed" });
     }
-
+    
     const isProduction = process.env.NODE_ENV === "production";
     
-    // Clear the token cookie
     res.clearCookie("token", {
       httpOnly: true,
-      sameSite: isProduction ? "none" : "lax",
+      sameSite: isProduction ? ("none" as const) : ("lax" as const),
       secure: isProduction,
+      path: "/",
     });
 
     res.json({ success: true, message: "Logged out successfully" });

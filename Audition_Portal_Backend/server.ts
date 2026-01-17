@@ -36,24 +36,42 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
+    origin: function (origin, callback) {
+      // Log every request origin for debugging
+      console.log("Request from origin:", origin);
       
-      // Allow all Vercel preview deployments and localhost
-      if (
+      const allowedOrigins = [
+        process.env.FRONTEND_URL,
+        "http://localhost:3000",
+        "http://localhost:3001",
+      ].filter(Boolean);
+      
+      // Allow no origin (mobile apps, curl, postman)
+      if (!origin) {
+        console.log("No origin - allowing");
+        return callback(null, true);
+      }
+      
+      // Check if origin is allowed
+      const isAllowed = 
+        allowedOrigins.some(allowed => origin === allowed) ||
         origin.includes("vercel.app") ||
-        origin.includes("localhost") ||
-        allowedOrigins.includes(origin)
-      ) {
+        origin.includes("localhost");
+      
+      if (isAllowed) {
+        console.log("Origin allowed:", origin);
         callback(null, true);
       } else {
-        callback(new Error("Not allowed by CORS"));
+        console.log("Origin BLOCKED:", origin);
+        callback(new Error(`CORS: Origin ${origin} not allowed`));
       }
     },
-    methods: "GET,POST,PUT,DELETE,PATCH,OPTIONS",
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true, // CRITICAL: Must be true for cookies
+    credentials: true, // CRITICAL
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+    exposedHeaders: ["Set-Cookie"],
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   })
 );
 
@@ -163,7 +181,6 @@ app.put(
     } catch (error) {
       console.error("Error updating user info:", error);
 
-      // --- IMPROVED ERROR HANDLING ---
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         // P2025: Record to update was not found
         if (error.code === "P2025") {

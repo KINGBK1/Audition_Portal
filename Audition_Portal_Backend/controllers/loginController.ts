@@ -45,9 +45,9 @@ app.get("/auth/google/callback",
 
     if (user.role === "ADMIN") {
       console.log(user.role);
-      res.redirect(process.env.FRONTEND_URL + "/admin/profile");
+      res.redirect(process.env.FRONTEND_HOME_URL + "/admin/profile");
     } else {
-      res.redirect(process.env.FRONTEND_URL + "/profile");
+      res.redirect(process.env.FRONTEND_HOME_URL + "/profile");
     }
   }
 );

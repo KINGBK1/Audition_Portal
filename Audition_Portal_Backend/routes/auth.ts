@@ -52,7 +52,7 @@ router.get(
       console.log("User role:", user?.role);
 
       console.log("NODE_ENV:", process.env.NODE_ENV);
-      console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
+      console.log("FRONTEND_URL:", process.env.FRONTEND_HOME_URL);
 
       /* =========================
          JWT CREATION
@@ -89,7 +89,7 @@ router.get(
       /* =========================
          REDIRECT LOGIC
       ========================= */
-      const frontendUrl = process.env.FRONTEND_URL;
+      const frontendUrl = process.env.FRONTEND_HOME_URL;
       const redirectPath =
         user.role === "ADMIN" ? "/admin/dashboard" : "/dashboard";
       const redirectUrl = `${frontendUrl}${redirectPath}`;

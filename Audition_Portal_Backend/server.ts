@@ -29,7 +29,7 @@ app.use(cookieParser());
 const allowedOrigins = [
   "http://localhost:3001",
   "http://localhost:3000",
-  process.env.FRONTEND_URL,
+  process.env.FRONTEND_HOME_URL,
   process.env.FRONTEND_ADMIN_REDIRECT_URL,
   process.env.FRONTEND_REDIRECT_URL,
 ].filter(Boolean); // Remove any undefined values

@@ -1,15 +1,11 @@
 import express, { Request, Response, Router } from "express";
 import passport from "../passport/passport";
 import jwt from "jsonwebtoken";
-import { Role } from "@prisma/client";
 import { verifyJWT } from "../middleware/verifyJWT";
 
 const router = Router();
 require("dotenv").config();
 
-/* =========================
-   GOOGLE AUTH ENTRY POINT
-========================= */
 router.get(
   "/google",
   (req, res, next) => {
@@ -25,16 +21,12 @@ router.get(
   })
 );
 
-/* =========================
-   GOOGLE AUTH CALLBACK
-========================= */
 router.get(
   "/google/callback",
   (req, res, next) => {
     console.log("=== GOOGLE CALLBACK HIT ===");
     console.log("Request origin:", req.headers.origin);
     console.log("Request referer:", req.headers.referer);
-    console.log("Cookies BEFORE passport:", req.cookies);
     next();
   },
   passport.authenticate("google", {
@@ -46,10 +38,7 @@ router.get(
       console.log("=== AUTH CALLBACK HANDLER START ===");
 
       const user = req.user as any;
-
       console.log("User object from passport:", user);
-      console.log("User email:", user?.email);
-      console.log("User role:", user?.role);
 
       const token = jwt.sign(
         { user },
@@ -57,20 +46,16 @@ router.get(
         { expiresIn: "1d" }
       );
 
-      console.log("JWT created (length):", token.length);
-
       const isProduction = process.env.NODE_ENV === "production";
 
-      /* =========================
-         UPDATED COOKIE OPTIONS FOR PRODUCTION
-      ========================= */
+      // CRITICAL FIX: Cookie options for cross-origin
       const cookieOptions = {
         httpOnly: true,
-        sameSite: "none" as const, // CRITICAL for cross-origin
-        secure: true, // MUST be true when sameSite is "none"
+        sameSite: "none" as const,
+        secure: true,
         maxAge: 24 * 60 * 60 * 1000,
         path: "/",
-        domain: isProduction ? ".vercel.app" : undefined, // Share across subdomains
+        domain: isProduction ? ".vercel.app" : undefined,
       };
 
       console.log("Cookie options being used:", cookieOptions);
@@ -78,13 +63,10 @@ router.get(
       res.cookie("token", token, cookieOptions);
       console.log("Set-Cookie header:", res.getHeader("Set-Cookie"));
 
-      /* =========================
-         REDIRECT LOGIC
-      ========================= */
+      // Redirect with token in URL as fallback
       const frontendUrl = process.env.FRONTEND_HOME_URL;
-      const redirectPath =
-        user.role === "ADMIN" ? "/admin/dashboard" : "/dashboard";
-      const redirectUrl = `${frontendUrl}${redirectPath}`;
+      const redirectPath = user.role === "ADMIN" ? "/admin/dashboard" : "/dashboard";
+      const redirectUrl = `${frontendUrl}${redirectPath}?token=${encodeURIComponent(token)}`;
 
       console.log("Redirect URL:", redirectUrl);
       console.log("=== AUTH CALLBACK HANDLER END ===");
@@ -97,9 +79,6 @@ router.get(
   }
 );
 
-/* =========================
-   LOGOUT
-========================= */
 router.get("/logout", (req: Request, res: Response) => {
   console.log("=== LOGOUT REQUEST ===");
   console.log("Cookies before logout:", req.cookies);
@@ -114,9 +93,10 @@ router.get("/logout", (req: Request, res: Response) => {
 
     res.clearCookie("token", {
       httpOnly: true,
-      sameSite: isProduction ? ("none" as const) : ("lax" as const),
-      secure: isProduction,
+      sameSite: "none" as const,
+      secure: true,
       path: "/",
+      domain: isProduction ? ".vercel.app" : undefined,
     });
 
     console.log("Token cookie cleared");
@@ -126,13 +106,26 @@ router.get("/logout", (req: Request, res: Response) => {
   });
 });
 
-/* =========================
-   VERIFY JWT
-========================= */
 router.get("/verify", (req, res, next) => {
   console.log("=== VERIFY ROUTE HIT ===");
   console.log("Request headers:", req.headers);
   console.log("Cookies on verify request:", req.cookies);
+  
+  // Handle token from URL (fallback from OAuth redirect)
+  const urlToken = req.query.token as string;
+  if (urlToken && !req.cookies.token) {
+    const isProduction = process.env.NODE_ENV === "production";
+    res.cookie("token", urlToken, {
+      httpOnly: true,
+      sameSite: "none" as const,
+      secure: true,
+      maxAge: 24 * 60 * 60 * 1000,
+      path: "/",
+      domain: isProduction ? ".vercel.app" : undefined,
+    });
+    req.cookies.token = urlToken;
+  }
+  
   next();
 }, verifyJWT, (req: Request, res: Response) => {
   const user = (req as Request & { user?: any }).user;
@@ -149,6 +142,3 @@ router.get("/verify", (req, res, next) => {
 });
 
 export default router;
-
-
-

@@ -30,18 +30,28 @@ const initialState: AuthState = {
   error: null,
 };
 
-// Verify token from cookie
+// Helper function to get token from cookie
+const getTokenFromCookie = (): string | null => {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(/token=([^;]+)/);
+  return match ? match[1] : null;
+};
+
+// Verify token
 export const verifyToken = createAsyncThunk(
   'auth/verifyToken',
   async (_, { rejectWithValue }) => {
     try {
+      const token = getTokenFromCookie();
+      
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/verify`,
         {
           method: 'GET',
-          credentials: 'include', 
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` })
           },
         }
       );
@@ -63,13 +73,16 @@ export const fetchUserData = createAsyncThunk(
   'auth/fetchUserData',
   async (_, { rejectWithValue }) => {
     try {
+      const token = getTokenFromCookie();
+      
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
         {
           method: 'GET',
-          credentials: 'include', // CRITICAL
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` })
           },
         }
       );
@@ -98,13 +111,16 @@ export const updateUserInfo = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
+      const token = getTokenFromCookie();
+      
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/update-user-info`,
         {
           method: 'PUT',
-          credentials: 'include', // CRITICAL
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` })
           },
           body: JSON.stringify(userData),
         }
@@ -132,12 +148,17 @@ export const logout = createAsyncThunk(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`,
         {
           method: 'GET',
-          credentials: 'include', // CRITICAL
+          credentials: 'include',
         }
       );
 
       if (!response.ok) {
         throw new Error('Logout failed');
+      }
+
+      // Clear cookie on client side as well
+      if (typeof document !== 'undefined') {
+        document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure';
       }
 
       return await response.json();

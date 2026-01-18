@@ -103,28 +103,27 @@ const Dashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
-  async function logout(): Promise<void> {
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
+async function logout(): Promise<void> {
+  try {
+    await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
+      method: "GET",
+      credentials: "include",
+    })
 
-      const data = await res.json();
-
-      if (data.success) {
-        push("/");
-      } else {
-        alert("Logout failed");
-      }
-    } catch (error) {
-      console.error("Error logging out:", error);
-      alert("Error logging out");
-    }
+    // Clear cookies
+    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure'
+    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    
+    push("/")
+  } catch (error) {
+    console.error("Logout error:", error)
+    
+    // Force clear even on error
+    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure'
+    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    push("/")
   }
+}
 
   const hasCompletedQuiz = userInfo?.hasGivenExam && userInfo?.round === 1;
   const isRoundTwo = userInfo?.round === 2;

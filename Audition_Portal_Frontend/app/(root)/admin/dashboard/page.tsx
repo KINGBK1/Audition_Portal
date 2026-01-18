@@ -50,20 +50,27 @@ const AdminDashboard = () => {
     }
   ]
 
-  const handleLogout = async () => {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
-        method: 'GET',
-        credentials: 'include',
-      })
-      
-      if (response.ok) {
-        router.push('/')
-      }
-    } catch (error) {
-      console.error('Error logging out:', error)
-    }
+const handleLogout = async () => {
+  try {
+    await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
+      method: 'GET',
+      credentials: 'include',
+    })
+
+    // Clear cookies (multiple methods)
+    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure'
+    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    
+    router.push('/')
+  } catch (error) {
+    console.error('Logout error:', error)
+    
+    // Force clear even on error
+    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure'
+    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    router.push('/')
   }
+}
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">

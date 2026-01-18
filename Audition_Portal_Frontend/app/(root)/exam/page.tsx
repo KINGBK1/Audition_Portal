@@ -45,9 +45,16 @@ import { useAppDispatch } from "@/lib/hooks";
 import { fetchUserData } from "@/lib/store/features/auth/authSlice";
 // --------------------------------
 
+const getTokenFromCookie = (): string | null => {
+  if (typeof document === 'undefined') return null
+  const match = document.cookie.match(/token=([^;]+)/)
+  return match ? match[1] : null
+}
+
 const Exam = () => {
   const [rulesAccepted, setRulesAccepted] = useState(false);
   const [isExamStarted, setIsExamStarted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(2700); // 45:00 in seconds
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<{
@@ -56,6 +63,7 @@ const Exam = () => {
   const [progress, setProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
   // --- DISPATCH HOOK INITIALIZED ---
@@ -91,57 +99,42 @@ const Exam = () => {
   };
 
   // Fetch questions and options and user from the server
-  useEffect(() => {
+useEffect(() => {
     const fetchQuestions = async () => {
-      setIsLoadingQuestions(true);
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz`,
+        const token = getTokenFromCookie()
+        
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/questions`,
           {
-            method: "GET",
-            credentials: "include",
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token && { 'Authorization': `Bearer ${token}` })
+            },
           }
-        );
+        )
 
-        const data: any = await res.json();
-        setQuestions(data);
-      } catch (e) {
-        toast({
-          variant: "destructive",
-          description: "Failed to load questions, please refresh.",
-        });
-      } finally {
-        setIsLoadingQuestions(false);
-      }
-    };
-    const fetchUser = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
-          {
-            method: "GET",
-            credentials: "include",
-          }
-        );
-        const user = await res.json();
-        // console.log(user)
-        if (user.hasGivenExam) {
-          toast({
-            variant: "destructive",
-            description: "You have already given the exam.",
-          });
-          router.push("/dashboard");
+        if (!response.ok) {
+          throw new Error('Failed to fetch questions')
         }
-      } catch (e) {
-        toast({
-          variant: "destructive",
-          description: "Failed to fetch user data, please refresh.",
-        });
+
+        const data = await response.json()
+        console.log('Questions fetched:', data)
+        
+        // Ensure data is an array
+        setQuestions(Array.isArray(data) ? data : [])
+        setIsLoadingQuestions(false)
+      } catch (error: any) {
+        console.error('Error fetching questions:', error)
+        setError(error.message)
+        setIsLoadingQuestions(false)
       }
-    };
-    fetchUser();
-    fetchQuestions();
-  }, [router]);
+    }
+
+    fetchQuestions()
+  }, [])
 
   const handleFinalSubmit = async () => {
     if (isSubmitting) return;

@@ -52,7 +52,9 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
       console.log("verifyJWT SUCCESS");
       console.log("Decoded payload:", decoded);
 
-      req.user = (decoded as any).user;
+      // CRITICAL FIX: Set req.user correctly
+      const payload = decoded as any;
+      req.user = payload.user; // The user object is nested inside the payload
       console.log("Attached req.user:", req.user);
 
       next();
@@ -78,13 +80,15 @@ export const verifyAdmin = (req: Request, res: Response, next: NextFunction) => 
 
     console.log("Decoded payload:", decoded);
 
-    if (!decoded || (decoded as any).user?.role !== "ADMIN") {
+    // CRITICAL FIX: Check role from nested user object
+    const payload = decoded as any;
+    if (!payload || !payload.user || payload.user.role !== "ADMIN") {
       console.log("verifyAdmin FAILED → Not ADMIN");
-      console.log("User role:", (decoded as any).user?.role);
+      console.log("User role:", payload?.user?.role);
       return res.status(403).json({ message: "Forbidden: Admins only" });
     }
 
-    req.user = (decoded as any).user;
+    req.user = payload.user;
     console.log("verifyAdmin SUCCESS →", req.user);
 
     next();
@@ -95,7 +99,6 @@ export const verifyAdmin = (req: Request, res: Response, next: NextFunction) => 
   }
 };
 
-// Middleware to verify MEMBER role
 export const verifyMember = (req: Request, res: Response, next: NextFunction) => {
   console.log("==== verifyMember ====");
   console.log("Request path:", req.path);
@@ -115,9 +118,11 @@ export const verifyMember = (req: Request, res: Response, next: NextFunction) =>
 
     console.log("Decoded payload:", decoded);
 
-    if (!decoded || (decoded as any).user?.role !== "MEMBER") {
+    // CRITICAL FIX: Check role from nested user object
+    const payload = decoded as any;
+    if (!payload || !payload.user || payload.user.role !== "MEMBER") {
       console.log("verifyMember FAILED → Not MEMBER");
-      console.log("User role:", (decoded as any).user?.role);
+      console.log("User role:", payload?.user?.role);
 
       console.log("Clearing token cookie");
       res.clearCookie("token");
@@ -125,7 +130,7 @@ export const verifyMember = (req: Request, res: Response, next: NextFunction) =>
       return res.status(403).json({ message: "Forbidden: Members only." });
     }
 
-    req.user = (decoded as any).user;
+    req.user = payload.user;
     console.log("verifyMember SUCCESS →", req.user);
 
     next();

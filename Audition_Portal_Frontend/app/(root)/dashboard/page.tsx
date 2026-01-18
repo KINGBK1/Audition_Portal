@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react'
 import { CheckCircle2, ArrowRight, Trophy, Sparkles, Star } from 'lucide-react';
+// import ClientVerify from '@/components/ClientVerify';
 
 const Dashboard = () => {
   const calculateTimeLeft = () => {
@@ -137,7 +138,9 @@ const Dashboard = () => {
   };
 
   return (
+    
     <div>
+      {/* <ClientVerify /> */}
       {isLoading ? (
         <Loader />
       ) : (

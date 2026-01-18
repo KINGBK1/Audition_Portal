@@ -1,13 +1,7 @@
+// next.config.mjs
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    images: {
-        domains: ['lh3.googleusercontent.com'],
-        formats: ['image/avif', 'image/webp'],
-    }
-};
-
-// next.config.mjs
-export default {
   images: {
     remotePatterns: [
       {
@@ -21,6 +15,25 @@ export default {
         hostname: "**",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+        port: "",
+        pathname: "/**",
+      },
     ],
+    formats: ["image/avif", "image/webp"],
+  },
+
+  // Proxy API calls under /api/* to your backend
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: "https://audition-portal-jj3t.onrender.com/:path*",
+      },
+    ];
   },
 };
+
+export default nextConfig;

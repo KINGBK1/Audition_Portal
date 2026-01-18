@@ -165,7 +165,7 @@ app.put(
         // FIXED: Cookie settings for production
         res.cookie("token", newToken, {
           httpOnly: true,
-          sameSite: isProduction ? "none" : "lax",
+          sameSite: "none" as const,
           secure: isProduction, // Must be true in production
           maxAge: 24 * 60 * 60 * 1000, // 1 day
           path: "/",

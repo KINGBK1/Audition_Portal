@@ -41,7 +41,7 @@ app.get("/auth/google/callback",
     );
 
 
-    res.cookie("token", token, { httpOnly: true, sameSite: "lax" });
+    res.cookie("token", token, { httpOnly: true, sameSite: "none" });
 
     if (user.role === "ADMIN") {
       console.log(user.role);

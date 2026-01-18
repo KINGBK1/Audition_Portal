@@ -6,8 +6,8 @@ function decodeJWT(token: string) {
   try {
     const base64Url = token.split('.')[1]
     if (!base64Url) return null
-    
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const jsonPayload = decodeURIComponent(
       atob(base64)
         .split('')
@@ -25,9 +25,9 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   console.log('Middleware executed for path:', pathname)
 
-  const token = request.cookies.get('token')?.value
-  console.log('Token exists:', !!token)
-   console.log('All cookies:', request.cookies.getAll())
+  const token = request.cookies.get('token')?.value;
+  console.log('Token exists:', !!token);
+  console.log('All cookies:', request.cookies.getAll())
 
   const isAuthPage = pathname === '/'
   const isProtectedRoute = pathname.startsWith('/dashboard') ||
@@ -42,13 +42,13 @@ export function middleware(request: NextRequest) {
     if (token) {
       const decoded = decodeJWT(token)
       console.log('Decoded token on auth page:', decoded)
-      
+
       // Redirect authenticated users away from auth page
       if (decoded?.user?.role === 'ADMIN') {
         console.log('Admin logged in, redirecting to admin dashboard')
         return NextResponse.redirect(new URL('/admin/dashboard', request.url))
       }
-      
+
       if (decoded?.user) {
         console.log('User logged in, redirecting to dashboard')
         return NextResponse.redirect(new URL('/dashboard', request.url))
@@ -61,15 +61,17 @@ export function middleware(request: NextRequest) {
   // Protect routes that require authentication
   if (isProtectedRoute || isAdminRoute) {
     if (!token) {
-      console.log('No token found, redirecting to home')
-      return NextResponse.redirect(new URL('/', request.url))
+      // IMPORTANT CHANGE: Don't redirect here — the token may be set only on the backend domain.
+      // Let the client perform verification. This prevents incorrect redirects when the cookie
+      // is stored on the backend origin.
+      console.log('No token found in middleware — allowing request. Client will verify after load.');
+      return NextResponse.next();
     }
 
     const decoded = decodeJWT(token)
-    
+
     if (!decoded || !decoded.user) {
-      console.log('Invalid token, redirecting to home')
-      // Clear invalid cookie
+      console.log('Invalid token, redirecting to home and clearing cookie')
       const response = NextResponse.redirect(new URL('/', request.url))
       response.cookies.delete('token')
       return response

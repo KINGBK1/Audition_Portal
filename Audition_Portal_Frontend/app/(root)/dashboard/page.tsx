@@ -71,7 +71,16 @@ const Dashboard = () => {
         await dispatch(verifyToken()).unwrap();
 
         // 2. Fetch the absolute latest user data from the server
-        await dispatch(fetchUserData()).unwrap();
+        const userData = await dispatch(fetchUserData()).unwrap();
+        
+        // 3. Check if profile is complete
+        const isProfileComplete = userData.contact && userData.gender && userData.specialization;
+        
+        if (!isProfileComplete) {
+          // Redirect to profile page if incomplete
+          push("/profile");
+          return;
+        }
       } catch (error) {
         // If verifyToken or fetchUserData fails, redirect to login page
         push("/");

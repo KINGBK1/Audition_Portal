@@ -18,10 +18,11 @@ passport.use(
       clientID: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       //change this to your callback URL
-      callbackURL:
-        process.env.NODE_ENV === "production"
-          ? "https://audition-portal-jj3t.onrender.com/auth/google/callback"
-          : "/auth/google/callback",
+      // callbackURL:
+      //   process.env.NODE_ENV === "production"
+      //     ? "https://audition-portal-jj3t.onrender.com/auth/google/callback"
+      //     : "/auth/google/callback",
+      callbackURL: process.env.BACKEND_REDIRECT_URL!,
       passReqToCallback: true,
     },
     async (req, accessToken, refreshToken, profile, done) => {
@@ -44,13 +45,6 @@ passport.use(
 
         //  1. Validate email domain
         if (!verifyEmail(userEmail)) {
-          console.log(
-            "Attempted login with:",
-            userEmail,
-            "Valid:",
-            verifyEmail(userEmail)
-          );
-
           return done(null, false, {
             message: "You are not a first-year student at NIT Durgapur.",
           });
@@ -84,7 +78,6 @@ passport.use(
 
         return done(null, user); // Type-safe user return
       } catch (err) {
-        console.error("GoogleStrategy Error:", err);
         return done(err as Error); // Explicitly return null if error
       }
     }

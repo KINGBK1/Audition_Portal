@@ -19,8 +19,6 @@ dotenv.config();
 
 const app = express();
 
-console.log("Prisma DB URL:", process.env.DATABASE_URL);
-
 const prisma = new PrismaClient();
 
 app.use(cookieParser());
@@ -37,9 +35,6 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Log every request origin for debugging
-      console.log("Request from origin:", origin);
-      
       const allowedOrigins = [
         process.env.FRONTEND_URL,
         "http://localhost:3000",
@@ -48,7 +43,6 @@ app.use(
       
       // Allow no origin (mobile apps, curl, postman)
       if (!origin) {
-        console.log("No origin - allowing");
         return callback(null, true);
       }
       
@@ -59,10 +53,8 @@ app.use(
         origin.includes("localhost");
       
       if (isAllowed) {
-        console.log("Origin allowed:", origin);
         callback(null, true);
       } else {
-        console.log("Origin BLOCKED:", origin);
         callback(new Error(`CORS: Origin ${origin} not allowed`));
       }
     },
@@ -91,9 +83,8 @@ app.use(passport.session());
 async function connectToDatabase() {
   try {
     await prisma.$connect();
-    console.log("Connected to the database");
   } catch (err) {
-    console.error(err);
+    // Silent fail - check logs for errors
   }
 }
 
@@ -229,6 +220,5 @@ const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, () => {
   connectToDatabase();
-  console.log("Server is running on port", PORT);
 });
 

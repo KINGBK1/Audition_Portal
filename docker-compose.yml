@@ -1,0 +1,48 @@
+version: '3.8'
+
+networks:
+  audition-portal:
+    driver: bridge
+
+services:
+  backend:
+    build: ./Audition_Portal_Backend
+    container_name: audition-backend
+    environment:
+      - TZ=Asia/Kolkata
+      - NODE_ENV=production
+    env_file:
+      - ./Audition_Portal_Backend/.env
+    ports:
+      - "8080:8080"
+    networks:
+      - audition-portal
+    volumes:
+      - logs_data:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build: ./Audition_Portal_Frontend
+    container_name: audition-frontend
+    environment:
+      - TZ=Asia/Kolkata
+      - NODE_ENV=production
+    env_file:
+      - ./Audition_Portal_Frontend/.env
+    ports:
+      - "3000:3000"
+    networks:
+      - audition-portal
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  logs_data:

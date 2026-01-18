@@ -51,12 +51,6 @@ router.get(
       console.log("User email:", user?.email);
       console.log("User role:", user?.role);
 
-      console.log("NODE_ENV:", process.env.NODE_ENV);
-      console.log("FRONTEND_URL:", process.env.FRONTEND_HOME_URL);
-
-      /* =========================
-         JWT CREATION
-      ========================= */
       const token = jwt.sign(
         { user },
         process.env.ACCESS_TOKEN_SECRET as string,
@@ -68,22 +62,19 @@ router.get(
       const isProduction = process.env.NODE_ENV === "production";
 
       /* =========================
-         COOKIE OPTIONS
+         UPDATED COOKIE OPTIONS FOR PRODUCTION
       ========================= */
       const cookieOptions = {
         httpOnly: true,
-        sameSite: "none" as const,
-        secure: true,
+        sameSite: "none" as const, // CRITICAL for cross-origin
+        secure: true, // MUST be true when sameSite is "none"
         maxAge: 24 * 60 * 60 * 1000,
         path: "/",
-        // domain: 
+        domain: isProduction ? ".vercel.app" : undefined, // Share across subdomains
       };
 
       console.log("Cookie options being used:", cookieOptions);
 
-      /* =========================
-         SET COOKIE
-      ========================= */
       res.cookie("token", token, cookieOptions);
       console.log("Set-Cookie header:", res.getHeader("Set-Cookie"));
 
@@ -158,3 +149,6 @@ router.get("/verify", (req, res, next) => {
 });
 
 export default router;
+
+
+

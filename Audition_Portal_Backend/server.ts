@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import passport from "./passport/passport";
 import session from "express-session";
-import { PrismaClient, Prisma, User as PrismaUser } from "@prisma/client"; // Added 'Prisma' for error handling
+import { PrismaClient, Prisma, User as PrismaUser } from "@prisma/client";
 import registerRouter from "./routes/register";
 import authRouter from "./routes/auth";
 import quizRouter from "./routes/quiz";
@@ -25,28 +25,22 @@ const prisma = new PrismaClient();
 
 app.use(cookieParser());
 
-// Dynamic CORS configuration
-const allowedOrigins = [
-  "http://localhost:3001",
-  "http://localhost:3000",
-  process.env.FRONTEND_HOME_URL,
-  process.env.FRONTEND_ADMIN_REDIRECT_URL,
-  process.env.FRONTEND_REDIRECT_URL,
-].filter(Boolean); // Remove any undefined values
+const isProduction = process.env.NODE_ENV === "production";
 
+// CORS configuration
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Log every request origin for debugging
       console.log("Request from origin:", origin);
       
       const allowedOrigins = [
-        process.env.FRONTEND_URL,
+        process.env.FRONTEND_HOME_URL,
+        "https://audition-portal-gamma.vercel.app",
         "http://localhost:3000",
         "http://localhost:3001",
       ].filter(Boolean);
       
-      // Allow no origin (mobile apps, curl, postman)
+      // Allow no origin (for server-to-server requests, Postman, etc.)
       if (!origin) {
         console.log("No origin - allowing");
         return callback(null, true);
@@ -66,7 +60,7 @@ app.use(
         callback(new Error(`CORS: Origin ${origin} not allowed`));
       }
     },
-    credentials: true, // CRITICAL
+    credentials: true, // CRITICAL - allows cookies
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
     exposedHeaders: ["Set-Cookie"],
@@ -76,12 +70,17 @@ app.use(
 );
 
 app.use(express.json());
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "your-secret-key",
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: false }, // Set secure to true if using HTTPS
+    cookie: { 
+      secure: isProduction, // Secure in production
+      sameSite: isProduction ? "none" : "lax", // "none" for cross-origin in production
+      httpOnly: true,
+    },
   })
 );
 
@@ -99,7 +98,6 @@ async function connectToDatabase() {
 
 app.get("/api/user", verifyJWT, async (req: Request, res: Response) => {
   try {
-    // Cast req.user to your PrismaUser model specifically
     const user = req.user as PrismaUser | undefined;
 
     if (!user || !user.id) {
@@ -128,13 +126,11 @@ app.get("/api/verify-admin", verifyAdmin, (req, res) => {
   });
 });
 
-// Added a basic response for the root path
 app.get("/", (req, res) => {
   res.send("API is running.");
 });
 
 app.get("/api/verify-token", verifyJWT, (req, res) => {
-  // If the token is valid, the verifyJWT middleware will allow this function to run
   res.json({
     message: "Token is valid",
     user: (req as unknown as Request & { user: any }).user,
@@ -148,12 +144,9 @@ app.put(
     const { contact, gender, specialization } = req.body;
 
     try {
-      // Get user ID from authenticated request
       if (req?.user) {
-        // Use destructuring and type assertion for clarity
         const { id: userId } = req.user as PrismaUser;
 
-        // Update user in database using Prisma
         const updatedUser = await prisma.user.update({
           where: { id: userId },
           data: {
@@ -168,10 +161,15 @@ app.put(
           process.env.ACCESS_TOKEN_SECRET as string,
           { expiresIn: "1d" }
         );
+        
+        // FIXED: Cookie settings for production
         res.cookie("token", newToken, {
           httpOnly: true,
-          sameSite: "lax",
-          secure: process.env.NODE_ENV === "production",
+          sameSite: isProduction ? "none" : "lax",
+          secure: isProduction, // Must be true in production
+          maxAge: 24 * 60 * 60 * 1000, // 1 day
+          path: "/",
+          domain: isProduction ? ".vercel.app" : undefined,
         });
 
         res.json(updatedUser);
@@ -182,13 +180,11 @@ app.put(
       console.error("Error updating user info:", error);
 
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        // P2025: Record to update was not found
         if (error.code === "P2025") {
           return res
             .status(404)
             .json({ error: "User not found or session invalid." });
         }
-        // P2002: Unique constraint failure (e.g., trying to set contact to an already existing number)
         if (error.code === "P2002") {
           return res
             .status(400)
@@ -196,13 +192,11 @@ app.put(
               error: "Validation failed: A user with this data already exists.",
             });
         }
-        // General Prisma validation error (e.g., wrong type)
         return res
           .status(400)
           .json({ error: "Invalid data provided for update." });
       }
 
-      // 500 for all other, unexpected errors
       res
         .status(500)
         .json({
@@ -231,4 +225,3 @@ app.listen(PORT, () => {
   connectToDatabase();
   console.log("Server is running on port", PORT);
 });
-

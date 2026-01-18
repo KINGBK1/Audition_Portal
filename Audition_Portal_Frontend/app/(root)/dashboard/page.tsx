@@ -75,7 +75,7 @@ const Dashboard = () => {
         await dispatch(fetchUserData()).unwrap();
       } catch (error) {
         // If verifyToken or fetchUserData fails, redirect to login page
-        push("/");
+        push("/dashboard");
       } finally {
         // Ensure loading screen is dismissed
         setIsLoading(false);

@@ -169,7 +169,7 @@ app.put(
           secure: isProduction, // Must be true in production
           maxAge: 24 * 60 * 60 * 1000, // 1 day
           path: "/",
-          domain: isProduction ? ".vercel.app" : undefined,
+          // domain: isProduction ? ".vercel.app" : undefined,
         });
 
         res.json(updatedUser);

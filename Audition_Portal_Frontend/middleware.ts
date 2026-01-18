@@ -27,6 +27,7 @@ export function middleware(request: NextRequest) {
 
   const token = request.cookies.get('token')?.value
   console.log('Token exists:', !!token)
+   console.log('All cookies:', request.cookies.getAll())
 
   const isAuthPage = pathname === '/'
   const isProtectedRoute = pathname.startsWith('/dashboard') ||

@@ -160,7 +160,7 @@ useEffect(() => {
     fetchQuestions()
   }, [])
 
-  const handleFinalSubmit = async () => {
+const handleFinalSubmit = async () => {
   if (isSubmitting) return;
   setIsSubmitting(true);
 
@@ -173,7 +173,6 @@ useEffect(() => {
       })
     );
 
-    // CRITICAL: Get token from cookie for Authorization header
     const token = getTokenFromCookie();
 
     const response = await fetch(
@@ -182,9 +181,9 @@ useEffect(() => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }), // Add token to header
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
-        credentials: "include", // Also send cookies
+        credentials: "include",
         body: JSON.stringify({ answers: formattedAnswers }),
       }
     );
@@ -202,14 +201,21 @@ useEffect(() => {
       description: "Exam submitted successfully.",
     });
 
+    // CRITICAL: Close exam UI first
     setIsExamStarted(false);
+    
+    // Wait for UI to settle
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
-    // Refresh user data to update hasGivenExam status
+    // Force fetch fresh user data from server
     await dispatch(fetchUserData()).unwrap();
+    
+    // Additional delay to ensure Redux state updates
     await new Promise((resolve) => setTimeout(resolve, 300));
 
-    // Navigate to dashboard - will show "Quiz Completed" screen
-    router.push("/dashboard");
+    // Force navigation with full page reload to ensure fresh state
+    window.location.href = '/dashboard';
+    
   } catch (error) {
     console.error("Error submitting exam:", error);
     toast({
@@ -217,9 +223,9 @@ useEffect(() => {
       variant: "destructive",
       description: "Failed to submit answers. Please try again.",
     });
-  } finally {
-    setIsSubmitting(false);
+    setIsSubmitting(false); // Only reset on error
   }
+  // Don't reset isSubmitting on success - we're navigating away
 };
 
   const handleAutoSubmit = async () => {

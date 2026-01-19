@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react'
 import { CheckCircle2, ArrowRight, Trophy, Sparkles, Star } from 'lucide-react';
+import { resetAuth } from '@/lib/store/features/auth/authSlice';
 // import ClientVerify from '@/components/ClientVerify';
 
 const Dashboard = () => {
@@ -68,8 +69,10 @@ useEffect(() => {
   const initializeDashboard = async () => {
     setIsLoading(true);
     try {
-      // AuthProvider already verified token, just fetch latest user data
+      // CRITICAL: Always fetch fresh user data from server on mount
       await dispatch(fetchUserData()).unwrap();
+      
+      console.log("Dashboard loaded - user data:", userInfo);
     } catch (error) {
       console.error("Failed to fetch user data:", error);
       // AuthProvider will handle redirect if auth fails
@@ -79,7 +82,7 @@ useEffect(() => {
   };
 
   initializeDashboard();
-}, [dispatch]);
+}, [dispatch]); // Remove userInfo dependency to avoid loops
   // useEffect(() => {
   //   if (!isLoading && userInfo) {
   //     if (userInfo.round === 2) {
@@ -99,26 +102,34 @@ useEffect(() => {
 
 async function logout(): Promise<void> {
   try {
+    // Call backend logout
     await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
       method: "GET",
       credentials: "include",
-    })
+    });
 
-    // Clear cookies
-    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure'
-    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    // Clear all cookies (multiple methods for reliability)
+    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure';
+    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
     
-    push("/")
+    // Clear Redux state
+    dispatch(resetAuth()); // CRITICAL: Reset auth state
+    
+    // Small delay to ensure state clears
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Force navigation to home
+    window.location.href = '/';
   } catch (error) {
-    console.error("Logout error:", error)
+    console.error("Logout error:", error);
     
-    // Force clear even on error
-    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure'
-    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
-    push("/")
+    // Force logout even on error
+    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure';
+    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    dispatch(resetAuth());
+    window.location.href = '/';
   }
 }
-
   const hasCompletedQuiz = userInfo?.hasGivenExam && userInfo?.round === 1;
   const isRoundTwo = userInfo?.round === 2;
   const isRoundThreeOrHigher = userInfo?.round && userInfo.round >= 3;

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
-import { selectAuthState, fetchUserData} from '@/lib/store/features/auth/authSlice'
+import { selectAuthState, fetchUserData , resetAuth} from '@/lib/store/features/auth/authSlice'
 import { ChevronRight, Users, ClipboardList, FileText, Award, LogOut, User } from 'lucide-react'
 import { useEffect } from 'react'
 
@@ -64,20 +64,25 @@ const handleLogout = async () => {
     await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
       method: 'GET',
       credentials: 'include',
-    })
+    });
 
-    // Clear cookies (multiple methods)
-    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure'
-    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    // Clear cookies
+    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure';
+    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
     
-    router.push('/')
+    // Clear Redux state
+    dispatch(resetAuth());
+    
+    // Force navigation
+    window.location.href = '/';
   } catch (error) {
-    console.error('Logout error:', error)
+    console.error('Logout error:', error);
     
-    // Force clear even on error
-    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure'
-    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
-    router.push('/')
+    // Force logout even on error
+    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure';
+    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    dispatch(resetAuth());
+    window.location.href = '/';
   }
 }
 

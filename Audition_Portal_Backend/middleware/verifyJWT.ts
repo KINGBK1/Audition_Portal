@@ -52,9 +52,20 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
       console.log("verifyJWT SUCCESS");
       console.log("Decoded payload:", decoded);
 
-      // CRITICAL FIX: Set req.user correctly
+      // CRITICAL FIX: Check if payload has nested user object or is direct
       const payload = decoded as any;
-      req.user = payload.user; // The user object is nested inside the payload
+      
+      if (payload.user) {
+        // Token format: { user: { id, role, email } }
+        req.user = payload.user;
+      } else if (payload.id || payload.email) {
+        // Token format: { id, role, email } (direct)
+        req.user = payload;
+      } else {
+        console.error("Invalid token structure:", payload);
+        return res.status(403).json({ message: "Forbidden: Invalid token structure" });
+      }
+      
       console.log("Attached req.user:", req.user);
 
       next();
@@ -80,15 +91,25 @@ export const verifyAdmin = (req: Request, res: Response, next: NextFunction) => 
 
     console.log("Decoded payload:", decoded);
 
-    // CRITICAL FIX: Check role from nested user object
+    // CRITICAL FIX: Handle both token formats
     const payload = decoded as any;
-    if (!payload || !payload.user || payload.user.role !== "ADMIN") {
-      console.log("verifyAdmin FAILED → Not ADMIN");
-      console.log("User role:", payload?.user?.role);
+    let userRole: string | undefined;
+    
+    if (payload.user) {
+      req.user = payload.user;
+      userRole = payload.user.role;
+    } else if (payload.role) {
+      req.user = payload;
+      userRole = payload.role;
+    }
+
+    console.log("User role:", userRole);
+
+    if (!userRole || userRole !== "ADMIN") {
+      console.log("verifyAdmin FAILED → Not ADMIN, role is:", userRole);
       return res.status(403).json({ message: "Forbidden: Admins only" });
     }
 
-    req.user = payload.user;
     console.log("verifyAdmin SUCCESS →", req.user);
 
     next();
@@ -118,11 +139,21 @@ export const verifyMember = (req: Request, res: Response, next: NextFunction) =>
 
     console.log("Decoded payload:", decoded);
 
-    // CRITICAL FIX: Check role from nested user object
+    // CRITICAL FIX: Handle both token formats
     const payload = decoded as any;
-    if (!payload || !payload.user || payload.user.role !== "MEMBER") {
+    let userRole: string | undefined;
+    
+    if (payload.user) {
+      req.user = payload.user;
+      userRole = payload.user.role;
+    } else if (payload.role) {
+      req.user = payload;
+      userRole = payload.role;
+    }
+
+    if (!userRole || userRole !== "MEMBER") {
       console.log("verifyMember FAILED → Not MEMBER");
-      console.log("User role:", payload?.user?.role);
+      console.log("User role:", userRole);
 
       console.log("Clearing token cookie");
       res.clearCookie("token");
@@ -130,7 +161,6 @@ export const verifyMember = (req: Request, res: Response, next: NextFunction) =>
       return res.status(403).json({ message: "Forbidden: Members only." });
     }
 
-    req.user = payload.user;
     console.log("verifyMember SUCCESS →", req.user);
 
     next();

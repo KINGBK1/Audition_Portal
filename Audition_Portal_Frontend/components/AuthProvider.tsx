@@ -16,68 +16,77 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const publicRoutes = ['/', '/login']
   const isPublicRoute = publicRoutes.includes(pathname)
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      // CRITICAL: Check URL for token from OAuth redirect
-      const urlParams = new URLSearchParams(window.location.search)
-      const tokenFromUrl = urlParams.get('token')
+useEffect(() => {
+  const checkAuth = async () => {
+    // CRITICAL: Check URL for token from OAuth redirect
+    const urlParams = new URLSearchParams(window.location.search)
+    const tokenFromUrl = urlParams.get('token')
+    
+    if (tokenFromUrl) {
+      // Store token in cookie with correct attributes for cross-origin
+      document.cookie = `token=${tokenFromUrl}; Path=/; SameSite=None; Secure; Max-Age=86400`
       
-      if (tokenFromUrl) {
-        // Store token in cookie with correct attributes for cross-origin
-        document.cookie = `token=${tokenFromUrl}; Path=/; SameSite=None; Secure; Max-Age=86400`
-        
-        // Clean URL to remove token parameter
-        const cleanUrl = window.location.pathname
-        window.history.replaceState({}, '', cleanUrl)
-      }
+      // Clean URL to remove token parameter
+      const cleanUrl = window.location.pathname
+      window.history.replaceState({}, '', cleanUrl)
+    }
+    
+    try {
+      // Verify token with backend
+      const userData = await dispatch(verifyToken()).unwrap()
+      console.log("✅ Auth verified - User data:", userData);
+      console.log("✅ User role:", userData?.role);
       
-      try {
-        // Verify token with backend
-        await dispatch(verifyToken()).unwrap()
-        setIsVerifying(false)
-      } catch (error) {
-        console.error('Auth verification failed:', error)
-        setIsVerifying(false)
-        
-        // Only redirect to home if trying to access protected route
-        if (!isPublicRoute) {
-          router.push('/')
-        }
+      setIsVerifying(false)
+    } catch (error) {
+      console.error('❌ Auth verification failed:', error)
+      setIsVerifying(false)
+      
+      // Only redirect to home if trying to access protected route
+      if (!isPublicRoute) {
+        router.push('/')
       }
     }
+  }
 
-    checkAuth()
-  }, [dispatch, pathname, router, isPublicRoute])
+  checkAuth()
+}, [dispatch, pathname, router, isPublicRoute])
 
   // Handle role-based redirects
-  useEffect(() => {
-    if (isVerifying) return
+useEffect(() => {
+  if (isVerifying) return
 
-    // Authenticated users on public routes → redirect to dashboard
-    if (isAuthenticated && isPublicRoute) {
-      const targetRoute = userInfo?.role === 'ADMIN' ? '/admin/dashboard' : '/dashboard'
-      router.push(targetRoute)
-      return
-    }
+  // Authenticated users on public routes → redirect to dashboard
+  if (isAuthenticated && isPublicRoute) {
+    const targetRoute = userInfo?.role === 'ADMIN' ? '/admin/dashboard' : '/dashboard'
+    router.push(targetRoute)
+    return
+  }
 
-    // Unauthenticated users on protected routes → redirect to home
-    if (!isAuthenticated && !isPublicRoute) {
-      router.push('/')
-      return
-    }
+  // Unauthenticated users on protected routes → redirect to home
+  if (!isAuthenticated && !isPublicRoute) {
+    router.push('/')
+    return
+  }
 
-    // Admin route protection: Regular users can't access /admin/*
-    if (isAuthenticated && pathname.startsWith('/admin') && userInfo?.role !== 'ADMIN') {
-      router.push('/dashboard')
-      return
-    }
+  // CRITICAL: Block exam access if already completed
+  if (isAuthenticated && pathname === '/exam' && userInfo?.hasGivenExam) {
+    router.push('/dashboard')
+    return
+  }
 
-    // Reverse protection: Admins shouldn't see regular dashboard
-    if (isAuthenticated && pathname.startsWith('/dashboard') && userInfo?.role === 'ADMIN') {
-      router.push('/admin/dashboard')
-      return
-    }
-  }, [isAuthenticated, isPublicRoute, isVerifying, pathname, userInfo, router])
+  // Admin route protection: Regular users can't access /admin/*
+  if (isAuthenticated && pathname.startsWith('/admin') && userInfo?.role !== 'ADMIN') {
+    router.push('/dashboard')
+    return
+  }
+
+  // Reverse protection: Admins shouldn't see regular dashboard
+  if (isAuthenticated && pathname === '/dashboard' && userInfo?.role === 'ADMIN') {
+    router.push('/admin/dashboard')
+    return
+  }
+}, [isAuthenticated, isPublicRoute, isVerifying, pathname, userInfo, router])
 
   // Loading state while verifying
   if (isVerifying) {

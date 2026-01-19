@@ -122,6 +122,45 @@ useEffect(() => {
   };
 }, [isExamStarted]);
 
+// CRITICAL: Prevent access if exam already completed
+useEffect(() => {
+  const checkExamAccess = async () => {
+    try {
+      const token = getTokenFromCookie();
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
+        {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { Authorization: `Bearer ${token}` })
+          },
+        }
+      );
+
+      if (response.ok) {
+        const userData = await response.json();
+        
+        // If user already gave exam, redirect to dashboard
+        if (userData.hasGivenExam) {
+          console.log("User already completed exam - redirecting to dashboard");
+          toast({
+            className: "dark",
+            variant: "destructive",
+            description: "You have already completed the exam.",
+          });
+          router.push('/dashboard');
+        }
+      }
+    } catch (error) {
+      console.error("Failed to verify exam access:", error);
+    }
+  };
+
+  checkExamAccess();
+}, [router]);
+
   // Fetch questions and options and user from the server
 useEffect(() => {
     const fetchQuestions = async () => {

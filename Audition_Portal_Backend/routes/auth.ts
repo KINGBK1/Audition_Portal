@@ -40,15 +40,23 @@ router.get(
       const user = req.user as any;
       console.log("User object from passport:", user);
 
+      // CRITICAL FIX: Sign token with user object nested
       const token = jwt.sign(
-        { user },
+        { 
+          user: {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            username: user.username
+          }
+        },
         process.env.ACCESS_TOKEN_SECRET as string,
         { expiresIn: "1d" }
       );
 
       const isProduction = process.env.NODE_ENV === "production";
 
-      // CRITICAL FIX: Cookie options for cross-origin
+      // Cookie options for cross-origin
       const cookieOptions = {
         httpOnly: true,
         sameSite: "none" as const,
@@ -59,6 +67,7 @@ router.get(
       };
 
       console.log("Cookie options being used:", cookieOptions);
+      console.log("User role:", user.role);
 
       res.cookie("token", token, cookieOptions);
       console.log("Set-Cookie header:", res.getHeader("Set-Cookie"));

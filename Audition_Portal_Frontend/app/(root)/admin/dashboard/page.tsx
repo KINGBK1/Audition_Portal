@@ -1,28 +1,44 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
-import { selectAuthState, fetchUserData , resetAuth} from '@/lib/store/features/auth/authSlice'
+import { selectAuthState, fetchUserData, resetAuth } from '@/lib/store/features/auth/authSlice'
 import { ChevronRight, Users, ClipboardList, FileText, Award, LogOut, User } from 'lucide-react'
-import { useEffect } from 'react'
-
 
 const AdminDashboard = () => {
   const router = useRouter()
   const dispatch = useAppDispatch()
-  const { userInfo } = useAppSelector(selectAuthState)
+  const { userInfo, isAuthenticated } = useAppSelector(selectAuthState)
 
+  // Fetch admin data on mount
   useEffect(() => {
-  // Fetch latest user data on mount
-  dispatch(fetchUserData()).catch(err => {
-    console.error("Failed to fetch admin data:", err);
-  });
-}, [dispatch]);
+    const loadAdminData = async () => {
+      try {
+        await dispatch(fetchUserData()).unwrap();
+        console.log("Admin data loaded:", userInfo);
+      } catch (error) {
+        console.error("Failed to fetch admin data:", error);
+      }
+    };
+
+    if (isAuthenticated) {
+      loadAdminData();
+    }
+  }, [dispatch, isAuthenticated]);
+
+  // Debug logging
+  useEffect(() => {
+    console.log("Admin Dashboard State:", {
+      isAuthenticated,
+      userRole: userInfo?.role,
+      username: userInfo?.username
+    });
+  }, [userInfo, isAuthenticated]);
 
   const rounds = [
     {
@@ -59,32 +75,28 @@ const AdminDashboard = () => {
     }
   ]
 
-const handleLogout = async () => {
-  try {
-    await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
-      method: 'GET',
-      credentials: 'include',
-    });
+  const handleLogout = async () => {
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
+        method: 'GET',
+        credentials: 'include',
+      })
 
-    // Clear cookies
-    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure';
-    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    
-    // Clear Redux state
-    dispatch(resetAuth());
-    
-    // Force navigation
-    window.location.href = '/';
-  } catch (error) {
-    console.error('Logout error:', error);
-    
-    // Force logout even on error
-    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure';
-    document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    dispatch(resetAuth());
-    window.location.href = '/';
+      document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure'
+      document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      
+      dispatch(resetAuth())
+      
+      window.location.href = '/'
+    } catch (error) {
+      console.error('Logout error:', error)
+      
+      document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure'
+      document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      dispatch(resetAuth())
+      window.location.href = '/'
+    }
   }
-}
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">

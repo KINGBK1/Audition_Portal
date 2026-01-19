@@ -98,6 +98,30 @@ const Exam = () => {
     setSubmitConfirmText("");
   };
 
+  // Auto-submit when user tries to leave the exam page
+useEffect(() => {
+  if (!isExamStarted) return;
+
+  const handleRouteChange = () => {
+    console.log("Route change detected - auto-submitting exam");
+    handleAutoSubmit();
+  };
+
+  // Listen for Next.js route changes
+  const handleBeforeHistoryChange = () => {
+    if (isExamStarted) {
+      handleAutoSubmit();
+    }
+  };
+
+  // Detect back/forward browser navigation
+  window.addEventListener('popstate', handleBeforeHistoryChange);
+  
+  return () => {
+    window.removeEventListener('popstate', handleBeforeHistoryChange);
+  };
+}, [isExamStarted]);
+
   // Fetch questions and options and user from the server
 useEffect(() => {
     const fetchQuestions = async () => {
@@ -137,60 +161,66 @@ useEffect(() => {
   }, [])
 
   const handleFinalSubmit = async () => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
+  if (isSubmitting) return;
+  setIsSubmitting(true);
 
-    try {
-      const formattedAnswers = Object.entries(answers).map(
-        ([questionId, answer]) => ({
-          questionId: Number(questionId),
-          option: answer.optionId ? { id: answer.optionId } : undefined,
-          ans: answer.description || "",
-        })
-      );
+  try {
+    const formattedAnswers = Object.entries(answers).map(
+      ([questionId, answer]) => ({
+        questionId: Number(questionId),
+        option: answer.optionId ? { id: answer.optionId } : undefined,
+        ans: answer.description || "",
+      })
+    );
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/answer`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ answers: formattedAnswers }),
-        }
-      );
+    // CRITICAL: Get token from cookie for Authorization header
+    const token = getTokenFromCookie();
 
-      const data = await response.json();
-      console.log("submit response:", response.status, data);
-
-      if (!response.ok) {
-        throw new Error(data?.message || "Failed to submit exam");
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/answer`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }), // Add token to header
+        },
+        credentials: "include", // Also send cookies
+        body: JSON.stringify({ answers: formattedAnswers }),
       }
+    );
 
-      toast({
-        className: "dark",
-        variant: "default",
-        description: "Exam submitted successfully.",
-      });
+    const data = await response.json();
+    console.log("submit response:", response.status, data);
 
-      setIsExamStarted(false);
-
-      // This line is now functional due to the added imports/hook
-      await dispatch(fetchUserData()).unwrap();
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
-      // This immediately navigates and shows the "Quiz Completed" screen on the dashboard.
-      router.push("/dashboard");
-    } catch (error) {
-      console.error("Error submitting exam:", error);
-      toast({
-        className: "dark",
-        variant: "destructive",
-        description: "Failed to submit answers. Please try again.",
-      });
-    } finally {
-      setIsSubmitting(false);
+    if (!response.ok) {
+      throw new Error(data?.message || "Failed to submit exam");
     }
-  };
+
+    toast({
+      className: "dark",
+      variant: "default",
+      description: "Exam submitted successfully.",
+    });
+
+    setIsExamStarted(false);
+
+    // Refresh user data to update hasGivenExam status
+    await dispatch(fetchUserData()).unwrap();
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    // Navigate to dashboard - will show "Quiz Completed" screen
+    router.push("/dashboard");
+  } catch (error) {
+    console.error("Error submitting exam:", error);
+    toast({
+      className: "dark",
+      variant: "destructive",
+      description: "Failed to submit answers. Please try again.",
+    });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const handleAutoSubmit = async () => {
     if (isExamStarted) {
@@ -340,34 +370,34 @@ useEffect(() => {
       .padStart(2, "0")}`;
   };
 
-  const startExam = async () => {
-    setIsLoading(true);
-    // Simulate loading
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    // Request fullscreen mode
-    try {
-      await document.documentElement.requestFullscreen();
-    } catch (err) {
-      console.error("Failed to enter fullscreen:", err);
-      toast({
-        className: "dark",
-        variant: "destructive",
-        description: "Please allow fullscreen mode to continue.",
-      });
-    }
-    
-    setIsExamStarted(true);
-    setIsLoading(false);
+const startExam = async () => {
+  setIsLoading(true);
+  
+  // Simulate loading
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+  
+  // Request fullscreen mode
+  try {
+    await document.documentElement.requestFullscreen();
+  } catch (err) {
+    console.error("Failed to enter fullscreen:", err);
+    toast({
+      className: "dark",
+      variant: "destructive",
+      description: "Please allow fullscreen mode to continue.",
+    });
+  }
+  
+  setIsExamStarted(true);
+  setIsLoading(false);
 
-    // Add event listeners for security
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    document.addEventListener("contextmenu", handleContextMenu);
-    document.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("blur", handleWindowBlur);
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    document.addEventListener("mousemove", handleMouseMove);
-  };
+  // Add all security event listeners
+  document.addEventListener("visibilitychange", handleVisibilityChange);
+  document.addEventListener("contextmenu", handleContextMenu);
+  document.addEventListener("keydown", handleKeyDown);
+  window.addEventListener("blur", handleWindowBlur);
+  window.addEventListener("mousemove", handleMouseMove);
+};
 
   const submitAnswer = async (questionId: number) => {
     const answer = answers[questionId];

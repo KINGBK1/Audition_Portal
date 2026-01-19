@@ -63,33 +63,37 @@ const Dashboard = () => {
   const { push } = useRouter();
   const [isLoading, setIsLoading] = useState(true);
 
-  // Dashboard.tsx (Revised useEffect)
 
 useEffect(() => {
   const initializeDashboard = async () => {
     setIsLoading(true);
     try {
-      // CRITICAL: Always fetch fresh user data from server on mount
-      await dispatch(fetchUserData()).unwrap();
+      // Fetch latest user data
+      const userData = await dispatch(fetchUserData()).unwrap();
       
-      console.log("Dashboard loaded - user data:", userInfo);
+      console.log("Dashboard loaded - user data:", userData);
+
+      // Check if profile is complete
+      const isProfileComplete = Boolean(
+        userData?.contact && 
+        userData?.gender && 
+        userData?.specialization
+      );
+
+      if (!isProfileComplete) {
+        console.log("Profile incomplete - redirecting to /profile");
+        push("/profile");
+        return;
+      }
     } catch (error) {
       console.error("Failed to fetch user data:", error);
-      // AuthProvider will handle redirect if auth fails
     } finally {
       setIsLoading(false);
     }
   };
 
   initializeDashboard();
-}, [dispatch]); // Remove userInfo dependency to avoid loops
-  // useEffect(() => {
-  //   if (!isLoading && userInfo) {
-  //     if (userInfo.round === 2) {
-  //       push("/exam/round2");
-  //     }
-  //   }
-  // }, [isLoading, userInfo, push]);
+}, [dispatch, push]);
 
 
   useEffect(() => {

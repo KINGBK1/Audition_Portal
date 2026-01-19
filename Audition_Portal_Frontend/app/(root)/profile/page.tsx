@@ -48,6 +48,19 @@ export default function Profile() {
     Boolean(userInfo?.specialization);
 
 useEffect(() => {
+  if (!isLoading && userInfo) {
+    const isComplete = Boolean(
+      userInfo.contact && 
+      userInfo.gender && 
+      userInfo.specialization
+    );
+
+    // If already complete and user manually navigated to /profile, allow them to view
+    // But if they try to go to dashboard without completing, they'll be blocked by AuthProvider
+  }
+}, [userInfo, isLoading]);
+
+useEffect(() => {
   const loadProfile = async () => {
     setIsLoading(true);
     try {

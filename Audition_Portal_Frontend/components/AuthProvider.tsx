@@ -52,14 +52,28 @@ useEffect(() => {
   checkAuth()
 }, [dispatch, pathname, router, isPublicRoute])
 
-  // Handle role-based redirects
+// Handle redirects based on auth state
 useEffect(() => {
   if (isVerifying) return
 
-  // Authenticated users on public routes → redirect to dashboard
+  // Authenticated users on public routes → redirect based on profile completion
   if (isAuthenticated && isPublicRoute) {
-    const targetRoute = userInfo?.role === 'ADMIN' ? '/admin/dashboard' : '/dashboard'
-    router.push(targetRoute)
+    if (userInfo?.role === 'ADMIN') {
+      router.push('/admin/dashboard')
+    } else {
+      // CRITICAL: Check if user profile is complete
+      const isProfileComplete = Boolean(
+        userInfo?.contact && 
+        userInfo?.gender && 
+        userInfo?.specialization
+      );
+
+      if (isProfileComplete) {
+        router.push('/dashboard')
+      } else {
+        router.push('/profile')
+      }
+    }
     return
   }
 
@@ -73,6 +87,24 @@ useEffect(() => {
   if (isAuthenticated && pathname === '/exam' && userInfo?.hasGivenExam) {
     router.push('/dashboard')
     return
+  }
+
+  // CRITICAL: Block dashboard access if profile incomplete (for regular users)
+  if (
+    isAuthenticated && 
+    pathname === '/dashboard' && 
+    userInfo?.role !== 'ADMIN'
+  ) {
+    const isProfileComplete = Boolean(
+      userInfo?.contact && 
+      userInfo?.gender && 
+      userInfo?.specialization
+    );
+
+    if (!isProfileComplete) {
+      router.push('/profile')
+      return
+    }
   }
 
   // Admin route protection: Regular users can't access /admin/*

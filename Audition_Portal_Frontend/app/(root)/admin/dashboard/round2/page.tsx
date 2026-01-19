@@ -148,57 +148,72 @@ export default function AdminRoundTwoDashboard() {
     forwarded: "no",
   })
 
-  const fetchCandidates = async () => {
-    try {
-      setIsLoading(true)
+const getToken = () => {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(/token=([^;]+)/);
+  return match ? match[1] : null;
+};
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r2/candidate`, {
-        method: "GET",
-        credentials: "include",
-      })
+const fetchCandidates = async () => {
+  try {
+    setIsLoading(true);
 
-      if (!res.ok) {
-        console.error("Failed to fetch round 2 candidates:", res.status, res.statusText)
-        toast({ title: "Error fetching Round 2 candidates", variant: "destructive" })
-        setUsers([])
-        return
-      }
+    const token = getToken(); // Get token
 
-      const json = await res.json()
-      const usersData: User[] = Array.isArray(json) ? json : json.data || []
-      setUsers(usersData)
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r2/candidate`, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }), // Add token
+      },
+    });
 
-      const statsRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r2/statistics`, {
-        method: "GET",
-        credentials: "include",
-      })
-
-      if (statsRes.ok) {
-        const statsJson = await statsRes.json()
-        const statsData = statsJson.data || {}
-
-        setStatistics({
-          totalAccepted: statsData.totalAccepted || 0,
-          totalRound2: statsData.totalRound2 || 0,
-          totalReviewed: statsData.totalReviewed || 0,
-          totalAttended: statsData.totalAttended || 0,
-        })
-      } else {
-        // safe fallback compute local stats if endpoint not provided
-        setStatistics({
-          totalAccepted: usersData.filter(u => u.round === 3).length,
-          totalRound2: usersData.length,
-          totalReviewed: usersData.filter(u => !!u.roundTwo?.review).length,
-          totalAttended: usersData.filter(u => u.roundTwo?.review?.attendance).length,
-        })
-      }
-    } catch (err) {
-      console.error("Fetch error:", err)
-      toast({ title: "Error fetching data", variant: "destructive" })
-    } finally {
-      setIsLoading(false)
+    if (!res.ok) {
+      console.error("Failed to fetch round 2 candidates:", res.status, res.statusText);
+      toast({ title: "Error fetching Round 2 candidates", variant: "destructive" });
+      setUsers([]);
+      return;
     }
+
+    const json = await res.json();
+    const usersData: User[] = Array.isArray(json) ? json : json.data || [];
+    setUsers(usersData);
+
+    const statsRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r2/statistics`, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }), // Add token
+      },
+    });
+
+    if (statsRes.ok) {
+      const statsJson = await statsRes.json();
+      const statsData = statsJson.data || {};
+
+      setStatistics({
+        totalAccepted: statsData.totalAccepted || 0,
+        totalRound2: statsData.totalRound2 || 0,
+        totalReviewed: statsData.totalReviewed || 0,
+        totalAttended: statsData.totalAttended || 0,
+      });
+    } else {
+      setStatistics({
+        totalAccepted: usersData.filter(u => u.round === 3).length,
+        totalRound2: usersData.length,
+        totalReviewed: usersData.filter(u => !!u.roundTwo?.review).length,
+        totalAttended: usersData.filter(u => u.roundTwo?.review?.attendance).length,
+      });
+    }
+  } catch (err) {
+    console.error("Fetch error:", err);
+    toast({ title: "Error fetching data", variant: "destructive" });
+  } finally {
+    setIsLoading(false);
   }
+};
 
   useEffect(() => {
     fetchCandidates()

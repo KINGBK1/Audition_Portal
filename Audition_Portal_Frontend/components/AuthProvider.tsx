@@ -12,6 +12,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const { isAuthenticated, userInfo } = useAppSelector(selectAuthState)
   const [isVerifying, setIsVerifying] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [shouldRender, setShouldRender] = useState(false)
 
   // Public routes that don't need auth
   const publicRoutes = ['/', '/login']
@@ -54,12 +55,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   }, [dispatch, pathname, router, isPublicRoute])
 
   // CRITICAL FIX: Refresh user data when navigating to dashboard or profile
-  // Wait for the refresh to complete before allowing redirects
   useEffect(() => {
     const refreshData = async () => {
       if (isAuthenticated && !isVerifying && (pathname === '/dashboard' || pathname === '/profile')) {
         console.log("🔄 Refreshing user data for:", pathname);
         setIsRefreshing(true);
+        setShouldRender(false); // Hide content while refreshing
         try {
           await dispatch(fetchUserData()).unwrap();
         } catch (error) {
@@ -76,7 +77,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   // Handle redirects based on auth state
   useEffect(() => {
     // Wait until both verification and refresh are complete
-    if (isVerifying || isRefreshing) return
+    if (isVerifying || isRefreshing) {
+      setShouldRender(false);
+      return;
+    }
 
     // Helper to check profile completion
     const isProfileComplete = Boolean(
@@ -89,7 +93,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       contact: userInfo?.contact,
       gender: userInfo?.gender,
       specialization: userInfo?.specialization,
-      isComplete: isProfileComplete
+      isComplete: isProfileComplete,
+      pathname
     });
 
     // Authenticated users on public routes → redirect based on profile completion
@@ -108,18 +113,18 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
     // Unauthenticated users on protected routes → redirect to home
     if (!isAuthenticated && !isPublicRoute) {
+      console.log("🚫 Not authenticated - redirecting to home");
       router.push('/')
       return
     }
 
-    // CRITICAL FIX #1: Block exam access if already completed
+    // CRITICAL FIX #1: Block exam access if already completed OR profile incomplete
     if (isAuthenticated && pathname === '/exam') {
       if (userInfo?.hasGivenExam) {
         console.log("🚫 Exam already completed - redirecting to dashboard");
         router.push('/dashboard')
         return
       }
-      // Also block if profile is incomplete
       if (!isProfileComplete) {
         console.log("🚫 Profile incomplete - redirecting to profile");
         router.push('/profile')
@@ -127,8 +132,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       }
     }
 
-    // CRITICAL FIX #2: Only block dashboard if profile is incomplete
-    // Don't redirect if user is on /profile page itself
+    // CRITICAL FIX #2: Block dashboard if profile is incomplete
     if (
       isAuthenticated && 
       pathname === '/dashboard' && 
@@ -142,19 +146,45 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
     // Admin route protection: Regular users can't access /admin/*
     if (isAuthenticated && pathname.startsWith('/admin') && userInfo?.role !== 'ADMIN') {
+      console.log("🚫 Not admin - redirecting to dashboard");
       router.push('/dashboard')
       return
     }
 
     // Reverse protection: Admins shouldn't see regular dashboard
     if (isAuthenticated && pathname === '/dashboard' && userInfo?.role === 'ADMIN') {
+      console.log("🚫 Admin accessing user dashboard - redirecting to admin dashboard");
       router.push('/admin/dashboard')
       return
     }
+
+    // CRITICAL FIX #3: Block unauthorized access to round pages
+    if (isAuthenticated && pathname.startsWith('/exam/round')) {
+      const currentRound = userInfo?.round || 1;
+      
+      // Extract round number from path (e.g., /exam/round2 -> 2)
+      const requestedRound = parseInt(pathname.split('/exam/round')[1] || '1');
+      
+      if (requestedRound !== currentRound) {
+        console.log(`🚫 Cannot access round ${requestedRound}, user is on round ${currentRound}`);
+        router.push('/dashboard')
+        return
+      }
+
+      // Also check if exam already completed for this round
+      if (userInfo?.hasGivenExam && currentRound === 1) {
+        console.log("🚫 Round 1 exam already completed");
+        router.push('/dashboard')
+        return
+      }
+    }
+
+    // All checks passed - render the page
+    setShouldRender(true);
   }, [isAuthenticated, isPublicRoute, isVerifying, isRefreshing, pathname, userInfo, router])
 
-  // Loading state while verifying or refreshing
-  if (isVerifying || isRefreshing) {
+  // Loading state while verifying, refreshing, or determining access
+  if (isVerifying || isRefreshing || !shouldRender) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">

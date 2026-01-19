@@ -124,8 +124,8 @@ export default function Profile() {
     }
   };
 
-  // FIXED: Use Next.js router.push instead of window.history.pushState
-  const navigateToDashBoard = (e: React.FormEvent) => {
+  // Navigate to dashboard - with proper validation
+  const navigateToDashBoard = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isComplete) {
@@ -138,6 +138,14 @@ export default function Profile() {
     }
 
     console.log("✅ Navigating to dashboard...");
+    
+    // Refresh user data one more time before navigation to ensure sync
+    try {
+      await dispatch(fetchUserData()).unwrap();
+    } catch (error) {
+      console.error("Failed to refresh before navigation:", error);
+    }
+    
     router.push("/dashboard");
   };
 

@@ -37,7 +37,6 @@ const getTokenFromCookie = (): string | null => {
   return match ? match[1] : null;
 };
 
-// Verify token
 export const verifyToken = createAsyncThunk(
   'auth/verifyToken',
   async (_, { rejectWithValue }) => {
@@ -48,10 +47,10 @@ export const verifyToken = createAsyncThunk(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/verify`,
         {
           method: 'GET',
-          credentials: 'include',
+          credentials: 'include', // CRITICAL: Sends cookies
           headers: {
             'Content-Type': 'application/json',
-            ...(token && { 'Authorization': `Bearer ${token}` })
+            ...(token && { 'Authorization': `Bearer ${token}` }) // Fallback to Bearer token
           },
         }
       );
@@ -61,6 +60,8 @@ export const verifyToken = createAsyncThunk(
       }
 
       const data = await response.json();
+      
+      // Backend returns user object directly, not nested
       return data;
     } catch (error: any) {
       return rejectWithValue(error.message || 'Verification failed');

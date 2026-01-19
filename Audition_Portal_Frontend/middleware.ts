@@ -2,19 +2,13 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-  
-
+  // Token validation happens client-side via AuthProvider
+  // This middleware just passes requests through
   return NextResponse.next()
 }
 
 export const config = {
   matcher: [
-    '/',
-    '/dashboard/:path*',
-    '/exam/:path*',
-    '/profile/:path*',
-    '/round-info/:path*',
-    '/admin/:path*'
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ]
 }

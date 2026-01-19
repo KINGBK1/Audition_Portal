@@ -7,13 +7,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
-import { selectAuthState } from '@/lib/store/features/auth/authSlice'
+import { selectAuthState, fetchUserData} from '@/lib/store/features/auth/authSlice'
 import { ChevronRight, Users, ClipboardList, FileText, Award, LogOut, User } from 'lucide-react'
+import { useEffect } from 'react'
+
 
 const AdminDashboard = () => {
   const router = useRouter()
   const dispatch = useAppDispatch()
   const { userInfo } = useAppSelector(selectAuthState)
+
+  useEffect(() => {
+  // Fetch latest user data on mount
+  dispatch(fetchUserData()).catch(err => {
+    console.error("Failed to fetch admin data:", err);
+  });
+}, [dispatch]);
 
   const rounds = [
     {

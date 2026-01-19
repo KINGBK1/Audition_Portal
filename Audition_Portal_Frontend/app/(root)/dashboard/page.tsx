@@ -64,28 +64,22 @@ const Dashboard = () => {
 
   // Dashboard.tsx (Revised useEffect)
 
-  useEffect(() => {
-    const initializeDashboard = async () => {
-      setIsLoading(true);
-      try {
-        // 1. Verify token
-        await dispatch(verifyToken()).unwrap();
+useEffect(() => {
+  const initializeDashboard = async () => {
+    setIsLoading(true);
+    try {
+      // AuthProvider already verified token, just fetch latest user data
+      await dispatch(fetchUserData()).unwrap();
+    } catch (error) {
+      console.error("Failed to fetch user data:", error);
+      // AuthProvider will handle redirect if auth fails
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-        // 2. Fetch the absolute latest user data from the server
-        await dispatch(fetchUserData()).unwrap();
-      } catch (error) {
-        // If verifyToken or fetchUserData fails, redirect to login page
-        push("/dashboard");
-      } finally {
-        // Ensure loading screen is dismissed
-        setIsLoading(false);
-      }
-    };
-
-    initializeDashboard();
-
-    // Cleanup is not strictly necessary here, but good practice if you added event listeners
-  }, [dispatch, push]);
+  initializeDashboard();
+}, [dispatch]);
   // useEffect(() => {
   //   if (!isLoading && userInfo) {
   //     if (userInfo.round === 2) {

@@ -47,28 +47,26 @@ export default function Profile() {
     Boolean(userInfo?.gender) &&
     Boolean(userInfo?.specialization);
 
-  useEffect(() => {
-    dispatch(verifyToken())
-      .unwrap()
-      .then(() => {
-        dispatch(fetchUserData())
-          .unwrap()
-          .then((data) => {
-            const user = data ?? {};
-            setFormData({
-              contact: user.contact || "",
-              gender: user.gender || "",
-              specialization: user.specialization || "",
-            });
-          })
-          .finally(() => setIsLoading(false));
-      })
-      .catch((err) => {
-        console.error("verifyToken failed:", err);
-        setIsLoading(false);
-        push("/");
+useEffect(() => {
+  const loadProfile = async () => {
+    setIsLoading(true);
+    try {
+      // AuthProvider already verified, just fetch user data
+      const data = await dispatch(fetchUserData()).unwrap();
+      setFormData({
+        contact: data.contact || "",
+        gender: data.gender || "",
+        specialization: data.specialization || "",
       });
-  }, [dispatch, push]);
+    } catch (error) {
+      console.error("Failed to load profile:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  loadProfile();
+}, [dispatch]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;

@@ -18,27 +18,28 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     const checkAuth = async () => {
-      // Check if token is in URL (from OAuth redirect)
+      // CRITICAL: Check URL for token from OAuth redirect
       const urlParams = new URLSearchParams(window.location.search)
       const tokenFromUrl = urlParams.get('token')
       
       if (tokenFromUrl) {
-        // Store token in cookie
+        // Store token in cookie with correct attributes for cross-origin
         document.cookie = `token=${tokenFromUrl}; Path=/; SameSite=None; Secure; Max-Age=86400`
         
-        // Clean URL
+        // Clean URL to remove token parameter
         const cleanUrl = window.location.pathname
         window.history.replaceState({}, '', cleanUrl)
       }
       
       try {
+        // Verify token with backend
         await dispatch(verifyToken()).unwrap()
         setIsVerifying(false)
       } catch (error) {
-        console.error('Auth failed:', error)
+        console.error('Auth verification failed:', error)
         setIsVerifying(false)
         
-        // Only redirect to login if trying to access protected route
+        // Only redirect to home if trying to access protected route
         if (!isPublicRoute) {
           router.push('/')
         }
@@ -46,48 +47,45 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     }
 
     checkAuth()
-  }, [dispatch, pathname])
+  }, [dispatch, pathname, router, isPublicRoute])
 
-  // Handle redirects based on auth state
+  // Handle role-based redirects
   useEffect(() => {
     if (isVerifying) return
 
-    // If authenticated and on public route, redirect to dashboard
+    // Authenticated users on public routes → redirect to dashboard
     if (isAuthenticated && isPublicRoute) {
-      if (userInfo?.role === 'ADMIN') {
-        router.push('/admin/dashboard')
-      } else {
-        router.push('/dashboard')
-      }
+      const targetRoute = userInfo?.role === 'ADMIN' ? '/admin/dashboard' : '/dashboard'
+      router.push(targetRoute)
       return
     }
 
-    // If not authenticated and on protected route, redirect to login
+    // Unauthenticated users on protected routes → redirect to home
     if (!isAuthenticated && !isPublicRoute) {
       router.push('/')
       return
     }
 
-    // Handle admin route protection
+    // Admin route protection: Regular users can't access /admin/*
     if (isAuthenticated && pathname.startsWith('/admin') && userInfo?.role !== 'ADMIN') {
       router.push('/dashboard')
       return
     }
 
-    // Handle regular user trying to access admin dashboard
+    // Reverse protection: Admins shouldn't see regular dashboard
     if (isAuthenticated && pathname.startsWith('/dashboard') && userInfo?.role === 'ADMIN') {
       router.push('/admin/dashboard')
       return
     }
   }, [isAuthenticated, isPublicRoute, isVerifying, pathname, userInfo, router])
 
-  // Show loading state while verifying - keep your existing loader design
+  // Loading state while verifying
   if (isVerifying) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-400">Loading...</p>
+          <p className="text-slate-400 font-mono uppercase tracking-widest text-sm">Verifying Access...</p>
         </div>
       </div>
     )

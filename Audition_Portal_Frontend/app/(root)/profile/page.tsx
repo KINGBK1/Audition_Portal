@@ -7,7 +7,6 @@ import {
   fetchUserData,
   selectAuthState,
   updateUserInfo,
-  verifyToken,
 } from "@/lib/store/features/auth/authSlice";
 
 import { Button } from "@/components/ui/button";
@@ -28,11 +27,10 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { ShieldCheck, User, ChevronRight } from "lucide-react";
 
-// profile
 export default function Profile() {
   const dispatch = useAppDispatch();
   const { userInfo, status } = useAppSelector(selectAuthState);
-  const { push } = useRouter();
+  const router = useRouter(); // Use router properly
 
   const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState({
@@ -48,39 +46,25 @@ export default function Profile() {
     Boolean(userInfo?.gender) &&
     Boolean(userInfo?.specialization);
 
-useEffect(() => {
-  if (!isLoading && userInfo) {
-    const isComplete = Boolean(
-      userInfo.contact && 
-      userInfo.gender && 
-      userInfo.specialization
-    );
+  useEffect(() => {
+    const loadProfile = async () => {
+      setIsLoading(true);
+      try {
+        const data = await dispatch(fetchUserData()).unwrap();
+        setFormData({
+          contact: data.contact || "",
+          gender: data.gender || "",
+          specialization: data.specialization || "",
+        });
+      } catch (error) {
+        console.error("Failed to load profile:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    // If already complete and user manually navigated to /profile, allow them to view
-    // But if they try to go to dashboard without completing, they'll be blocked by AuthProvider
-  }
-}, [userInfo, isLoading]);
-
-useEffect(() => {
-  const loadProfile = async () => {
-    setIsLoading(true);
-    try {
-      // AuthProvider already verified, just fetch user data
-      const data = await dispatch(fetchUserData()).unwrap();
-      setFormData({
-        contact: data.contact || "",
-        gender: data.gender || "",
-        specialization: data.specialization || "",
-      });
-    } catch (error) {
-      console.error("Failed to load profile:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  loadProfile();
-}, [dispatch]);
+    loadProfile();
+  }, [dispatch]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -105,10 +89,7 @@ useEffect(() => {
     }
 
     try {
-      // 1. Attempt to update
       await dispatch(updateUserInfo(formData)).unwrap();
-
-      // 2. Refresh local store so buttons update instantly
       await dispatch(fetchUserData()).unwrap();
 
       toast({
@@ -119,7 +100,6 @@ useEffect(() => {
     } catch (error: any) {
       console.error("Update error:", error);
 
-      // Check for 400 Bad Request or Prisma Unique Constraint Error
       const isDuplicate =
         error?.status === 400 ||
         error?.code === "P2002" ||
@@ -127,10 +107,7 @@ useEffect(() => {
         error?.message?.toLowerCase().includes("unique");
 
       if (isDuplicate) {
-        // Update inline error text
         setContactError("This contact number is already registered.");
-
-        // Trigger the specific toast message you asked for
         toast({
           className: "dark",
           variant: "destructive",
@@ -138,7 +115,6 @@ useEffect(() => {
           description: "This contact number already exists in our records.",
         });
       } else {
-        // General error handling
         toast({
           className: "dark",
           variant: "destructive",
@@ -148,9 +124,21 @@ useEffect(() => {
     }
   };
 
+  // FIXED: Use Next.js router.push instead of window.history.pushState
   const navigateToDashBoard = (e: React.FormEvent) => {
     e.preventDefault();
-    push("/dashboard");
+
+    if (!isComplete) {
+      toast({
+        className: "dark",
+        variant: "destructive",
+        description: "Please complete your profile first.",
+      });
+      return;
+    }
+
+    console.log("✅ Navigating to dashboard...");
+    router.push("/dashboard");
   };
 
   return (
@@ -186,7 +174,6 @@ useEffect(() => {
 
             {/* Avatar Header */}
             <div className="flex flex-col items-center mb-6">
-              {" "}
               <div className="relative mb-3">
                 <div className="absolute inset-0 bg-blue-500 blur-[20px] opacity-20 rounded-full " />
                 <Avatar className="w-28 h-28 border-2 border-blue-500/50 p-1 bg-black shadow-[0_0_20px_rgba(59,130,246,0.2)]">
@@ -216,7 +203,6 @@ useEffect(() => {
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* READ ONLY FIELDS */}
               <div className="space-y-3">
-                {" "}
                 <div className="space-y-1">
                   <Label className="text-[15px] uppercase tracking-wider text-slate-400 font-semibold">
                     Name
@@ -354,7 +340,6 @@ useEffect(() => {
 
               {/* BUTTONS */}
               <div className="flex flex-col gap-3 pt-2">
-                {" "}
                 <Button
                   type="submit"
                   disabled={Boolean(isComplete)}
@@ -374,6 +359,7 @@ useEffect(() => {
                   )}
                 </Button>
                 <Button
+                  type="button"
                   variant="outline"
                   onClick={navigateToDashBoard}
                   disabled={!isComplete}

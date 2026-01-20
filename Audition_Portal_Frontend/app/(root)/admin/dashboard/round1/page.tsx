@@ -146,93 +146,80 @@ export default function AdminDashboard() {
   const [taskText, setTaskText] = useState("");
   const [taskLink, setTaskLink] = useState("");
 
-const fetchData = async () => {
-  try {
-    setIsLoading(true);
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
 
-    // CRITICAL: Get token for Authorization header
-    const getToken = () => {
-      if (typeof document === 'undefined') return null;
-      const match = document.cookie.match(/token=([^;]+)/);
-      return match ? match[1] : null;
-    };
+      const [usersRes, questionsRes] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/candidate`, {
+          method: "GET",
+          credentials: "include",
+        }),
+        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz`, {
+          method: "GET",
+          credentials: "include",
+        }),
+      ]);
 
-    const token = getToken();
+      if (!usersRes.ok) {
+        console.error(
+          "Failed to fetch users:",
+          usersRes.status,
+          usersRes.statusText
+        );
+        toast({ title: "Error fetching users", variant: "destructive" });
+        setUsers([]);
+      } else {
+        const usersJson = await usersRes.json();
+        const usersData: User[] = Array.isArray(usersJson)
+          ? usersJson
+          : usersJson.data || [];
+        setUsers(usersData);
 
-    const [usersRes, questionsRes] = await Promise.all([
-      fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/r1/candidate`, {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }), // Add token
-        },
-      }),
-      fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz`, {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }), // Add token
-        },
-      }),
-    ]);
+        // Calculate scores if we have users who took the exam
+        if (usersData.length > 0) {
+          const examTakenUsers = usersData.filter((u) => u.hasGivenExam);
+          if (examTakenUsers.length > 0) {
+            // Wait for questions first
+            if (questionsRes.ok) {
+              const questionsJson = await questionsRes.json();
+              const questionsData: Question[] = Array.isArray(questionsJson)
+                ? questionsJson
+                : questionsJson.data || [];
+              setQuestions(questionsData);
 
-    if (!usersRes.ok) {
-      console.error(
-        "Failed to fetch users:",
-        usersRes.status,
-        usersRes.statusText
-      );
-      toast({ title: "Error fetching users", variant: "destructive" });
-      setUsers([]);
-    } else {
-      const usersJson = await usersRes.json();
-      const usersData: User[] = Array.isArray(usersJson)
-        ? usersJson
-        : usersJson.data || [];
-      setUsers(usersData);
-
-      if (usersData.length > 0) {
-        const examTakenUsers = usersData.filter((u) => u.hasGivenExam);
-        if (examTakenUsers.length > 0) {
-          if (questionsRes.ok) {
-            const questionsJson = await questionsRes.json();
-            const questionsData: Question[] = Array.isArray(questionsJson)
-              ? questionsJson
-              : questionsJson.data || [];
-            setQuestions(questionsData);
-
-            if (questionsData.length > 0) {
-              calculateAllScores(examTakenUsers, questionsData);
+              // Now calculate scores
+              if (questionsData.length > 0) {
+                calculateAllScores(examTakenUsers, questionsData);
+              }
             }
           }
         }
       }
-    }
 
-    if (!questionsRes.ok) {
-      console.error(
-        "Failed to fetch questions:",
-        questionsRes.status,
-        questionsRes.statusText
-      );
-      toast({ title: "Error fetching questions", variant: "destructive" });
-      setQuestions([]);
-    } else if (questions.length === 0) {
-      const questionsJson = await questionsRes.json();
-      const questionsData: Question[] = Array.isArray(questionsJson)
-        ? questionsJson
-        : questionsJson.data || [];
-      setQuestions(questionsData);
+      if (!questionsRes.ok) {
+        console.error(
+          "Failed to fetch questions:",
+          questionsRes.status,
+          questionsRes.statusText
+        );
+        toast({ title: "Error fetching questions", variant: "destructive" });
+        setQuestions([]);
+      } else if (questions.length === 0) {
+        // Only set questions if not already set
+        const questionsJson = await questionsRes.json();
+        const questionsData: Question[] = Array.isArray(questionsJson)
+          ? questionsJson
+          : questionsJson.data || [];
+        setQuestions(questionsData);
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+      toast({ title: "Error fetching data", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
     }
-  } catch (err) {
-    console.error("Fetch error:", err);
-    toast({ title: "Error fetching data", variant: "destructive" });
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
   useEffect(() => {
     fetchData();
   }, []);

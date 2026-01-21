@@ -151,10 +151,10 @@ const Dashboard = () => {
         <Loader />
       ) : (
         <div className="relative h-screen w-screen overflow-hidden">
-          <div className="fixed top-6 right-6 z-50">
+          <div className="fixed top-4 sm:top-6 right-4 sm:right-6 z-50">
             <Popover>
               <PopoverTrigger>
-                <Avatar className="hover:brightness-75 w-11 h-11 cursor-pointer">
+                <Avatar className="hover:brightness-75 w-10 h-10 sm:w-11 sm:h-11 cursor-pointer">
                   <AvatarImage
                     src={userInfo?.picture || undefined}
                     alt="image"
@@ -189,14 +189,14 @@ const Dashboard = () => {
             </Popover>
           </div>
 
-          <div className="fixed top-7 left-7 text-2xl md:text-3xl text-slate-300 z-50">
+          <div className="fixed top-5 sm:top-7 left-4 sm:left-7 text-xl sm:text-2xl md:text-3xl text-slate-300 z-50">
             Dashboard
           </div>
 
           {hasCompletedQuiz ? (
-            <div className="flex items-center justify-center h-full flex-col space-y-12 z-10 relative">
+            <div className="flex items-center justify-center h-full flex-col space-y-8 sm:space-y-12 z-10 relative px-4">
               {/* Themed Completion Card */}
-              <div className="max-w-xl w-full border border-slate-800 bg-card/90 backdrop-blur-md p-10 md:p-14 rounded-none shadow-2xl relative text-center">
+              <div className="max-w-xl w-full border border-slate-800 bg-card/90 backdrop-blur-md p-6 sm:p-10 md:p-14 rounded-none shadow-2xl relative text-center">
                 {/* Blue Top Accent Line */}
                 <div className="absolute top-0 left-0 w-full h-[2px] bg-blue-500" />
 
@@ -431,13 +431,13 @@ const Dashboard = () => {
               </div>
             </div>
           ) : showStartButton ? (
-            <div className="flex items-center justify-center h-full flex-col space-y-16">
+            <div className="flex items-center justify-center h-full flex-col space-y-10 sm:space-y-16 px-4">
               {/* Timer Section */}
-              <div className="flex items-center justify-center flex-col space-y-8">
-                <span className="text-slate-500 text-xs md:text-sm font-bold uppercase tracking-[0.4em] font-mono">
+              <div className="flex items-center justify-center flex-col space-y-6 sm:space-y-8">
+                <span className="text-slate-500 text-xs sm:text-sm font-bold uppercase tracking-[0.3em] sm:tracking-[0.4em] font-mono">
                   Window Closing In
                 </span>
-                <div className="flex justify-center gap-8 md:gap-12">
+                <div className="flex justify-center gap-4 sm:gap-8 md:gap-12">
                   {[
                     { label: "DAYS", value: timeLeft.days },
                     { label: "HOURS", value: timeLeft.hours },
@@ -446,15 +446,15 @@ const Dashboard = () => {
                   ].map((item, index, array) => (
                     <React.Fragment key={item.label}>
                       <div className="flex flex-col items-center">
-                        <p className="font-bold text-5xl md:text-7xl text-slate-100 tabular-nums tracking-tighter">
+                        <p className="font-bold text-3xl sm:text-5xl md:text-7xl text-slate-100 tabular-nums tracking-tighter">
                           {String(item.value).padStart(2, "0")}
                         </p>
-                        <div className="text-[10px] text-slate-500 mt-3 tracking-[0.2em] font-bold">
+                        <div className="text-[8px] sm:text-[10px] text-slate-500 mt-2 sm:mt-3 tracking-[0.15em] sm:tracking-[0.2em] font-bold">
                           {item.label}
                         </div>
                       </div>
                       {index !== array.length - 1 && (
-                        <p className="font-light text-4xl md:text-6xl text-slate-800 self-center -mt-6">
+                        <p className="font-light text-2xl sm:text-4xl md:text-6xl text-slate-800 self-center -mt-4 sm:-mt-6">
                           :
                         </p>
                       )}
@@ -464,17 +464,17 @@ const Dashboard = () => {
               </div>
 
               {/* Quiz Card */}
-              <Card className="border-white/5 w-[85vw] md:w-[35vw] bg-black/60 backdrop-blur-xl rounded-none shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-                <CardHeader className="pb-4 border-b border-white/5 mx-6 px-0">
-                  <CardTitle className="text-lg text-white font-bold uppercase tracking-[0.2em]">
+              <Card className="border-white/5 w-[95vw] sm:w-[85vw] md:w-[35vw] bg-black/60 backdrop-blur-xl rounded-none shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                <CardHeader className="pb-4 border-b border-white/5 mx-4 sm:mx-6 px-0">
+                  <CardTitle className="text-base sm:text-lg text-white font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em]">
                     General Round
                   </CardTitle>
-                  <CardDescription className="text-[11px] text-slate-500 uppercase tracking-widest font-medium">
+                  <CardDescription className="text-[10px] sm:text-[11px] text-slate-500 uppercase tracking-wider sm:tracking-widest font-medium">
                     Time to put your skills to the test
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-8 pt-8 px-6">
-                  <p className="text-slate-400 text-sm font-medium leading-relaxed tracking-wide">
+                <CardContent className="space-y-6 sm:space-y-8 pt-6 sm:pt-8 px-4 sm:px-6">
+                  <p className="text-slate-400 text-xs sm:text-sm font-medium leading-relaxed tracking-wide">
                     Please go through the{" "}
                     <Popover>
                       <PopoverTrigger>
@@ -506,7 +506,7 @@ const Dashboard = () => {
                   <Button
                     onClick={() => push("/exam")}
                     className={cn(
-                      "w-full h-14 text-[16px] font-black uppercase tracking-[0.3em] transition-colors rounded-none cursor-pointer ",
+                      "w-full h-12 sm:h-14 text-[14px] sm:text-[16px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] transition-colors rounded-none cursor-pointer ",
                       "bg-[#f1f5f9] text-slate-950 hover:bg-white", // Sharp Off-white
                       "animate-futuristic"
 

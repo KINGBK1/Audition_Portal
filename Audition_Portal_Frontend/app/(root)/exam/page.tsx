@@ -602,18 +602,18 @@ const Exam = () => {
             exit={{ opacity: 0 }}
             className="h-screen flex flex-col relative z-10 w-full overflow-hidden"
           >
-            <header className="h-16 border-b border-slate-800 bg-background/90 backdrop-blur-md flex items-center justify-between px-8 shrink-0">
-              <div className="flex items-center gap-6">
-                <h1 className="text-sm font-black tracking-[0.3em] text-white uppercase">
+            <header className="h-14 sm:h-16 border-b border-slate-800 bg-background/90 backdrop-blur-md flex items-center justify-between px-4 sm:px-8 shrink-0">
+              <div className="flex items-center gap-3 sm:gap-6">
+                <h1 className="text-xs sm:text-sm font-black tracking-[0.2em] sm:tracking-[0.3em] text-white uppercase">
                   Round // 01
                 </h1>
-                <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+                <span className="text-[9px] sm:text-[10px] text-slate-500 uppercase tracking-wider sm:tracking-widest font-bold">
                   Progress: {Math.round(progress)}%
                 </span>
               </div>
               <div
                 className={cn(
-                  "text-xl font-bold tabular-nums tracking-tighter",
+                  "text-lg sm:text-xl font-bold tabular-nums tracking-tighter",
                   timeLeft < 300
                     ? "text-red-500 animate-pulse"
                     : "text-blue-400"
@@ -623,11 +623,11 @@ const Exam = () => {
               </div>
             </header>
 
-            <main className="flex-1 w-full p-4 md:p-8 flex items-center justify-center overflow-hidden">
-              <div className="container h-full grid md:grid-cols-12 gap-8 items-stretch">
+            <main className="flex-1 w-full p-3 sm:p-4 md:p-8 flex items-center justify-center overflow-hidden">
+              <div className="container h-full grid md:grid-cols-12 gap-4 sm:gap-8 items-stretch">
                 {/* ASIDE (Sidebar) with Answer Tracking */}
-                <aside className="md:col-span-3 lg:col-span-2 overflow-y-auto pr-2 custom-scrollbar">
-                  <div className="grid grid-cols-5 md:grid-cols-2 gap-2">
+                <aside className="md:col-span-3 lg:col-span-2 overflow-y-auto pr-1 sm:pr-2 custom-scrollbar mb-4 md:mb-0">
+                  <div className="grid grid-cols-5 md:grid-cols-2 gap-1.5 sm:gap-2">
                     {questions.map((q, index) => {
                       const isAnswered = isQuestionAnswered(q.id);
                       const isActive = currentQuestionIndex === index;
@@ -658,7 +658,7 @@ const Exam = () => {
                 <div className="md:col-span-9 lg:col-span-10 flex flex-col bg-card/30 backdrop-blur-sm border border-slate-800 relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-full h-[2px] bg-blue-500/30" />
 
-                  <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                  <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 custom-scrollbar">
                     {questions.length > 0 &&
                       currentQuestionIndex < questions.length && (
                         <motion.div
@@ -667,9 +667,9 @@ const Exam = () => {
                           animate={{ opacity: 1, x: 0 }}
                           className="space-y-8 max-w-4xl mx-auto"
                         >
-                          <div className="space-y-6">
-                            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                              <span className="text-[11px] text-blue-500 tracking-[0.3em] uppercase font-black">
+                          <div className="space-y-4 sm:space-y-6">
+                            <div className="flex items-center justify-between border-b border-slate-800 pb-3 sm:pb-4 flex-wrap gap-2">
+                              <span className="text-[10px] sm:text-[11px] text-blue-500 tracking-[0.2em] sm:tracking-[0.3em] uppercase font-black">
                                 QUESTION // {questions[currentQuestionIndex].id}
                               </span>
                               {getQuestionTypeBadge(
@@ -679,7 +679,7 @@ const Exam = () => {
 
                             {/* IMAGE SUPPORT: Ensure q.imageUrl exists in your data */}
                             {questions[currentQuestionIndex].picture && (
-                              <div className="w-full h-64 md:h-80 bg-black/40 border border-slate-800 flex items-center justify-center overflow-hidden">
+                              <div className="w-full h-48 sm:h-64 md:h-80 bg-black/40 border border-slate-800 flex items-center justify-center overflow-hidden">
                                 <img
                                   src={questions[currentQuestionIndex].picture ?? undefined}
                                   alt="Question asset"
@@ -688,7 +688,7 @@ const Exam = () => {
                               </div>
                             )}
 
-                            <h2 className="text-xl md:text-2xl font-bold leading-relaxed text-white uppercase">
+                            <h2 className="text-lg sm:text-xl md:text-2xl font-bold leading-relaxed text-white uppercase">
                               {questions[currentQuestionIndex].description}
                             </h2>
                           </div>
@@ -750,7 +750,7 @@ const Exam = () => {
                               </div>
                             ) : (
                               <textarea
-                                className="w-full h-64 bg-background/40 border border-slate-800 p-6 text-white focus:outline-none focus:border-blue-500 text-sm uppercase"
+                                className="w-full h-48 sm:h-64 bg-background/40 border border-slate-800 p-4 sm:p-6 text-white focus:outline-none focus:border-blue-500 text-xs sm:text-sm uppercase"
                                 placeholder="TYPE YOUR ANSWER HERE..."
                                 value={
                                   answers[questions[currentQuestionIndex].id]
@@ -773,8 +773,8 @@ const Exam = () => {
                   </div>
 
                   {/* FOOTER (Next/Prev Buttons) - Forced visibility */}
-                  <div className="p-6 border-t border-slate-800 bg-background/50 flex flex-col md:flex-row justify-between items-center gap-6 shrink-0">
-                    <div className="flex gap-4">
+                  <div className="p-3 sm:p-4 md:p-6 border-t border-slate-800 bg-background/50 flex flex-col md:flex-row justify-between items-center gap-3 sm:gap-4 md:gap-6 shrink-0">
+                    <div className="flex gap-2 sm:gap-4 w-full md:w-auto">
                       <Button
                         variant="outline"
                         onClick={() =>
@@ -783,9 +783,9 @@ const Exam = () => {
                           )
                         }
                         disabled={currentQuestionIndex === 0}
-                        className="border-slate-700 text-slate-300 hover:text-white uppercase tracking-widest text-[10px] font-black px-6"
+                        className="border-slate-700 text-slate-300 hover:text-white uppercase tracking-wider sm:tracking-widest text-[9px] sm:text-[10px] font-black px-3 sm:px-6 flex-1 md:flex-initial"
                       >
-                        <ChevronLeft className="mr-2 h-4 w-4" /> Previous
+                        <ChevronLeft className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" /> Previous
                       </Button>
                       <Button
                         variant="outline"
@@ -795,16 +795,16 @@ const Exam = () => {
                           )
                         }
                         disabled={currentQuestionIndex === questions.length - 1}
-                        className="border-slate-700 text-slate-300 hover:text-white uppercase tracking-widest text-[10px] font-black px-6"
+                        className="border-slate-700 text-slate-300 hover:text-white uppercase tracking-wider sm:tracking-widest text-[9px] sm:text-[10px] font-black px-3 sm:px-6 flex-1 md:flex-initial"
                       >
-                        Next <ChevronRight className="ml-2 h-4 w-4" />
+                        Next <ChevronRight className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
                     </div>
 
                     {/* FINAL SUBMIT - Changed to blue outline for better contrast */}
                     <Button
                       onClick={openSubmitModal} // Now opens the modal first
-                      className="w-full md:w-auto px-10 h-12 bg-blue-600 text-white hover:bg-blue-500 transition-all rounded-none font-black uppercase tracking-[0.2em] text-[16px]"
+                      className="w-full md:w-auto px-6 sm:px-10 h-10 sm:h-12 bg-blue-600 text-white hover:bg-blue-500 transition-all rounded-none font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-[14px] sm:text-[16px]"
                     >
                       Final Submission
                     </Button>
@@ -816,12 +816,11 @@ const Exam = () => {
         )}
       </AnimatePresence>
       {showSubmitModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-md p-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-md p-4 sm:p-6">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="max-w-md w-full border border-slate-800 bg-card p-8 space-y-6 shadow-2xl relative"
-          >
+            className="max-w-md w-full border border-slate-800 bg-card p-6 sm:p-8 space-y-4 sm:space-y-6 shadow-2xl relative">
             <div className="absolute top-0 left-0 w-full h-1 bg-slate-800">
               <motion.div
                 initial={{ width: "100%" }}
@@ -831,11 +830,11 @@ const Exam = () => {
               />
             </div>
 
-            <div className="space-y-4 text-center">
-              <h3 className="text-2xl font-black uppercase tracking-[0.3em] text-white">
+            <div className="space-y-3 sm:space-y-4 text-center">
+              <h3 className="text-xl sm:text-2xl font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-white">
                 Final Authorization
               </h3>
-              <p className="text-xs font-black uppercase tracking-widest text-slate-400">
+              <p className="text-[10px] sm:text-xs font-black uppercase tracking-wider sm:tracking-widest text-slate-400">
                 {confirmTimer > 0 ? (
                   <>
                     Manual override required. System lock:{" "}

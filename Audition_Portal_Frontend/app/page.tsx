@@ -127,17 +127,17 @@ function Signin() {
           </div>
 
           {/* Right side content */}
-          <div className="relative flex flex-col h-full w-full items-center justify-center overflow-hidden rounded-lg p-4">
+          <div className="relative flex flex-col h-full w-full items-center justify-center overflow-hidden rounded-lg p-4 px-6">
             <div className="w-full flex flex-col items-center justify-center overflow-hidden rounded-md">
               <BlurIn
                 word="GLUG AUDITONS"
-                className="md:text-7xl text-6xl lg:text-8xl font-black text-center relative z-20 pointer-events-none whitespace-pre-wrap bg-gradient-to-b from-slate-600 to-gray-300/80 bg-clip-text leading-none text-transparent dark:from-white dark:to-slate-900/10"
+                className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black text-center relative z-20 pointer-events-none whitespace-pre-wrap bg-gradient-to-b from-slate-600 to-gray-300/80 bg-clip-text leading-none text-transparent dark:from-white dark:to-slate-900/10"
               />
-              <div className="w-[40rem] transition-opacity fade-in-5 h-32 relative">
-                <div className="absolute inset-x-20 top-0 bg-gradient-to-r from-transparent via-indigo-500 to-transparent h-[3px] w-3/4 blur-sm" />
-                <div className="absolute inset-x-20 top-0 bg-gradient-to-r from-transparent via-indigo-500 to-transparent h-px w-5/4" />
-                <div className="absolute inset-x-60 top-0 bg-gradient-to-r from-transparent via-sky-500 to-transparent h-[7px] w-1/4 blur-sm" />
-                <div className="absolute inset-x-60 top-0 bg-gradient-to-r from-transparent via-sky-500 to-transparent h-px w-2/4" />
+              <div className="w-full max-w-[40rem] transition-opacity fade-in-5 h-32 relative">
+                <div className="absolute inset-x-10 sm:inset-x-20 top-0 bg-gradient-to-r from-transparent via-indigo-500 to-transparent h-[3px] w-3/4 blur-sm" />
+                <div className="absolute inset-x-10 sm:inset-x-20 top-0 bg-gradient-to-r from-transparent via-indigo-500 to-transparent h-px w-5/4" />
+                <div className="absolute inset-x-20 sm:inset-x-60 top-0 bg-gradient-to-r from-transparent via-sky-500 to-transparent h-[7px] w-1/4 blur-sm" />
+                <div className="absolute inset-x-20 sm:inset-x-60 top-0 bg-gradient-to-r from-transparent via-sky-500 to-transparent h-px w-2/4" />
 
                 <SparklesCore
                   background="transparent"
@@ -152,9 +152,9 @@ function Signin() {
             </div>
 
             {/* Sign-in Button */}
-            <div className="flex justify-between items-center">
-              <div className="flex items-center justify-center rounded-full p-4 animate-fade-in">
-                <div className="relative flex items-center justify-center p-5 rounded-full bg-black ring-container hover:animate-pulse-spin">
+            <div className="flex justify-center items-center mt-4">
+              <div className="flex items-center justify-center rounded-full p-2 sm:p-4 animate-fade-in">
+                <div className="relative flex items-center justify-center p-3 sm:p-5 rounded-full bg-black ring-container hover:animate-pulse-spin">
                   <div className="absolute inset-0 flex items-center justify-center ring">
                     <div className="ring-layer"></div>
                     <div className="ring-layer"></div>
@@ -162,9 +162,9 @@ function Signin() {
                   <Image
                     src="glug.svg"
                     alt="GLUG Logo"
-                    width={100}
-                    height={100}
-                    className="rounded-full z-20 duration-300 scale-150 brightness-90 hover:brightness-110 transition ease-in cursor-pointer"
+                    width={80}
+                    height={80}
+                    className="rounded-full z-20 duration-300 scale-125 sm:scale-150 brightness-90 hover:brightness-110 transition ease-in cursor-pointer"
                     onClick={Signin}
                   />
                 </div>
@@ -172,8 +172,8 @@ function Signin() {
             </div>
           </div>
           {/* TELEMETRY HUD */}
-          <div className="absolute bottom-8 w-full px-12 flex justify-between items-end pointer-events-none opacity-40 hidden md:flex z-50">
-            <div className="text-[12px] space-y-1 tracking-[0.2em] uppercase">
+          <div className="absolute bottom-4 sm:bottom-8 w-full px-4 sm:px-12 justify-between items-end pointer-events-none opacity-40 hidden lg:flex z-50">
+            <div className="text-[10px] sm:text-[12px] space-y-1 tracking-[0.2em] uppercase">
               <p className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />{" "}
                 STATUS: STABLE
@@ -181,7 +181,7 @@ function Signin() {
               <p>SECTOR: 7G-XC</p>
               <p>VELOCITY: 28,000 KM/H</p>
             </div>
-            <div className="text-[12px] text-right tracking-[0.2em] uppercase">
+            <div className="text-[10px] sm:text-[12px] text-right tracking-[0.2em] uppercase">
               <p>AUDITION PORTAL TERMINAL: V2.0.4</p>
               <p>© 2026 GNU/LINUX USERS GROUP</p>
             </div>

@@ -208,7 +208,7 @@ export default function Round2() {
     );
 
   return (
-    <div className="h-screen w-full bg-[#02010a] text-slate-200 font-mono relative flex flex-col items-center justify-center overflow-hidden">
+    <div className="min-h-screen w-full bg-[#02010a] text-slate-200 font-mono relative flex flex-col items-center justify-center overflow-x-hidden overflow-y-auto">
       {/* DYNAMIC HIGH-BRIGHTNESS BACKGROUND */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         {/* Orbital Blue Orb */}
@@ -242,21 +242,21 @@ export default function Round2() {
 
       <Toaster position="top-center" />
 
-      <div className="container relative z-10 max-w-7xl h-full flex flex-col justify-between py-10 px-8">
+      <div className="container relative z-10 max-w-7xl w-full flex flex-col justify-between py-6 sm:py-10 px-4 sm:px-8">
         {/* HEADER */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center mt-6"
+          className="text-center mt-4 sm:mt-6"
         >
-          <div className="flex items-center justify-center gap-4 mb-2">
-            <div className="h-[1px] w-12 bg-blue-400/50 shadow-[0_0_8px_#3b82f6]" />
-            <p className="text-blue-400 tracking-[0.6em] text-[11px] uppercase font-black drop-shadow-lg">
+          <div className="flex items-center justify-center gap-2 sm:gap-4 mb-2">
+            <div className="h-[1px] w-6 sm:w-12 bg-blue-400/50 shadow-[0_0_8px_#3b82f6]" />
+            <p className="text-blue-400 tracking-[0.3em] sm:tracking-[0.6em] text-[9px] sm:text-[11px] uppercase font-black drop-shadow-lg">
               Authorized // Round 2 Submission
             </p>
-            <div className="h-[1px] w-12 bg-blue-400/50 shadow-[0_0_8px_#3b82f6]" />
+            <div className="h-[1px] w-6 sm:w-12 bg-blue-400/50 shadow-[0_0_8px_#3b82f6]" />
           </div>
-          <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-white uppercase leading-tight">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-black tracking-tighter text-white uppercase leading-tight">
             TECH{" "}
             <span className="relative inline-block pr-2 text-blue-600">
               REVIEW
@@ -265,19 +265,19 @@ export default function Round2() {
         </motion.div>
 
         {/* MAIN CONTENT GRID */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 w-full  my-6 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 md:gap-10 w-full my-4 sm:my-6 items-stretch">
           {/* LEFT: FORMS */}
-          <div className="lg:col-span-7 flex flex-col gap-6">
-            <div className="group flex-1 border border-white/10 bg-white/5 backdrop-blur-2xl p-6 relative rounded-none shadow-[0_0_40px_rgba(0,0,0,0.5)] transition-all hover:border-blue-500/50">
+          <div className="lg:col-span-7 flex flex-col gap-4 sm:gap-6">
+            <div className="group flex-1 border border-white/10 bg-white/5 backdrop-blur-2xl p-4 sm:p-6 relative rounded-none shadow-[0_0_40px_rgba(0,0,0,0.5)] transition-all hover:border-blue-500/50">
               <div className="absolute top-0 left-0 w-full h-[4px] bg-blue-500 shadow-[0_0_15px_#3b82f6]" />
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-4 mt-3">
-                  <FaGithub className="text-3xl text-blue-300 animate-pulse" />
-                  <h3 className="text-xl font-mono font-bold uppercase tracking-widest text-white">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <div className="flex items-center gap-2 sm:gap-4 mt-2 sm:mt-3">
+                  <FaGithub className="text-2xl sm:text-3xl text-blue-300 animate-pulse" />
+                  <h3 className="text-sm sm:text-xl font-mono font-bold uppercase tracking-wide sm:tracking-widest text-white">
                     GITHUB REPOSITORY LINK
                   </h3>
                 </div>
-                <Badge className="bg-blue-500 text-white rounded-none font-bold">
+                <Badge className="bg-blue-500 text-white rounded-none font-bold text-xs">
                   REQUIRED
                 </Badge>
               </div>
@@ -289,7 +289,7 @@ export default function Round2() {
                     disabled={isSubmitted}
                     onChange={(e) => setTaskLink(e.target.value)}
                     placeholder="https://github.com/username/repository"
-                    className="bg-black/80 border-slate-500 rounded-none h-12 px-4 text-sm tracking-normal focus:border-blue-500 uppercase transition-all"
+                    className="bg-black/80 border-slate-500 rounded-none h-10 sm:h-12 px-3 sm:px-4 text-xs sm:text-sm tracking-normal focus:border-blue-500 uppercase transition-all"
                   />
                   {taskLinkValid !== null && (
                     <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -304,7 +304,7 @@ export default function Round2() {
                 <Button
                   onClick={handleTaskLinkValidation}
                   disabled={isSubmitted || isSubmitting}
-                  className="w-full bg-blue-600 hover:bg-white hover:text-black text-white rounded-none h-12 font-black uppercase tracking-tight text-sm transition-all duration-500 mb-4"
+                  className="w-full bg-blue-600 hover:bg-white hover:text-black text-white rounded-none h-10 sm:h-12 font-black uppercase tracking-tight text-xs sm:text-sm transition-all duration-500 mb-4"
                 >
                   VALIDATE
                 </Button>
@@ -318,11 +318,11 @@ export default function Round2() {
               </div>
             </div>
 
-            <div className="group flex-1 border border-white/10 bg-white/5 backdrop-blur-2xl p-6 relative rounded-none shadow-[0_0_40px_rgba(0,0,0,0.5)] transition-all hover:border-purple-500/50">
+            <div className="group flex-1 border border-white/10 bg-white/5 backdrop-blur-2xl p-4 sm:p-6 relative rounded-none shadow-[0_0_40px_rgba(0,0,0,0.5)] transition-all hover:border-purple-500/50">
               <div className="absolute top-0 left-0 w-full h-[4px] bg-purple-600 shadow-[0_0_15px_#9333ea]" />
-              <div className="flex items-center gap-5 mb-6">
-                <FaPhotoVideo className="text-3xl text-purple-400" />
-                <h3 className="text-xl font-mono font-bold uppercase tracking-widest text-white">
+              <div className="flex items-center gap-3 sm:gap-5 mb-4 sm:mb-6">
+                <FaPhotoVideo className="text-2xl sm:text-3xl text-purple-400" />
+                <h3 className="text-sm sm:text-xl font-mono font-bold uppercase tracking-wide sm:tracking-widest text-white">
                   Creative Assets Link (Optional)
                 </h3>
               </div>
@@ -331,11 +331,11 @@ export default function Round2() {
                   value={gdLink}
                   onChange={(e) => setGdLink(e.target.value)}
                   placeholder="Canva, Drive, Figma, or Portfolio link"
-                  className="bg-black/80 border-slate-700 rounded-none h-12 px-4 text-sm tracking-normal focus:border-purple-500 uppercase transition-all"
+                  className="bg-black/80 border-slate-700 rounded-none h-10 sm:h-12 px-3 sm:px-4 text-xs sm:text-sm tracking-normal focus:border-purple-500 uppercase transition-all"
                 />
                 <Button
                   onClick={handleGdLinkValidation}
-                  className="w-full bg-slate-900 border border-purple-500/30 text-purple-400 hover:bg-purple-600 hover:text-white rounded-none h-12 font-black uppercase tracking-tight text-sm transition-all duration-500 mb-4"
+                  className="w-full bg-slate-900 border border-purple-500/30 text-purple-400 hover:bg-purple-600 hover:text-white rounded-none h-10 sm:h-12 font-black uppercase tracking-tight text-xs sm:text-sm transition-all duration-500 mb-4"
                 >
                   Validate
                 </Button>
@@ -352,7 +352,7 @@ export default function Round2() {
           {/* RIGHT: STATUS */}
           {/* RIGHT: STATUS SELECTOR */}
           <div className="lg:col-span-5 self-start">
-            <div className="border border-white/10 bg-white/5 backdrop-blur-3xl p-6 relative shadow-2xl overflow-hidden">
+            <div className="border border-white/10 bg-white/5 backdrop-blur-3xl p-4 sm:p-6 relative shadow-2xl overflow-hidden">
               <motion.div
                 animate={{
                   backgroundColor:
@@ -365,7 +365,7 @@ export default function Round2() {
                 className="absolute top-0 left-0 w-full h-[3px] transition-colors duration-500"
               />
 
-              <h3 className="text-lg font-mono font-bold uppercase tracking-[0.em] text-white/90 mb-6 border-b border-white/10 pb-2">
+              <h3 className="text-base sm:text-lg font-mono font-bold uppercase tracking-wide text-white/90 mb-4 sm:mb-6 border-b border-white/10 pb-2">
                 TASK STATUS
               </h3>
 
@@ -446,37 +446,37 @@ export default function Round2() {
         </div>
 
         {/* FOOTER */}
-        <motion.div className="flex flex-col items-center gap-4">
+        <motion.div className="flex flex-col items-center gap-3 sm:gap-4 mb-4 sm:mb-0">
           <Button
             onClick={handleSubmit}
             // Logic: Disable if already submitted OR if currently submitting OR if link isn't valid
             disabled={isSubmitted || isSubmitting || !taskLinkValid}
             className={cn(
-              "group relative h-12 w-full max-w-xl transition-all duration-700 rounded-none font-black uppercase tracking-[0.4em] text-lg overflow-hidden",
+              "group relative h-10 sm:h-12 w-full max-w-xl transition-all duration-700 rounded-none font-black uppercase tracking-[0.2em] sm:tracking-[0.4em] text-sm sm:text-lg overflow-hidden",
               isSubmitted
                 ? "bg-emerald-900/40 text-emerald-500 border border-emerald-500/50 cursor-not-allowed shadow-none"
                 : "bg-blue-600 text-white hover:bg-blue-400 hover:text-black shadow-[0_0_50px_rgba(37,99,235,0.4)]"
             )}
           >
             {isSubmitted ? (
-              <span className="flex items-center gap-3">
-                <HiCheck className="w-6 h-6" /> SUBMITTED
+              <span className="flex items-center gap-2 sm:gap-3">
+                <HiCheck className="w-4 h-4 sm:w-6 sm:h-6" /> SUBMITTED
               </span>
             ) : isSubmitting ? (
-              <Loader2 className="h-8 w-8 animate-spin" />
+              <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin" />
             ) : (
-              <span className="flex items-center gap-6">
+              <span className="flex items-center gap-3 sm:gap-6">
                 FINAL SUBMISSION{" "}
-                <ChevronRight className="w-8 h-8 group-hover:translate-x-4 transition-transform" />
+                <ChevronRight className="w-6 h-6 sm:w-8 sm:h-8 group-hover:translate-x-4 transition-transform" />
               </span>
             )}
           </Button>
-          <div className="flex items-center gap-10 opacity-40">
-            <div className="h-[1px] w-24 bg-blue-500" />
-            <p className="text-[10px] text-blue-400 uppercase tracking-[1em] animate-pulse">
+          <div className="flex items-center gap-4 sm:gap-10 opacity-40">
+            <div className="h-[1px] w-12 sm:w-24 bg-blue-500" />
+            <p className="text-[8px] sm:text-[10px] text-blue-400 uppercase tracking-[0.5em] sm:tracking-[1em] animate-pulse">
               SECURE_LINK_ESTABLISHED
             </p>
-            <div className="h-[1px] w-24 bg-blue-500" />
+            <div className="h-[1px] w-12 sm:w-24 bg-blue-500" />
           </div>
         </motion.div>
       </div>

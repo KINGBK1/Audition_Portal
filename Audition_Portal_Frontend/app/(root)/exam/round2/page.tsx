@@ -90,7 +90,9 @@ export default function Round2() {
       );
       const user = await res.json();
 
-      if (!user.hasGivenExam || user.round < 2) {
+      // Only allow access if user is exactly in round 2
+      if (!user.hasGivenExam || user.round !== 2) {
+        toast.error("You are not authorized to access Round 2");
         router.push("/dashboard");
         return;
       }

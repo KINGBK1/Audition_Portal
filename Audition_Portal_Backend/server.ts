@@ -39,7 +39,6 @@ app.use(
         process.env.FRONTEND_URL,
         "http://localhost:3000",
         "http://localhost:3001",
-        "http://dev.auditions.nitdgplug.org/",
       ].filter(Boolean);
       
       // Allow no origin (mobile apps, curl, postman)
@@ -51,9 +50,8 @@ app.use(
       const isAllowed = 
         allowedOrigins.some(allowed => origin === allowed) ||
         origin.includes("vercel.app") ||
-        origin.includes("localhost");
-        origin.includes("dev.auditions.nitdgplug.org");
-        origin.includes("nitdgplug.org");
+        origin.includes("localhost") ||
+        origin.endsWith(".nitdgplug.org");
       
       if (isAllowed) {
         callback(null, true);

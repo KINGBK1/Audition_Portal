@@ -137,7 +137,7 @@ app.put(
   "/api/update-user-info",
   verifyJWT,
   async (req: Request, res: Response) => {
-    const { contact, gender, specialization } = req.body;
+    const { username, contact, gender, specialization } = req.body;
 
     try {
       // Get user ID from authenticated request
@@ -149,6 +149,7 @@ app.put(
         const updatedUser = await prisma.user.update({
           where: { id: userId },
           data: {
+            username,
             contact,
             gender,
             specialization,

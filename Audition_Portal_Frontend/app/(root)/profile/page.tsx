@@ -35,6 +35,7 @@ export default function Profile() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState({
+    username: "",
     contact: "",
     gender: "",
     specialization: "",
@@ -56,6 +57,7 @@ export default function Profile() {
           .then((data) => {
             const user = data ?? {};
             setFormData({
+              username: user.username || "",
               contact: user.contact || "",
               gender: user.gender || "",
               specialization: user.specialization || "",
@@ -206,13 +208,16 @@ export default function Profile() {
               <div className="space-y-3">
                 {" "}
                 <div className="space-y-1">
-                  <Label className="text-[13px] sm:text-[15px] uppercase tracking-wider text-slate-400 font-semibold">
+                  <Label htmlFor="username" className="text-[13px] sm:text-[15px] uppercase tracking-wider text-blue-400 font-black">
                     Name
                   </Label>
                   <Input
-                    className="bg-black/40 border-slate-800 text-slate-100 h-10 sm:h-12 text-[13px] sm:text-[15px] rounded-none cursor-not-allowed font-bold"
-                    value={userInfo?.username || ""}
-                    disabled
+                    id="username"
+                    className="bg-black/60 border-slate-700 hover:border-blue-800 focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-blue-500 focus:outline-none h-10 sm:h-12 text-[13px] sm:text-[15px] rounded-none transition-all placeholder:text-slate-600 text-white font-mono font-bold"
+                    value={formData.username}
+                    onChange={handleInputChange}
+                    placeholder="Enter your name"
+                    required
                   />
                 </div>
                 <div className="space-y-2">
@@ -239,10 +244,7 @@ export default function Profile() {
                   <Input
                     id="contact"
                     className="bg-black/60 border-slate-700 hover:border-blue-800 focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-blue-500 focus:outline-none h-12 sm:h-14 rounded-none transition-all placeholder:text-slate-600 text-white font-mono font-bold text-[16px] sm:text-[18px]"
-                    disabled={Boolean(userInfo?.contact)}
-                    value={
-                      userInfo?.contact ? userInfo.contact : formData.contact
-                    }
+                    value={formData.contact}
                     onChange={handleInputChange}
                     placeholder="Enter 10-digit number"
                     required
@@ -260,10 +262,7 @@ export default function Profile() {
                       Gender
                     </Label>
                     <Select
-                      disabled={Boolean(userInfo?.gender)}
-                      value={
-                        userInfo?.gender ? userInfo.gender : formData.gender
-                      }
+                      value={formData.gender}
                       onValueChange={(val: string) =>
                         handleSelectChange("gender", val)
                       }
@@ -300,12 +299,7 @@ export default function Profile() {
                       DEPARTMENT
                     </Label>
                     <Select
-                      disabled={Boolean(userInfo?.specialization)}
-                      value={
-                        userInfo?.specialization
-                          ? userInfo.specialization
-                          : formData.specialization
-                      }
+                      value={formData.specialization}
                       onValueChange={(val: string) =>
                         handleSelectChange("specialization", val)
                       }
@@ -345,21 +339,9 @@ export default function Profile() {
                 {" "}
                 <Button
                   type="submit"
-                  disabled={Boolean(isComplete)}
-                  className={cn(
-                    "w-full h-12 sm:h-14 rounded-none font-black uppercase tracking-[0.2em] sm:tracking-[0.25em] transition-all text-[13px] sm:text-[15px]",
-                    isComplete
-                      ? "bg-emerald-900/20 text-emerald-400 border border-emerald-500/50 cursor-not-allowed"
-                      : "bg-blue-800 text-white hover:bg-blue-600 transition-all shadow-[0_0_20px_rgba(37,99,235,0.4)]"
-                  )}
+                  className="w-full h-12 sm:h-14 rounded-none font-black uppercase tracking-[0.2em] sm:tracking-[0.25em] transition-all text-[13px] sm:text-[15px] bg-blue-800 text-white hover:bg-blue-600 shadow-[0_0_20px_rgba(37,99,235,0.4)]"
                 >
-                  {isComplete ? (
-                    <span className="flex items-center gap-2">
-                      PROFILE COMPLETED ✓
-                    </span>
-                  ) : (
-                    "COMPLETE YOUR PROFILE"
-                  )}
+                  UPDATE PROFILE
                 </Button>
                 <Button
                   variant="outline"

@@ -25,7 +25,7 @@ console.log("Prisma DB URL:", process.env.DATABASE_URL);
 const prisma = new client_1.PrismaClient();
 app.use((0, cookie_parser_1.default)());
 app.use((0, cors_1.default)({
-    origin: ["http://localhost:3001", "http://localhost:3000", "https://audition-portal-ke8e.vercel.app", "https://audition-portal-ke8e-i4q7qtepi-kingbk1s-projects.vercel.app"
+    origin: ["http://localhost:3001", "http://localhost:3000", "https://audition-portal-ke8e.vercel.app", "https://audition-portal-ke8e-i4q7qtepi-kingbk1s-projects.vercel.app" , "https://dev.auditions.nitdgplug.org"
     ],
     methods: "GET,POST,PUT,DELETE",
     allowedHeaders: "Content-Type,Authorization",

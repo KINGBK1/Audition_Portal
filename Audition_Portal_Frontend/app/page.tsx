@@ -150,7 +150,7 @@ export default function Home() {
             </div>
 
             {/* Sign-in Button */}
-            <div className="flex items-center justify-center rounded-full p-4 animate-fade-in relative">
+            <div className="flex flex-col md:flex-row items-center justify-center rounded-full p-4 animate-fade-in relative gap-3 md:gap-0">
               <div className="relative flex items-center justify-center p-5 rounded-full bg-black ring-container hover:animate-pulse-spin">
                 <div className="absolute inset-0 flex items-center justify-center ring">
                   <div className="ring-layer"></div>
@@ -166,8 +166,13 @@ export default function Home() {
                 />
               </div>
 
-              {/* Arrow and Text - Positioned to the right */}
-              <div className="absolute left-full ml-8 flex items-center gap-1 animate-fade-in whitespace-nowrap">
+              {/* Mobile: Text below logo */}
+              <span className="md:hidden text-xl font-bold bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 bg-clip-text text-transparent tracking-wide mt-12">
+                Register Here
+              </span>
+
+              {/* Desktop: Arrow and Text - Positioned to the right */}
+              <div className="hidden md:flex absolute left-full ml-8 items-center gap-1 animate-fade-in whitespace-nowrap">
                 {/* Arrow Image */}
                 <Image
                   src="/arrow.png"

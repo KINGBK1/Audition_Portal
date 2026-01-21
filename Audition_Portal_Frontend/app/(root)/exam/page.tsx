@@ -66,27 +66,9 @@ const Exam = () => {
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [submitConfirmText, setSubmitConfirmText] = useState("");
-  const [confirmTimer, setConfirmTimer] = useState(10);
-
-  // Timer logic for the modal
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-
-    if (showSubmitModal && confirmTimer > 0) {
-      // If modal is open and time remains, count down
-      interval = setInterval(() => setConfirmTimer((prev) => prev - 1), 1000);
-    } else if (showSubmitModal && confirmTimer === 0) {
-      // TRIGGER AUTO-SUBMIT WHEN MODAL TIMER EXPIRES
-      handleFinalSubmit();
-      setShowSubmitModal(false);
-    }
-
-    return () => clearInterval(interval);
-  }, [showSubmitModal, confirmTimer]); // Both dependencies are needed
 
   const openSubmitModal = () => {
     setShowSubmitModal(true);
-    setConfirmTimer(10);
     setSubmitConfirmText("");
   };
 
@@ -180,6 +162,7 @@ const Exam = () => {
       });
 
       setIsExamStarted(false);
+      setShowSubmitModal(false); // Close modal on successful submission
 
       // This line is now functional due to the added imports/hook
       await dispatch(fetchUserData()).unwrap();
@@ -821,32 +804,13 @@ const Exam = () => {
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             className="max-w-md w-full border border-slate-800 bg-card p-6 sm:p-8 space-y-4 sm:space-y-6 shadow-2xl relative">
-            <div className="absolute top-0 left-0 w-full h-1 bg-slate-800">
-              <motion.div
-                initial={{ width: "100%" }}
-                animate={{ width: "0%" }}
-                transition={{ duration: 10, ease: "linear" }}
-                className="h-full bg-red-500"
-              />
-            </div>
 
             <div className="space-y-3 sm:space-y-4 text-center">
               <h3 className="text-xl sm:text-2xl font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-white">
                 Final Authorization
               </h3>
               <p className="text-[10px] sm:text-xs font-black uppercase tracking-wider sm:tracking-widest text-slate-400">
-                {confirmTimer > 0 ? (
-                  <>
-                    Manual override required. System lock:{" "}
-                    <span className="text-red-500 font-mono text-base">
-                      {confirmTimer}s
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-red-500 animate-pulse">
-                    AUTO-SUBMITTING NOW...
-                  </span>
-                )}
+                Manual override required.
               </p>
             </div>
 
@@ -879,7 +843,7 @@ const Exam = () => {
                 Abort
               </Button>
               <Button
-                disabled={submitConfirmText !== "SUBMIT" || confirmTimer === 0}
+                disabled={submitConfirmText !== "SUBMIT"}
                 onClick={handleFinalSubmit}
                 className={cn(
                   "flex-1 h-14 rounded-none font-black uppercase text-xs tracking-[0.1em] transition-all",

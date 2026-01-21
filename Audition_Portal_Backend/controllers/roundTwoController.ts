@@ -53,13 +53,44 @@ export const CreateUpdateTask = async (req: Request, res: Response): Promise<Res
     }
 
     if (existingEntry) {
-      // Update existing entry - only update taskLink and status, keep review intact
+      // Check if review exists and forwarded status
+      if (existingEntry.review) {
+        if (existingEntry.review.forwarded === false) {
+          // Don't allow resubmission if forwarded is false
+          return res.status(403).json({ 
+            error: 'Your submission has been reviewed and cannot be modified.' 
+          });
+        } else if (existingEntry.review.forwarded === true) {
+          // Allow resubmission but reset forwarded to false
+          const updatedEntry = await prisma.roundTwo.update({
+            where: { userId: user.id },
+            data: {
+              taskLink,
+              status,
+            },
+          });
+
+          // Update review to set forwarded back to false
+          await prisma.roundTwoReview.update({
+            where: { roundTwoId: existingEntry.id },
+            data: {
+              forwarded: false,
+            },
+          });
+
+          return res.status(200).json({ 
+            message: 'Saved successfully - resubmission allowed', 
+            entry: updatedEntry 
+          });
+        }
+      }
+      
+      // No review exists - allow update normally
       const updatedEntry = await prisma.roundTwo.update({
         where: { userId: user.id },
         data: {
           taskLink,
           status,
-          // Don't update taskAlloted, addOns, or panel on resubmission
         },
       });
 

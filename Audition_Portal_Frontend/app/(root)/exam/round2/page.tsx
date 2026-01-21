@@ -24,6 +24,7 @@ export default function Round2() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isNewEntry, setIsNewEntry] = useState(true);
+  const [isUnderReview, setIsUnderReview] = useState(false);
 
   // URL Validation Logic
   const validateUrl = (url: string, type: "github" | "creative"): boolean => {
@@ -89,11 +90,6 @@ export default function Round2() {
       );
       const user = await res.json();
 
-      if (user.round == 2) {
-        router.push("/exam/round2");
-        return;
-      }
-
       if (!user.hasGivenExam || user.round < 2) {
         router.push("/dashboard");
         return;
@@ -102,14 +98,13 @@ export default function Round2() {
       setPanel(user.panel ?? null);
 
       const round2Res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/round2`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/round2/data`,
         {
           method: "GET",
           credentials: "include",
         }
       );
 
-      // Inside fetchUser function, replace the round2Res block:
       if (round2Res.ok) {
         const round2Data = await round2Res.json();
 
@@ -117,21 +112,33 @@ export default function Round2() {
           const dbStatus = round2Data.entry.status;
           const storedLinks = round2Data.entry.taskLink || "";
           const [firstLine, secondLine] = storedLinks.split(/\r?\n/, 2);
+          const review = round2Data.entry.review;
 
           setTaskLink(firstLine || "");
           setGdLink(secondLine || "");
           setStatus(dbStatus || "incomplete");
+          setIsNewEntry(false);
 
-          // CRITICAL FIX: Only set isSubmitted to true if the DB status is "done"
-          if (dbStatus === "done") {
-            setIsSubmitted(true);
-            setIsNewEntry(false);
-            // Ensure the button stays disabled by validating existing links
-            if (firstLine) setTaskLinkValid(validateUrl(firstLine, "github"));
+          // Check review.forwarded status
+          if (review) {
+            if (review.forwarded === false) {
+              // Submission is under review - disable submission
+              setIsUnderReview(true);
+              setIsSubmitted(true); // Keep form disabled
+              if (firstLine) setTaskLinkValid(validateUrl(firstLine, "github"));
+            } else if (review.forwarded === true) {
+              // Forwarded is true - allow resubmission
+              setIsUnderReview(false);
+              setIsSubmitted(false);
+            }
           } else {
-            // If status is "ASSIGNED" or anything else, keep the button active
-            setIsSubmitted(false);
-            setIsNewEntry(false); // It's an existing row, but not yet "Finalized"
+            // No review exists yet
+            if (dbStatus === "done") {
+              setIsSubmitted(true);
+              if (firstLine) setTaskLinkValid(validateUrl(firstLine, "github"));
+            } else {
+              setIsSubmitted(false);
+            }
           }
         }
       }
@@ -286,7 +293,7 @@ export default function Round2() {
                 <div className="relative">
                   <Input
                     value={taskLink}
-                    disabled={isSubmitted}
+                    disabled={isSubmitted || isUnderReview}
                     onChange={(e) => setTaskLink(e.target.value)}
                     placeholder="https://github.com/username/repository"
                     className="bg-black/80 border-slate-500 rounded-none h-10 sm:h-12 px-3 sm:px-4 text-xs sm:text-sm tracking-normal focus:border-blue-500 uppercase transition-all"
@@ -303,7 +310,7 @@ export default function Round2() {
                 </div>
                 <Button
                   onClick={handleTaskLinkValidation}
-                  disabled={isSubmitted || isSubmitting}
+                  disabled={isSubmitted || isSubmitting || isUnderReview}
                   className="w-full bg-blue-600 hover:bg-white hover:text-black text-white rounded-none h-10 sm:h-12 font-black uppercase tracking-tight text-xs sm:text-sm transition-all duration-500 mb-4"
                 >
                   VALIDATE
@@ -329,12 +336,14 @@ export default function Round2() {
               <div className="space-y-2">
                 <Input
                   value={gdLink}
+                  disabled={isUnderReview}
                   onChange={(e) => setGdLink(e.target.value)}
                   placeholder="Canva, Drive, Figma, or Portfolio link"
                   className="bg-black/80 border-slate-700 rounded-none h-10 sm:h-12 px-3 sm:px-4 text-xs sm:text-sm tracking-normal focus:border-purple-500 uppercase transition-all"
                 />
                 <Button
                   onClick={handleGdLinkValidation}
+                  disabled={isUnderReview}
                   className="w-full bg-slate-900 border border-purple-500/30 text-purple-400 hover:bg-purple-600 hover:text-white rounded-none h-10 sm:h-12 font-black uppercase tracking-tight text-xs sm:text-sm transition-all duration-500 mb-4"
                 >
                   Validate
@@ -400,7 +409,8 @@ export default function Round2() {
                   return (
                     <button
                       key={option.value}
-                      onClick={() => !isSubmitted && setStatus(option.value)}
+                      onClick={() => !isSubmitted && !isUnderReview && setStatus(option.value)}
+                      disabled={isUnderReview}
                       className={cn(
                         "w-full py-3 px-5 border transition-all duration-300 flex items-center justify-between rounded-none relative group",
                         isActive
@@ -449,16 +459,22 @@ export default function Round2() {
         <motion.div className="flex flex-col items-center gap-3 sm:gap-4 mb-4 sm:mb-0">
           <Button
             onClick={handleSubmit}
-            // Logic: Disable if already submitted OR if currently submitting OR if link isn't valid
-            disabled={isSubmitted || isSubmitting || !taskLinkValid}
+            // Logic: Disable if already submitted OR if currently submitting OR if link isn't valid OR if under review
+            disabled={isSubmitted || isSubmitting || !taskLinkValid || isUnderReview}
             className={cn(
               "group relative h-10 sm:h-12 w-full max-w-xl transition-all duration-700 rounded-none font-black uppercase tracking-[0.2em] sm:tracking-[0.4em] text-sm sm:text-lg overflow-hidden",
-              isSubmitted
+              isUnderReview
+                ? "bg-amber-900/40 text-amber-500 border border-amber-500/50 cursor-not-allowed shadow-none"
+                : isSubmitted
                 ? "bg-emerald-900/40 text-emerald-500 border border-emerald-500/50 cursor-not-allowed shadow-none"
                 : "bg-blue-600 text-white hover:bg-blue-400 hover:text-black shadow-[0_0_50px_rgba(37,99,235,0.4)]"
             )}
           >
-            {isSubmitted ? (
+            {isUnderReview ? (
+              <span className="flex items-center gap-2 sm:gap-3">
+                <HiClock className="w-4 h-4 sm:w-6 sm:h-6" /> UNDER REVIEW
+              </span>
+            ) : isSubmitted ? (
               <span className="flex items-center gap-2 sm:gap-3">
                 <HiCheck className="w-4 h-4 sm:w-6 sm:h-6" /> SUBMITTED
               </span>

@@ -130,7 +130,7 @@ function Signin() {
           <div className="relative flex flex-col h-full w-full items-center justify-center overflow-hidden rounded-lg p-4 px-6">
             <div className="w-full flex flex-col items-center justify-center overflow-hidden rounded-md">
               <BlurIn
-                word="GLUG AUDITONS"
+                word="GLUG Auditions"
                 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black text-center relative z-20 pointer-events-none whitespace-pre-wrap bg-gradient-to-b from-slate-600 to-gray-300/80 bg-clip-text leading-none text-transparent dark:from-white dark:to-slate-900/10"
               />
               <div className="w-full max-w-[40rem] transition-opacity fade-in-5 h-32 relative">

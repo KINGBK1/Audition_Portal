@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation";
 import Loader from "@/components/Loader";
 import { useAppDispatch } from "@/lib/hooks";
 import { verifyToken } from "@/lib/store/features/auth/authSlice";
+import SciFiButton from "@/components/SciFiButton";
+import Arrow from "@/components/Arrow";
 
 const slugs = [
   "typescript",
@@ -150,7 +152,12 @@ export default function Home() {
             </div>
 
             {/* Sign-in Button */}
-            <div className="flex flex-col md:flex-row items-center justify-center rounded-full p-4 animate-fade-in relative gap-3 md:gap-0">
+            <div className="flex flex-col items-center justify-center p-4 animate-fade-in relative">
+              {/* Arrow on mobile - positioned above logo */}
+              <div className="md:hidden relative w-20 h-20 mb-10">
+                <Arrow />
+              </div>
+
               <div className="relative flex items-center justify-center p-5 rounded-full bg-black ring-container hover:animate-pulse-spin">
                 <div className="absolute inset-0 flex items-center justify-center ring">
                   <div className="ring-layer"></div>
@@ -164,29 +171,15 @@ export default function Home() {
                   className="rounded-full z-20 duration-300 scale-150 brightness-90 hover:brightness-110 transition ease-in cursor-pointer"
                   onClick={Signin}
                 />
+
+                {/* SciFi Button positioned to the right side of logo - desktop only */}
+                <div className="hidden md:block absolute top-2/5 left-full ml-8 -translate-y-1/2 scale-[0.35] origin-left">
+                  <SciFiButton  text="Join Us" />
+                </div>
               </div>
 
-              {/* Mobile: Text below logo */}
-              <span className="md:hidden text-xl font-bold bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 bg-clip-text text-transparent tracking-wide mt-12">
-                Register Here
-              </span>
-
-              {/* Desktop: Arrow and Text - Positioned to the right */}
-              <div className="hidden md:flex absolute left-full ml-8 items-center gap-1 animate-fade-in whitespace-nowrap">
-                {/* Arrow Image */}
-                <Image
-                  src="/arrow.png"
-                  alt="Arrow"
-                  width={50}
-                  height={50}
-                  className="animate-bounce-x animate-blink-slow"
-                />
-
-                {/* Text */}
-                <span className="text-2xl font-bold bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 bg-clip-text text-transparent tracking-wide">
-                  Register Here
-                </span>
-              </div>
+              {/* Bottom margin for mobile */}
+              <div className="md:hidden h-16"></div>
             </div>
           </div>
           {/* TELEMETRY HUD */}
@@ -206,33 +199,6 @@ export default function Home() {
           </div>
         </div>
       )}
-      <style jsx>{`
-        @keyframes bounce-x {
-          0%, 100% {
-            transform: translateX(0);
-          }
-          50% {
-            transform: translateX(-10px);
-          }
-        }
-
-        @keyframes blink-slow {
-          0%, 100% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0.3;
-          }
-        }
-
-        .animate-bounce-x {
-          animation: bounce-x 2s ease-in-out infinite;
-        }
-
-        .animate-blink-slow {
-          animation: blink-slow 3s ease-in-out infinite;
-        }
-      `}</style>
     </div>
   );
 }

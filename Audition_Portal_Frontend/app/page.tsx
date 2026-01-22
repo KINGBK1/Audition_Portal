@@ -179,11 +179,29 @@ export default function Home() {
               </div>
 
               {/* Bottom margin for mobile */}
-              <div className="md:hidden h-16"></div>
+              <div className="md:hidden h-6"></div>
             </div>
           </div>
-          {/* TELEMETRY HUD */}
-          <div className="absolute bottom-8 w-full px-12 flex justify-between items-end pointer-events-none opacity-40 hidden md:flex z-50">
+
+          {/* Mobile Telemetry HUD - Spread across bottom */}
+          <div className="md:hidden absolute bottom-3 w-full px-3 flex justify-between items-end pointer-events-none z-50">
+            <div className="text-[10px] space-y-0.5 tracking-[0.08em] uppercase text-slate-300/80">
+              <p className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse flex-shrink-0" />
+                <span className="whitespace-nowrap">STABLE</span>
+              </p>
+              <p className="text-[9px] whitespace-nowrap">7G-XC</p>
+              <p className="text-[9px] whitespace-nowrap">28K KM/H</p>
+            </div>
+            <div className="text-[9px] text-right tracking-[0.08em] uppercase text-slate-400/80 space-y-0.5">
+              <p className="whitespace-nowrap">V2.0.4</p>
+              <p className="whitespace-nowrap">© 2026</p>
+              <p className="whitespace-nowrap">GLUG</p>
+            </div>
+          </div>
+
+          {/* TELEMETRY HUD - Desktop */}
+          <div className="absolute bottom-8 w-full px-12 justify-between items-end pointer-events-none opacity-40 hidden md:flex z-50">
             <div className="text-[12px] space-y-1 tracking-[0.2em] uppercase">
               <p className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />{" "}

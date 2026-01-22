@@ -748,6 +748,10 @@ const Exam = () => {
                                 onCopy={handleCopyPaste}
                                 onCut={handleCopyPaste}
                                 onPaste={handleCopyPaste}
+                                onDragStart={(e) => e.preventDefault()}
+                                onDrop={(e) => e.preventDefault()}
+                                autoComplete="off"
+                                spellCheck={false}
                               />
                             )}
                           </div>

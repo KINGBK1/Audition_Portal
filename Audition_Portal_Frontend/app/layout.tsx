@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import StoreProvider from "@/app/storeProvider";
 import { ThemeProvider } from "@/components/theme-provider";
+import DisableDevTools from "@/components/DisableDevTools";
+import SecurityLayer from "@/components/securitylayer";
 
 
 const inter = Inter({ subsets: ["latin"] });
@@ -21,7 +23,11 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <StoreProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <DisableDevTools />
+            <SecurityLayer />
+            {children}
+          </ThemeProvider>
         </StoreProvider>
       </body>
     </html>

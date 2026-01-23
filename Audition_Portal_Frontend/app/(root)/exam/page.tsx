@@ -66,6 +66,11 @@ const Exam = () => {
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [submitConfirmText, setSubmitConfirmText] = useState("");
+  const [showFullscreenWarning, setShowFullscreenWarning] = useState(false);
+  const [fullscreenWarningTimer, setFullscreenWarningTimer] = useState(5);
+  const fullscreenTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
+  const isAutoSubmittingRef = useRef(false);
 
   const openSubmitModal = () => {
     setShowSubmitModal(true);
@@ -74,6 +79,38 @@ const Exam = () => {
 
   // Fetch questions and options and user from the server
   useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
+        const user = await res.json();
+        
+        if (user.hasGivenExam) {
+          toast({
+            variant: "destructive",
+            description: "You have already given the exam.",
+          });
+          router.push("/dashboard");
+          return true; // Exam already given
+        } else {
+          // User hasn't given exam according to server, clear any stale flags
+          sessionStorage.removeItem('examAutoSubmitted');
+          return false; // Can proceed with exam
+        }
+      } catch (e) {
+        toast({
+          variant: "destructive",
+          description: "Failed to fetch user data, please refresh.",
+        });
+        return true; // Block on error
+      }
+    };
+    
     const fetchQuestions = async () => {
       setIsLoadingQuestions(true);
       try {
@@ -96,33 +133,15 @@ const Exam = () => {
         setIsLoadingQuestions(false);
       }
     };
-    const fetchUser = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user`,
-          {
-            method: "GET",
-            credentials: "include",
-          }
-        );
-        const user = await res.json();
-        // console.log(user)
-        if (user.hasGivenExam) {
-          toast({
-            variant: "destructive",
-            description: "You have already given the exam.",
-          });
-          router.push("/dashboard");
-        }
-      } catch (e) {
-        toast({
-          variant: "destructive",
-          description: "Failed to fetch user data, please refresh.",
-        });
+    
+    const initialize = async () => {
+      const examGiven = await fetchUser();
+      if (!examGiven) {
+        await fetchQuestions();
       }
     };
-    fetchUser();
-    fetchQuestions();
+    
+    initialize();
   }, [router]);
 
   const handleFinalSubmit = async () => {
@@ -183,7 +202,14 @@ const Exam = () => {
   };
 
   const handleAutoSubmit = async () => {
-    if (isExamStarted) {
+    if (isExamStarted && !isAutoSubmittingRef.current) {
+      console.log('Auto-submitting exam...');
+      isAutoSubmittingRef.current = true;
+      setHasAutoSubmitted(true);
+      
+      // Store in sessionStorage to prevent re-entry
+      sessionStorage.setItem('examAutoSubmitted', 'true');
+      
       await handleFinalSubmit();
     }
   };
@@ -217,31 +243,202 @@ const Exam = () => {
     };
   }, [isExamStarted]);
 
-  // Cleanup effect for security measures and fullscreen
+  // Fullscreen monitoring effect
   useEffect(() => {
+    if (!isExamStarted) return;
+
+    // Prevent back navigation
+    const preventBackNavigation = () => {
+      window.history.pushState(null, '', window.location.href);
+    };
+    
+    // Push initial state
+    window.history.pushState(null, '', window.location.href);
+    
+    const handlePopState = (e: PopStateEvent) => {
+      console.log('Back button pressed - preventing and auto-submitting');
+      e.preventDefault();
+      // Push state again to prevent going back
+      window.history.pushState(null, '', window.location.href);
+      
+      toast({
+        className: "dark",
+        variant: "destructive",
+        description: "Navigation blocked! Auto-submitting exam.",
+      });
+      handleAutoSubmit();
+    };
+
+    const handleFullscreenChange = () => {
+      console.log('Fullscreen changed:', document.fullscreenElement);
+      
+      if (!document.fullscreenElement) {
+        // User exited fullscreen
+        console.log('User exited fullscreen - starting warning');
+        setShowFullscreenWarning(true);
+        setFullscreenWarningTimer(5);
+        
+        // Clear any existing timer
+        if (fullscreenTimerRef.current) {
+          clearInterval(fullscreenTimerRef.current);
+        }
+        
+        // Start countdown
+        let timeRemaining = 5;
+        fullscreenTimerRef.current = setInterval(() => {
+          timeRemaining -= 1;
+          console.log('Countdown:', timeRemaining);
+          
+          if (timeRemaining <= 0) {
+            // Time's up, auto-submit
+            console.log('Time up - auto submitting');
+            if (fullscreenTimerRef.current) {
+              clearInterval(fullscreenTimerRef.current);
+              fullscreenTimerRef.current = null;
+            }
+            setShowFullscreenWarning(false);
+            toast({
+              className: "dark",
+              variant: "destructive",
+              description: "Exam auto-submitted due to exiting fullscreen mode.",
+            });
+            handleAutoSubmit();
+          } else {
+            setFullscreenWarningTimer(timeRemaining);
+          }
+        }, 1000);
+      } else {
+        // User returned to fullscreen
+        console.log('User returned to fullscreen');
+        if (fullscreenTimerRef.current) {
+          clearInterval(fullscreenTimerRef.current);
+          fullscreenTimerRef.current = null;
+        }
+        setShowFullscreenWarning(false);
+        setFullscreenWarningTimer(5);
+        toast({
+          className: "dark",
+          variant: "default",
+          description: "Fullscreen mode restored. Continue with your exam.",
+        });
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      console.log('Visibility changed:', document.visibilityState);
+      if (document.visibilityState === "hidden") {
+        console.log('Tab switched - auto submitting');
+        // Immediately submit without toast delay
+        handleAutoSubmit();
+      }
+    };
+
+    const handleWindowBlur = () => {
+      console.log('Window blur - auto submitting');
+      // Use a small delay to avoid false positives from modal dialogs
+      setTimeout(() => {
+        if (document.visibilityState === "hidden" || !document.hasFocus()) {
+          console.log('Confirmed window blur - auto submitting');
+          handleAutoSubmit();
+        }
+      }, 100);
+    };
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      console.log('Before unload - auto submitting');
+      e.preventDefault();
+      e.returnValue = ''; // Required for some browsers
+      handleAutoSubmit();
+    };
+    
+    const handlePageHide = () => {
+      console.log('Page hide - auto submitting');
+      handleAutoSubmit();
+    };
+    
+    const handleFocusOut = () => {
+      console.log('Focus out event');
+      // Check if focus moved outside the window
+      setTimeout(() => {
+        if (!document.hasFocus()) {
+          console.log('Lost focus - auto submitting');
+          handleAutoSubmit();
+        }
+      }, 100);
+    };
+
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      toast({
+        className: "dark",
+        variant: "destructive",
+        description: "Right-click is disabled during the exam.",
+      });
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        (e.ctrlKey &&
+          (e.key === "i" ||
+            e.key === "I" ||
+            e.key === "c" ||
+            e.key === "C" ||
+            e.key === "u" ||
+            e.key === "U" ||
+            e.key === "j" ||
+            e.key === "J")) ||
+        e.key === "F12"
+      ) {
+        e.preventDefault();
+        toast({
+          className: "dark",
+          variant: "destructive",
+          description: "Inspect element and other shortcuts are disabled during the exam.",
+        });
+      }
+    };
+
+    // Add all event listeners
+    window.addEventListener("popstate", handlePopState);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("contextmenu", handleContextMenu);
+    document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("blur", handleWindowBlur);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("pagehide", handlePageHide);
+    window.addEventListener("focusout", handleFocusOut);
+
+    // Cleanup
     return () => {
-      // Only cleanup when component unmounts
+      window.removeEventListener("popstate", handlePopState);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       document.removeEventListener("contextmenu", handleContextMenu);
       document.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("blur", handleWindowBlur);
       window.removeEventListener("beforeunload", handleBeforeUnload);
-      document.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("pagehide", handlePageHide);
+      window.removeEventListener("focusout", handleFocusOut);
       
-      // Exit fullscreen on unmount
+      if (fullscreenTimerRef.current) {
+        clearInterval(fullscreenTimerRef.current);
+        fullscreenTimerRef.current = null;
+      }
+      
       if (document.fullscreenElement) {
         document.exitFullscreen().catch(err => console.error("Failed to exit fullscreen:", err));
       }
     };
-  }, []);
+  }, [isExamStarted]);
 
-  // Security handlers
+  // Security handlers (kept for initial setup)
   const handleVisibilityChange = () => {
     if (document.visibilityState === "hidden" && isExamStarted) {
       toast({
         className: "dark",
         variant: "destructive",
-        description: "Switching tabs will submit your answers.",
+        description: "Tab switch detected! Auto-submitting exam.",
       });
       handleAutoSubmit();
     }
@@ -284,15 +481,22 @@ const Exam = () => {
       toast({
         className: "dark",
         variant: "destructive",
-        description: "Leaving the exam window will submit your answers.",
+        description: "Window switch detected! Auto-submitting exam.",
       });
       handleAutoSubmit();
     }
   };
 
   const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-    e.preventDefault();
-    handleAutoSubmit();
+    if (isExamStarted) {
+      e.preventDefault();
+      toast({
+        className: "dark",
+        variant: "destructive",
+        description: "Browser navigation detected! Auto-submitting exam.",
+      });
+      handleAutoSubmit();
+    }
   };
 
   const handleMouseMove = (e: MouseEvent) => {
@@ -331,6 +535,17 @@ const Exam = () => {
   };
 
   const startExam = async () => {
+    // Check if exam was auto-submitted before
+    if (hasAutoSubmitted) {
+      toast({
+        className: "dark",
+        variant: "destructive",
+        description: "Exam was already auto-submitted. You cannot restart.",
+      });
+      router.push("/dashboard");
+      return;
+    }
+    
     setIsLoading(true);
     // Simulate loading
     await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -338,6 +553,7 @@ const Exam = () => {
     // Request fullscreen mode
     try {
       await document.documentElement.requestFullscreen();
+      console.log('Entered fullscreen mode');
     } catch (err) {
       console.error("Failed to enter fullscreen:", err);
       toast({
@@ -345,18 +561,13 @@ const Exam = () => {
         variant: "destructive",
         description: "Please allow fullscreen mode to continue.",
       });
+      setIsLoading(false);
+      return; // Don't start exam if fullscreen failed
     }
     
     setIsExamStarted(true);
     setIsLoading(false);
-
-    // Add event listeners for security
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    document.addEventListener("contextmenu", handleContextMenu);
-    document.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("blur", handleWindowBlur);
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    document.addEventListener("mousemove", handleMouseMove);
+    console.log('Exam started');
   };
 
   const submitAnswer = async (questionId: number) => {
@@ -857,6 +1068,57 @@ const Exam = () => {
                 )}
               >
                 Confirm Submission
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+      
+      {/* Fullscreen Warning Modal */}
+      {showFullscreenWarning && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-red-950/80 backdrop-blur-md p-4 sm:p-6">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="max-w-md w-full border-4 border-red-500 bg-card p-6 sm:p-8 space-y-4 sm:space-y-6 shadow-2xl relative">
+
+            <div className="space-y-3 sm:space-y-4 text-center">
+              <AlertTriangle className="w-16 h-16 sm:w-20 sm:h-20 text-red-500 mx-auto animate-pulse" />
+              <h3 className="text-xl sm:text-2xl font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-red-500">
+                SECURITY BREACH
+              </h3>
+              <p className="text-[10px] sm:text-xs font-black uppercase tracking-wider sm:tracking-widest text-slate-300">
+                Fullscreen mode exited
+              </p>
+            </div>
+
+            <div className="space-y-4 text-center">
+              <div className="bg-red-950/50 border-2 border-red-500/30 p-6 sm:p-8">
+                <p className="text-5xl sm:text-6xl font-black text-red-500 mb-2">
+                  {fullscreenWarningTimer}
+                </p>
+                <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-slate-400 font-black">
+                  Seconds Remaining
+                </p>
+              </div>
+              
+              <p className="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider">
+                Return to fullscreen immediately
+                <br />
+                <span className="text-red-500">or exam will auto-submit!</span>
+              </p>
+              
+              <Button
+                onClick={async () => {
+                  try {
+                    await document.documentElement.requestFullscreen();
+                  } catch (err) {
+                    console.error("Failed to enter fullscreen:", err);
+                  }
+                }}
+                className="w-full h-14 rounded-none bg-red-600 text-white hover:bg-red-500 font-black uppercase text-xs tracking-[0.3em] shadow-[0_0_25px_rgba(220,38,38,0.6)]"
+              >
+                Enter Fullscreen Now
               </Button>
             </div>
           </motion.div>

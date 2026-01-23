@@ -71,6 +71,10 @@ const Exam = () => {
   const fullscreenTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
   const isAutoSubmittingRef = useRef(false);
+  const [showSecurityWarning, setShowSecurityWarning] = useState(false);
+  const [securityWarningTimer, setSecurityWarningTimer] = useState(5);
+  const [securityWarningType, setSecurityWarningType] = useState<'tab' | 'navigation' | 'window'>('tab');
+  const securityTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const openSubmitModal = () => {
     setShowSubmitModal(true);
@@ -256,17 +260,44 @@ const Exam = () => {
     window.history.pushState(null, '', window.location.href);
     
     const handlePopState = (e: PopStateEvent) => {
-      console.log('Back button pressed - preventing and auto-submitting');
+      console.log('Back button pressed - showing warning');
       e.preventDefault();
       // Push state again to prevent going back
       window.history.pushState(null, '', window.location.href);
       
-      toast({
-        className: "dark",
-        variant: "destructive",
-        description: "Navigation blocked! Auto-submitting exam.",
-      });
-      handleAutoSubmit();
+      // Show warning instead of immediate submit
+      setSecurityWarningType('navigation');
+      setShowSecurityWarning(true);
+      setSecurityWarningTimer(5);
+      
+      // Clear any existing timer
+      if (securityTimerRef.current) {
+        clearInterval(securityTimerRef.current);
+      }
+      
+      // Start countdown
+      let timeRemaining = 5;
+      securityTimerRef.current = setInterval(() => {
+        timeRemaining -= 1;
+        console.log('Security countdown:', timeRemaining);
+        
+        if (timeRemaining <= 0) {
+          console.log('Time up - auto submitting');
+          if (securityTimerRef.current) {
+            clearInterval(securityTimerRef.current);
+            securityTimerRef.current = null;
+          }
+          setShowSecurityWarning(false);
+          toast({
+            className: "dark",
+            variant: "destructive",
+            description: "Exam auto-submitted due to navigation attempt.",
+          });
+          handleAutoSubmit();
+        } else {
+          setSecurityWarningTimer(timeRemaining);
+        }
+      }, 1000);
     };
 
     const handleFullscreenChange = () => {
@@ -327,19 +358,98 @@ const Exam = () => {
     const handleVisibilityChange = () => {
       console.log('Visibility changed:', document.visibilityState);
       if (document.visibilityState === "hidden") {
-        console.log('Tab switched - auto submitting');
-        // Immediately submit without toast delay
-        handleAutoSubmit();
+        console.log('Tab switched - showing warning');
+        
+        // Show warning instead of immediate submit
+        setSecurityWarningType('tab');
+        setShowSecurityWarning(true);
+        setSecurityWarningTimer(5);
+        
+        // Clear any existing timer
+        if (securityTimerRef.current) {
+          clearInterval(securityTimerRef.current);
+        }
+        
+        // Start countdown
+        let timeRemaining = 5;
+        securityTimerRef.current = setInterval(() => {
+          timeRemaining -= 1;
+          console.log('Security countdown:', timeRemaining);
+          
+          if (timeRemaining <= 0) {
+            console.log('Time up - auto submitting');
+            if (securityTimerRef.current) {
+              clearInterval(securityTimerRef.current);
+              securityTimerRef.current = null;
+            }
+            setShowSecurityWarning(false);
+            toast({
+              className: "dark",
+              variant: "destructive",
+              description: "Exam auto-submitted due to tab switch.",
+            });
+            handleAutoSubmit();
+          } else {
+            setSecurityWarningTimer(timeRemaining);
+          }
+        }, 1000);
+      } else if (document.visibilityState === "visible" && showSecurityWarning) {
+        // User returned to tab
+        console.log('User returned to tab');
+        if (securityTimerRef.current) {
+          clearInterval(securityTimerRef.current);
+          securityTimerRef.current = null;
+        }
+        setShowSecurityWarning(false);
+        setSecurityWarningTimer(5);
+        toast({
+          className: "dark",
+          variant: "default",
+          description: "Welcome back. Continue with your exam.",
+        });
       }
     };
 
     const handleWindowBlur = () => {
-      console.log('Window blur - auto submitting');
+      console.log('Window blur - showing warning');
+      
       // Use a small delay to avoid false positives from modal dialogs
       setTimeout(() => {
         if (document.visibilityState === "hidden" || !document.hasFocus()) {
-          console.log('Confirmed window blur - auto submitting');
-          handleAutoSubmit();
+          console.log('Confirmed window blur - showing warning');
+          
+          setSecurityWarningType('window');
+          setShowSecurityWarning(true);
+          setSecurityWarningTimer(5);
+          
+          // Clear any existing timer
+          if (securityTimerRef.current) {
+            clearInterval(securityTimerRef.current);
+          }
+          
+          // Start countdown
+          let timeRemaining = 5;
+          securityTimerRef.current = setInterval(() => {
+            timeRemaining -= 1;
+            console.log('Security countdown:', timeRemaining);
+            
+            if (timeRemaining <= 0) {
+              console.log('Time up - auto submitting');
+              if (securityTimerRef.current) {
+                clearInterval(securityTimerRef.current);
+                securityTimerRef.current = null;
+              }
+              setShowSecurityWarning(false);
+              toast({
+                className: "dark",
+                variant: "destructive",
+                description: "Exam auto-submitted due to window switch.",
+              });
+              handleAutoSubmit();
+            } else {
+              setSecurityWarningTimer(timeRemaining);
+            }
+          }, 1000);
         }
       }, 100);
     };
@@ -424,6 +534,11 @@ const Exam = () => {
       if (fullscreenTimerRef.current) {
         clearInterval(fullscreenTimerRef.current);
         fullscreenTimerRef.current = null;
+      }
+      
+      if (securityTimerRef.current) {
+        clearInterval(securityTimerRef.current);
+        securityTimerRef.current = null;
       }
       
       if (document.fullscreenElement) {
@@ -738,7 +853,7 @@ const Exam = () => {
                   <AlertTriangle className="w-4 h-4" />
                   <span>Security Protocols Active</span>
                 </div>
-                <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-[11px] md:text-[12px] text-slate-400 uppercase tracking-widest font-bold">
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-[11px] md:text-[12px] text-red-600 uppercase tracking-widest font-bold">
                   <li className="flex items-center gap-2">
                     <span className="text-amber-500/30">/</span> Full-screen
                     mandatory
@@ -1119,6 +1234,66 @@ const Exam = () => {
                 className="w-full h-14 rounded-none bg-red-600 text-white hover:bg-red-500 font-black uppercase text-xs tracking-[0.3em] shadow-[0_0_25px_rgba(220,38,38,0.6)]"
               >
                 Enter Fullscreen Now
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+      
+      {/* Security Breach Warning Modal (Tab Switch / Navigation / Window Blur) */}
+      {showSecurityWarning && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-red-950/80 backdrop-blur-md p-4 sm:p-6">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="max-w-md w-full border-4 border-red-500 bg-card p-6 sm:p-8 space-y-4 sm:space-y-6 shadow-2xl relative">
+
+            <div className="space-y-3 sm:space-y-4 text-center">
+              <AlertTriangle className="w-16 h-16 sm:w-20 sm:h-20 text-red-500 mx-auto animate-pulse" />
+              <h3 className="text-xl sm:text-2xl font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-red-500">
+                SECURITY VIOLATION
+              </h3>
+              <p className="text-[10px] sm:text-xs font-black uppercase tracking-wider sm:tracking-widest text-slate-300">
+                {securityWarningType === 'tab' && 'Tab switch detected'}
+                {securityWarningType === 'navigation' && 'Navigation attempt detected'}
+                {securityWarningType === 'window' && 'Window switch detected'}
+              </p>
+            </div>
+
+            <div className="space-y-4 text-center">
+              <div className="bg-red-950/50 border-2 border-red-500/30 p-6 sm:p-8">
+                <p className="text-5xl sm:text-6xl font-black text-red-500 mb-2">
+                  {securityWarningTimer}
+                </p>
+                <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-slate-400 font-black">
+                  Seconds Remaining
+                </p>
+              </div>
+              
+              <p className="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider">
+                Return to exam immediately
+                <br />
+                <span className="text-red-500">or exam will auto-submit!</span>
+              </p>
+              
+              <Button
+                onClick={() => {
+                  // Clear the timer and dismiss warning
+                  if (securityTimerRef.current) {
+                    clearInterval(securityTimerRef.current);
+                    securityTimerRef.current = null;
+                  }
+                  setShowSecurityWarning(false);
+                  setSecurityWarningTimer(5);
+                  toast({
+                    className: "dark",
+                    variant: "default",
+                    description: "Warning dismissed. Continue with your exam.",
+                  });
+                }}
+                className="w-full h-14 rounded-none bg-red-600 text-white hover:bg-red-500 font-black uppercase text-xs tracking-[0.3em] shadow-[0_0_25px_rgba(220,38,38,0.6)]"
+              >
+                Return to Exam
               </Button>
             </div>
           </motion.div>

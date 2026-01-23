@@ -898,7 +898,7 @@ export default function AdminRoundTwoDashboard() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label className="text-gray-200">GD Round</Label>
+                          <Label className="text-gray-200">Graphic Designer</Label>
                           <Select value={reviewForm.gd} onValueChange={(v) => updateReviewField("gd", v)}>
                             <SelectTrigger className="bg-gray-900 border-gray-700 text-gray-200">
                               <SelectValue placeholder="GD participated?" />
@@ -911,7 +911,7 @@ export default function AdminRoundTwoDashboard() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label className="text-gray-200">General Round</Label>
+                          <Label className="text-gray-200">Video Editor</Label>
                           <Select
                             value={reviewForm.general}
                             onValueChange={(v) => updateReviewField("general", v)}
@@ -929,7 +929,7 @@ export default function AdminRoundTwoDashboard() {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label className="text-gray-200">Preferred Club</Label>
+                          <Label className="text-gray-200">Club Preference</Label>
                           <Input
                             value={reviewForm.clubPrefer}
                             onChange={(e) => updateReviewField("clubPrefer", e.target.value)}
@@ -956,7 +956,7 @@ export default function AdminRoundTwoDashboard() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-gray-200">Add on task</Label>
+                          <Label className="text-gray-200">Add-On Task</Label>
                           <Input
                             value={reviewForm.taskgiven}
                             onChange={(e) => updateReviewField("taskgiven", e.target.value)}
@@ -1019,7 +1019,7 @@ export default function AdminRoundTwoDashboard() {
                       <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
 
                         <div className="space-y-2">
-                          <Label className="text-gray-200">Forwarded to next tech task</Label>
+                          <Label className="text-gray-200">Next Tech Task Given</Label>
                           <Select
                             value={reviewForm.forwarded}
                             onValueChange={(v) => updateReviewField("forwarded", v)}

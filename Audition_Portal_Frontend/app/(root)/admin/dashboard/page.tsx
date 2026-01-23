@@ -127,9 +127,20 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-6 py-12 flex flex-col items-center justify-center min-h-[calc(100vh-88px)]">
-        <div className="mb-12 text-center">
+        <div className="mb-8 text-center">
           <h2 className="text-3xl font-bold text-white mb-2">Audition Rounds</h2>
           <p className="text-slate-400">Select a round to manage candidates and evaluations</p>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="mb-8">
+          <Button
+            onClick={() => router.push('/admin/round1/questions')}
+            className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-cyan-500/50"
+          >
+            <ClipboardList className="w-5 h-5 mr-2" />
+            Manage Round 1 Questions
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl">

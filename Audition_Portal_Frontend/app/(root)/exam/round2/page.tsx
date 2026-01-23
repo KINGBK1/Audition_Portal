@@ -11,6 +11,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, CheckCircle2, AlertCircle, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { panelLinks } from "@/components/panelLinks";
+
+
+
 
 export default function Round2() {
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -115,11 +119,13 @@ export default function Round2() {
           const storedLinks = round2Data.entry.taskLink || "";
           const [firstLine, secondLine] = storedLinks.split(/\r?\n/, 2);
           const review = round2Data.entry.review;
+          const reviewPanel = round2Data.entry.panel;
 
           setTaskLink(firstLine || "");
           setGdLink(secondLine || "");
           setStatus(dbStatus || "incomplete");
           setIsNewEntry(false);
+          setPanel(reviewPanel);
 
           // Check review.forwarded status
           if (review) {

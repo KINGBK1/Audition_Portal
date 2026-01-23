@@ -12,7 +12,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-
+import { FaWhatsapp } from 'react-icons/fa';
 import { useAppDispatch, useAppSelector } from '@/lib/hooks';
 import { fetchUserData, selectAuthState, verifyToken } from '@/lib/store/features/auth/authSlice';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react'
 import { CheckCircle2, ArrowRight, Trophy, Sparkles, Star } from 'lucide-react';
+import { panelLinks } from '@/components/panelLinks';
 
 const Dashboard = () => {
   const calculateTimeLeft = () => {
@@ -72,10 +73,15 @@ const Dashboard = () => {
 
         // 2. Fetch the absolute latest user data from the server
         const userData = await dispatch(fetchUserData()).unwrap();
-        
+
         // 3. Check if profile is complete
         const isProfileComplete = userData.contact && userData.gender && userData.specialization;
-        
+
+        // 4. If panel is not set and round is 2, fetch Round 2 data to get panel
+        // if (userData.round === 2 && (!userData.panel || userData.panel === 0)) {
+        //       await handleUserPanel();
+        // }
+
         if (!isProfileComplete) {
           // Redirect to profile page if incomplete
           push("/profile");
@@ -134,16 +140,52 @@ const Dashboard = () => {
     }
   }
 
+
+
+
   const hasCompletedQuiz = userInfo?.hasGivenExam && userInfo?.round === 1;
   const isRoundTwo = userInfo?.round === 2;
   const isRoundThreeOrHigher = userInfo?.round && userInfo.round >= 3;
   const showStartButton = !userInfo?.hasGivenExam;
+  const [panel, setPanel] = useState<number | null>(null);
 
   const handleRoundNavigation = () => {
     if (userInfo?.round === 2) {
       push(`/exam/round2`);
     }
   };
+
+
+  // Fetch user's panel number
+  const handleUserPanel = async () => {
+    if (userInfo?.round === 2) {
+      try {
+        const round2Res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/round2/data`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
+
+        if (round2Res.ok) {
+          const round2Data = await round2Res.json();
+          if (round2Data.entry) {
+            const reviewPanel = round2Data.entry.panel;
+            setPanel(reviewPanel);
+          }
+        };
+      } catch (error) {
+        console.error("Error fetching Round 2 data:", error);
+      }
+    }
+  }
+
+  useEffect(() => {
+  if (userInfo?.round === 2) {
+    handleUserPanel();
+  }
+}, [userInfo?.round]);
 
   return (
     <div>
@@ -289,18 +331,29 @@ const Dashboard = () => {
                     {/* Stats Divider: Responsive font sizes */}
                     <div className="grid grid-cols-2 border-y border-slate-500/50 py-5 sm:py-6 md:py-8 font-mono">
                       <div className="border-r border-slate-500/50 text-center">
-                        <div className="text-2xl sm:text-2xl md:text-3xl font-light text-white">
-                          02
+                        <div 
+                          onClick={() => {
+                            // console.log('Panel:', panel);
+                            // console.log('Panel Links:', panelLinks);
+                            if (panel && panelLinks[panel]) {
+                              window.open(panelLinks[panel], '_blank', 'noopener,noreferrer');
+                            } else {
+                              alert('Panel information not available yet');
+                            }
+                          }}
+                          className={`inline-block ${!panel ? 'opacity-50 cursor-not-allowed' : 'hover:scale-110 transition-transform cursor-pointer'}`}
+                        >
+                          <FaWhatsapp className="text-3xl sm:text-5xl md:text-6xl text-green-500 mx-auto" />
                         </div>
-                        <div className="text-[9px] sm:text-[10px] md:text-[12px] text-slate-300 uppercase tracking-widest mt-1">
-                          Target Round
+                        <div className="text-[9px] sm:text-[10px] md:text-[12px] text-slate-300 uppercase tracking-widest mt-2">
+                          Join Round 2 Panel
                         </div>
                       </div>
-                      <div className="text-center">
-                        <div className="text-2xl sm:text-2xl md:text-3xl font-light text-emerald-500">
+                      <div className="text-center flex pt-4 flex-col justify-between items-center ">
+                        <div className="text-2xl   sm:text-2xl md:text-3xl font-light text-emerald-500">
                           01
                         </div>
-                        <div className="text-[9px] sm:text-[10px] md:text-[12px] text-slate-300 uppercase tracking-widest mt-1">
+                        <div className="text-[9px]   sm:text-[10px] md:text-[12px] text-slate-300 uppercase tracking-widest mt-1">
                           Rounds Cleared
                         </div>
                       </div>
@@ -414,7 +467,7 @@ const Dashboard = () => {
 
                       <div className="space-y-2 sm:space-y-3">
                         <p className="text-[10px] sm:text-[11px] text-slate-400 text-center uppercase tracking-[0.08em] sm:tracking-[0.1em] font-bold font-mono px-4 sm:px-6">
-                          Please standby for further instructions. 
+                          Please standby for further instructions.
                           GLUG will process your performance data
                           shortly.
                         </p>

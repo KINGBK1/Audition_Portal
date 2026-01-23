@@ -163,6 +163,7 @@ export default function Home() {
                   <div className="ring-layer"></div>
                   <div className="ring-layer"></div>
                 </div>
+                    
                 <Image
                   src="glug.svg"
                   alt="GLUG Logo"
@@ -172,9 +173,17 @@ export default function Home() {
                   onClick={Signin}
                 />
 
-                {/* SciFi Button positioned to the right side of logo - desktop only */}
-                <div className="hidden md:block absolute top-2/5 left-full ml-8 -translate-y-1/2 scale-[0.35] origin-left">
-                  <SciFiButton  text="Join Us" />
+                {/* CONNECTOR LINE to top-right SciFi button */}
+                <div className="hidden md:block absolute bottom-full left-full mb-2 ml-2">
+                  {/* line going up and to the right */}
+                  <div className="w-[55px] h-[2px] bg-cyan-400 rotate-[-25deg] origin-left shadow-[0_0_12px_rgba(0,255,255,0.8)]" />
+                  {/* dot at the start of the line */}
+                  <div className="absolute -left-1 -bottom-1 w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_16px_rgba(0,255,255,1)]" />
+                </div>
+              
+                {/* SciFi Button positioned to the top right */}
+                <div className="hidden md:block absolute bottom-full left-full ml-14 mb-8 scale-[0.55] origin-bottom-left">
+                  <SciFiButton text="Click the Logo to Register" />
                 </div>
               </div>
 
@@ -212,7 +221,7 @@ export default function Home() {
             </div>
             <div className="text-[12px] text-right tracking-[0.2em] uppercase">
               <p>AUDITION PORTAL TERMINAL: V2.0.4</p>
-              <p>© 2026 GNU/LINUX USERS GROUP</p>
+              <p>© 2026 GNU/LINUX USERS&apos; GROUP</p>
             </div>
           </div>
         </div>

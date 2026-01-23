@@ -35,7 +35,7 @@ export function AdminQuestionDashboard() {
   const fetchQuestions = async () => {
     try {
       setLoading(true)
-      const response = await fetch("http://localhost:8080/api/quiz", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz`, {
         method: "GET",
         credentials: "include"
       });
@@ -64,7 +64,7 @@ export function AdminQuestionDashboard() {
       
       if (isEditing) {
         // Delete the old question first
-        const deleteResponse = await fetch(`http://localhost:8080/api/quiz/${currentQuestion.id}`, {
+        const deleteResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/${currentQuestion.id}`, {
           method: "DELETE",
           credentials: "include",
         });
@@ -75,7 +75,7 @@ export function AdminQuestionDashboard() {
       }
 
       // Create the new/updated question
-      const response = await fetch("http://localhost:8080/api/quiz/create", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/create`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -114,7 +114,7 @@ export function AdminQuestionDashboard() {
   // ✅ Delete question
   const handleDeleteQuestion = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/quiz/${id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/${id}`, {
         method: "DELETE",
         credentials: "include",
       });

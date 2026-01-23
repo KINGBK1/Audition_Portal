@@ -410,7 +410,7 @@ const Dashboard = () => {
                   <div className="text-center pb-6 sm:pb-8">
                     <div className="flex items-center justify-center mb-4 sm:mb-6">
                       <div className="bg-blue-500/10 border border-blue-500/50 text-blue-400 px-3 py-1.5 sm:px-4 sm:py-2 md:px-6 md:py-2 rounded-none text-[8px] sm:text-[9px] md:text-[10px] font-black uppercase tracking-[0.25em] sm:tracking-[0.3em] md:tracking-[0.4em]">
-                        LEVEL {userInfo?.round} COMPLETE
+                        LEVEL {(userInfo?.round || 1) - 1}  COMPLETE
                       </div>
                     </div>
 
@@ -454,7 +454,7 @@ const Dashboard = () => {
                             Concluded
                           </span>
                           <br />
-                          Round {userInfo?.round} Assessment
+                          Round {(userInfo?.round || 1) - 1} Assessment
                         </p>
                       </div>
 

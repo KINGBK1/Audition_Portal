@@ -183,7 +183,7 @@ export default function Home() {
               
                 {/* SciFi Button positioned to the top right */}
                 <div className="hidden md:block absolute bottom-full left-full ml-14 mb-8 scale-[0.55] origin-bottom-left">
-                  <SciFiButton text="Click the Logo to Register" />
+                  <SciFiButton text="Join Us" />
                 </div>
               </div>
 

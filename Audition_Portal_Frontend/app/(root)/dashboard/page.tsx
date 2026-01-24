@@ -576,7 +576,7 @@ const Dashboard = () => {
                         <div className="space-y-2 sm:space-y-3 p-1">
                           {[
                             "45:00 MINUTE DURATION",
-                            "10 SYSTEM QUESTIONS",
+                            "14 SYSTEM QUESTIONS",
                             "BINARY SCORING (1/0)",
                             "ZERO PENALTY PROTOCOL",
                           ].map((rule) => (

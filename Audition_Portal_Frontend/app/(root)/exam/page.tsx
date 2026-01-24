@@ -383,7 +383,7 @@ const Exam = () => {
         // Show warning instead of immediate submit
         setSecurityWarningType('tab');
         setShowSecurityWarning(true);
-        setSecurityWarningTimer(5);
+        setSecurityWarningTimer(10);
         
         // Clear any existing timer
         if (securityTimerRef.current) {
@@ -391,7 +391,7 @@ const Exam = () => {
         }
         
         // Start countdown
-        let timeRemaining = 5;
+        let timeRemaining = 10;
         securityTimerRef.current = setInterval(() => {
           timeRemaining -= 1;
           console.log('Security countdown:', timeRemaining);
@@ -421,7 +421,7 @@ const Exam = () => {
           securityTimerRef.current = null;
         }
         setShowSecurityWarning(false);
-        setSecurityWarningTimer(5);
+        setSecurityWarningTimer(10);
         toast({
           className: "dark",
           variant: "default",
@@ -440,7 +440,7 @@ const Exam = () => {
           
           setSecurityWarningType('window');
           setShowSecurityWarning(true);
-          setSecurityWarningTimer(5);
+          setSecurityWarningTimer(10);
           
           // Clear any existing timer
           if (securityTimerRef.current) {
@@ -448,7 +448,7 @@ const Exam = () => {
           }
           
           // Start countdown
-          let timeRemaining = 5;
+          let timeRemaining = 10;
           securityTimerRef.current = setInterval(() => {
             timeRemaining -= 1;
             console.log('Security countdown:', timeRemaining);

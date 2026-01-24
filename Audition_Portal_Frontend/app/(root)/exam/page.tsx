@@ -67,12 +67,12 @@ const Exam = () => {
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [submitConfirmText, setSubmitConfirmText] = useState("");
   const [showFullscreenWarning, setShowFullscreenWarning] = useState(false);
-  const [fullscreenWarningTimer, setFullscreenWarningTimer] = useState(5);
+  const [fullscreenWarningTimer, setFullscreenWarningTimer] = useState(10);
   const fullscreenTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
   const isAutoSubmittingRef = useRef(false);
   const [showSecurityWarning, setShowSecurityWarning] = useState(false);
-  const [securityWarningTimer, setSecurityWarningTimer] = useState(5);
+  const [securityWarningTimer, setSecurityWarningTimer] = useState(10);
   const [securityWarningType, setSecurityWarningType] = useState<'tab' | 'navigation' | 'window'>('tab');
   const securityTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -288,7 +288,7 @@ const Exam = () => {
       // Show warning instead of immediate submit
       setSecurityWarningType('navigation');
       setShowSecurityWarning(true);
-      setSecurityWarningTimer(5);
+      setSecurityWarningTimer(10);
       
       // Clear any existing timer
       if (securityTimerRef.current) {
@@ -296,7 +296,7 @@ const Exam = () => {
       }
       
       // Start countdown
-      let timeRemaining = 5;
+      let timeRemaining = 10;
       securityTimerRef.current = setInterval(() => {
         timeRemaining -= 1;
         console.log('Security countdown:', timeRemaining);
@@ -327,7 +327,7 @@ const Exam = () => {
         // User exited fullscreen
         console.log('User exited fullscreen - starting warning');
         setShowFullscreenWarning(true);
-        setFullscreenWarningTimer(5);
+        setFullscreenWarningTimer(10);
         
         // Clear any existing timer
         if (fullscreenTimerRef.current) {
@@ -335,7 +335,7 @@ const Exam = () => {
         }
         
         // Start countdown
-        let timeRemaining = 5;
+        let timeRemaining = 10;
         fullscreenTimerRef.current = setInterval(() => {
           timeRemaining -= 1;
           console.log('Countdown:', timeRemaining);
@@ -366,7 +366,7 @@ const Exam = () => {
           fullscreenTimerRef.current = null;
         }
         setShowFullscreenWarning(false);
-        setFullscreenWarningTimer(5);
+        setFullscreenWarningTimer(10);
         toast({
           className: "dark",
           variant: "default",
@@ -1017,7 +1017,7 @@ const Exam = () => {
                               </div>
                             )}
 
-                            <h2 className="text-lg sm:text-xl md:text-2xl font-bold leading-relaxed text-white uppercase">
+                            <h2 className="text-base sm:text-lg md:text-xl font-bold leading-relaxed text-white">
                               {questions[currentQuestionIndex].description}
                             </h2>
                           </div>
@@ -1070,7 +1070,7 @@ const Exam = () => {
                                           <div className="w-1.5 h-1.5 bg-black" />
                                         )}
                                       </div>
-                                      <span className="text-sm font-black uppercase">
+                                      <span className="text-sm font-black">
                                         {option.text}
                                       </span>
                                     </label>
@@ -1079,8 +1079,8 @@ const Exam = () => {
                               </div>
                             ) : (
                               <textarea
-                                className="w-full h-48 sm:h-64 bg-background/40 border border-slate-800 p-4 sm:p-6 text-white focus:outline-none focus:border-blue-500 text-xs sm:text-sm uppercase"
-                                placeholder="TYPE YOUR ANSWER HERE..."
+                                className="w-full h-48 sm:h-64 bg-background/40 border border-slate-800 p-4 sm:p-6 text-white focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
+                                placeholder="Type your answer here..."
                                 value={
                                   answers[questions[currentQuestionIndex].id]
                                     ?.description || ""
@@ -1304,7 +1304,7 @@ const Exam = () => {
                     securityTimerRef.current = null;
                   }
                   setShowSecurityWarning(false);
-                  setSecurityWarningTimer(5);
+                  setSecurityWarningTimer(10);
                   toast({
                     className: "dark",
                     variant: "default",

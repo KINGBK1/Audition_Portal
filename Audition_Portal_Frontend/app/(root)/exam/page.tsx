@@ -81,8 +81,25 @@ const Exam = () => {
     setSubmitConfirmText("");
   };
 
+  // Check if Round 1 deadline has passed
+  const isRoundOneEnded = () => {
+    const targetDate = "2026-01-31T23:59:59"; // Same date as dashboard timer
+    const difference = +new Date(targetDate) - +new Date();
+    return difference <= 0;
+  };
+
   // Fetch questions and options and user from the server
   useEffect(() => {
+    // Check if round 1 has ended before proceeding
+    if (isRoundOneEnded()) {
+      toast({
+        variant: "destructive",
+        description: "Round 1 has ended. You can no longer access the exam.",
+      });
+      router.push("/dashboard");
+      return;
+    }
+
     const fetchUser = async () => {
       try {
         const res = await fetch(

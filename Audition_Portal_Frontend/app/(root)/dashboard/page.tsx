@@ -24,7 +24,7 @@ import { panelLinks } from '@/components/panelLinks';
 
 const Dashboard = () => {
   const calculateTimeLeft = () => {
-    const targetDate = "2026-01-16"; // Your actual round end date
+    const targetDate = "2026-01-31T23:59:59"; // Your actual round end date
     const difference = +new Date(targetDate) - +new Date();
     let timeLeft = {
       days: 0,
@@ -148,6 +148,9 @@ const Dashboard = () => {
   const isRoundThreeOrHigher = userInfo?.round && userInfo.round >= 3;
   const showStartButton = !userInfo?.hasGivenExam;
   const [panel, setPanel] = useState<number | null>(null);
+  
+  // Check if timer has expired (all values are 0)
+  const isTimerExpired = timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0;
 
   const handleRoundNavigation = () => {
     if (userInfo?.round === 2) {
@@ -557,15 +560,16 @@ const Dashboard = () => {
                   </p>
 
                   <Button
-                    onClick={() => push("/exam")}
+                    onClick={() => !isTimerExpired && push("/exam")}
+                    disabled={isTimerExpired}
                     className={cn(
-                      "w-full h-11 sm:h-12 md:h-14 text-[12px] sm:text-[14px] md:text-[16px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] md:tracking-[0.3em] transition-colors rounded-none cursor-pointer",
-                      "bg-[#f1f5f9] text-slate-950 hover:bg-white", // Sharp Off-white
-                      "animate-futuristic"
-
+                      "w-full h-11 sm:h-12 md:h-14 text-[12px] sm:text-[14px] md:text-[16px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] md:tracking-[0.3em] transition-colors rounded-none",
+                      isTimerExpired 
+                        ? "bg-slate-800 text-slate-500 cursor-not-allowed" 
+                        : "bg-[#f1f5f9] text-slate-950 hover:bg-white cursor-pointer animate-futuristic"
                     )}
                   >
-                    Start Test
+                    {isTimerExpired ? "Round 1 ended" : "Start Test"}
                   </Button>
                 </CardContent>
               </Card>

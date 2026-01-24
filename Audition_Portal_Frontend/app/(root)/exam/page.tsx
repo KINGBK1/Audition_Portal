@@ -165,7 +165,7 @@ const Exam = () => {
     initialize();
   }, [router]);
 
-  const handleFinalSubmit = async () => {
+  const handleFinalSubmit = async (submissionReason: 'manual' | 'timeout' | 'violation' = 'manual') => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
@@ -195,6 +195,9 @@ const Exam = () => {
         throw new Error(data?.message || "Failed to submit exam");
       }
 
+      // Store submission reason in sessionStorage
+      sessionStorage.setItem('examSubmissionReason', submissionReason);
+
       toast({
         className: "dark",
         variant: "default",
@@ -222,7 +225,7 @@ const Exam = () => {
     }
   };
 
-  const handleAutoSubmit = async () => {
+  const handleAutoSubmit = async (reason: 'timeout' | 'violation' = 'violation') => {
     if (isExamStarted && !isAutoSubmittingRef.current) {
       console.log('Auto-submitting exam...');
       isAutoSubmittingRef.current = true;
@@ -231,7 +234,7 @@ const Exam = () => {
       // Store in sessionStorage to prevent re-entry
       sessionStorage.setItem('examAutoSubmitted', 'true');
       
-      await handleFinalSubmit();
+      await handleFinalSubmit(reason);
     }
   };
 
@@ -251,7 +254,7 @@ const Exam = () => {
         setTimeLeft((prevTime) => {
           if (prevTime <= 1) {
             clearInterval(timer!); // Stop timer when time is up
-            handleAutoSubmit();
+            handleAutoSubmit('timeout');
             return 0;
           }
           return prevTime - 1;
@@ -1191,7 +1194,7 @@ const Exam = () => {
               </Button>
               <Button
                 disabled={submitConfirmText !== "SUBMIT"}
-                onClick={handleFinalSubmit}
+                onClick={() => handleFinalSubmit('manual')}
                 className={cn(
                   "flex-1 h-14 rounded-none font-black uppercase text-xs tracking-[0.1em] transition-all",
                   submitConfirmText === "SUBMIT"

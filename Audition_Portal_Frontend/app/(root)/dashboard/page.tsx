@@ -152,6 +152,40 @@ const Dashboard = () => {
   // Check if timer has expired (all values are 0)
   const isTimerExpired = timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0;
 
+  // Get submission reason from sessionStorage
+  const [submissionReason, setSubmissionReason] = useState<'manual' | 'timeout' | 'violation' | null>(null);
+
+  useEffect(() => {
+    if (hasCompletedQuiz) {
+      const reason = sessionStorage.getItem('examSubmissionReason') as 'manual' | 'timeout' | 'violation' | null;
+      setSubmissionReason(reason);
+    }
+  }, [hasCompletedQuiz]);
+
+  // Get submission message based on reason
+  const getSubmissionMessage = () => {
+    switch (submissionReason) {
+      case 'violation':
+        return {
+          primary: 'Due to security violation, your exam was',
+          highlight: 'auto-submitted',
+        };
+      case 'timeout':
+        return {
+          primary: 'Your 45-minute session has',
+          highlight: 'successfully timed out',
+        };
+      case 'manual':
+      default:
+        return {
+          primary: 'Your exam has been',
+          highlight: 'successfully submitted',
+        };
+    }
+  };
+
+  const submissionMessage = getSubmissionMessage();
+
   const handleRoundNavigation = () => {
     if (userInfo?.round === 2) {
       push(`/exam/round2`);
@@ -270,8 +304,8 @@ const Dashboard = () => {
 
                   <div className="space-y-4 sm:space-y-5 font-mono">
                     <p className="text-slate-400 text-xs sm:text-sm leading-relaxed uppercase tracking-[0.1em] sm:tracking-[0.15em] font-bold px-2 sm:px-4">
-                      Your 45-minute session has{" "}
-                      <span className="text-white">successfully timed out</span>{" "}
+                      {submissionMessage.primary}{" "}
+                      <span className="text-white">{submissionMessage.highlight}</span>{" "}
                       and all responses have been saved.
                     </p>
                     <p className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-[0.15em] sm:tracking-[0.2em] leading-relaxed max-w-xs mx-auto px-2">

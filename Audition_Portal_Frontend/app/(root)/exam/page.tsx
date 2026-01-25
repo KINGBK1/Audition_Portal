@@ -280,20 +280,22 @@ const Exam = () => {
     window.history.pushState(null, '', window.location.href);
     
     const handlePopState = (e: PopStateEvent) => {
-      console.log('Back button pressed - showing warning');
+      console.log('Back button pressed - checking if warning already active');
       e.preventDefault();
       // Push state again to prevent going back
       window.history.pushState(null, '', window.location.href);
       
+      // Don't restart timer if already running
+      if (securityTimerRef.current) {
+        console.log('Timer already running, ignoring duplicate trigger');
+        return;
+      }
+      
+      console.log('Starting new warning');
       // Show warning instead of immediate submit
       setSecurityWarningType('navigation');
       setShowSecurityWarning(true);
       setSecurityWarningTimer(10);
-      
-      // Clear any existing timer
-      if (securityTimerRef.current) {
-        clearInterval(securityTimerRef.current);
-      }
       
       // Start countdown
       let timeRemaining = 10;
@@ -378,17 +380,19 @@ const Exam = () => {
     const handleVisibilityChange = () => {
       console.log('Visibility changed:', document.visibilityState);
       if (document.visibilityState === "hidden") {
-        console.log('Tab switched - showing warning');
+        console.log('Tab switched - checking if warning already active');
         
+        // Don't restart timer if already running
+        if (securityTimerRef.current) {
+          console.log('Timer already running, ignoring duplicate trigger');
+          return;
+        }
+        
+        console.log('Starting new warning');
         // Show warning instead of immediate submit
         setSecurityWarningType('tab');
         setShowSecurityWarning(true);
         setSecurityWarningTimer(10);
-        
-        // Clear any existing timer
-        if (securityTimerRef.current) {
-          clearInterval(securityTimerRef.current);
-        }
         
         // Start countdown
         let timeRemaining = 10;
@@ -431,21 +435,23 @@ const Exam = () => {
     };
 
     const handleWindowBlur = () => {
-      console.log('Window blur - showing warning');
+      console.log('Window blur - checking conditions');
       
       // Use a small delay to avoid false positives from modal dialogs
       setTimeout(() => {
         if (document.visibilityState === "hidden" || !document.hasFocus()) {
-          console.log('Confirmed window blur - showing warning');
+          console.log('Confirmed window blur - checking if warning already active');
           
+          // Don't restart timer if already running
+          if (securityTimerRef.current) {
+            console.log('Timer already running, ignoring duplicate trigger');
+            return;
+          }
+          
+          console.log('Starting new warning');
           setSecurityWarningType('window');
           setShowSecurityWarning(true);
           setSecurityWarningTimer(10);
-          
-          // Clear any existing timer
-          if (securityTimerRef.current) {
-            clearInterval(securityTimerRef.current);
-          }
           
           // Start countdown
           let timeRemaining = 10;
@@ -999,7 +1005,7 @@ const Exam = () => {
                           <div className="space-y-4 sm:space-y-6">
                             <div className="flex items-center justify-between border-b border-slate-800 pb-3 sm:pb-4 flex-wrap gap-2">
                               <span className="text-[10px] sm:text-[11px] text-blue-500 tracking-[0.2em] sm:tracking-[0.3em] uppercase font-black">
-                                QUESTION // {questions[currentQuestionIndex].id}
+                                QUESTION // {currentQuestionIndex + 1}
                               </span>
                               {getQuestionTypeBadge(
                                 questions[currentQuestionIndex].type

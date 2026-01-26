@@ -73,8 +73,11 @@ const Exam = () => {
   const isAutoSubmittingRef = useRef(false);
   const [showSecurityWarning, setShowSecurityWarning] = useState(false);
   const [securityWarningTimer, setSecurityWarningTimer] = useState(10);
-  const [securityWarningType, setSecurityWarningType] = useState<'tab' | 'navigation' | 'window'>('tab');
+  const [securityWarningType, setSecurityWarningType] = useState<
+    "tab" | "navigation" | "window"
+  >("tab");
   const securityTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const answersRef = useRef(answers);
 
   const openSubmitModal = () => {
     setShowSubmitModal(true);
@@ -88,6 +91,10 @@ const Exam = () => {
     return difference <= 0;
   };
 
+  // This keeps the ref perfectly in sync with the state
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
   // Fetch questions and options and user from the server
   useEffect(() => {
     // Check if round 1 has ended before proceeding
@@ -107,10 +114,10 @@ const Exam = () => {
           {
             method: "GET",
             credentials: "include",
-          }
+          },
         );
         const user = await res.json();
-        
+
         if (user.hasGivenExam) {
           toast({
             variant: "destructive",
@@ -120,7 +127,7 @@ const Exam = () => {
           return true; // Exam already given
         } else {
           // User hasn't given exam according to server, clear any stale flags
-          sessionStorage.removeItem('examAutoSubmitted');
+          sessionStorage.removeItem("examAutoSubmitted");
           return false; // Can proceed with exam
         }
       } catch (e) {
@@ -131,7 +138,7 @@ const Exam = () => {
         return true; // Block on error
       }
     };
-    
+
     const fetchQuestions = async () => {
       setIsLoadingQuestions(true);
       try {
@@ -140,7 +147,7 @@ const Exam = () => {
           {
             method: "GET",
             credentials: "include",
-          }
+          },
         );
 
         const data: any = await res.json();
@@ -154,28 +161,33 @@ const Exam = () => {
         setIsLoadingQuestions(false);
       }
     };
-    
+
     const initialize = async () => {
       const examGiven = await fetchUser();
       if (!examGiven) {
         await fetchQuestions();
       }
     };
-    
+
     initialize();
   }, [router]);
 
-  const handleFinalSubmit = async (submissionReason: 'manual' | 'timeout' | 'violation' = 'manual') => {
+  const handleFinalSubmit = async (
+    submissionReason: "manual" | "timeout" | "violation" = "manual",
+  ) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
     try {
-      const formattedAnswers = Object.entries(answers).map(
+      // USE THE REF HERE instead of the 'answers' state
+      const currentAnswers = answersRef.current;
+
+      const formattedAnswers = Object.entries(currentAnswers).map(
         ([questionId, answer]) => ({
           questionId: Number(questionId),
           option: answer.optionId ? { id: answer.optionId } : undefined,
           ans: answer.description || "",
-        })
+        }),
       );
 
       const response = await fetch(
@@ -185,8 +197,10 @@ const Exam = () => {
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({ answers: formattedAnswers }),
-        }
+          keepalive: true,
+        },
       );
+      // ... rest of your logic
 
       const data = await response.json();
       console.log("submit response:", response.status, data);
@@ -196,7 +210,7 @@ const Exam = () => {
       }
 
       // Store submission reason in sessionStorage
-      sessionStorage.setItem('examSubmissionReason', submissionReason);
+      sessionStorage.setItem("examSubmissionReason", submissionReason);
 
       toast({
         className: "dark",
@@ -225,15 +239,17 @@ const Exam = () => {
     }
   };
 
-  const handleAutoSubmit = async (reason: 'timeout' | 'violation' = 'violation') => {
+  const handleAutoSubmit = async (
+    reason: "timeout" | "violation" = "violation",
+  ) => {
     if (isExamStarted && !isAutoSubmittingRef.current) {
-      console.log('Auto-submitting exam...');
+      console.log("Auto-submitting exam...");
       isAutoSubmittingRef.current = true;
       setHasAutoSubmitted(true);
-      
+
       // Store in sessionStorage to prevent re-entry
-      sessionStorage.setItem('examAutoSubmitted', 'true');
-      
+      sessionStorage.setItem("examAutoSubmitted", "true");
+
       await handleFinalSubmit(reason);
     }
   };
@@ -254,7 +270,7 @@ const Exam = () => {
         setTimeLeft((prevTime) => {
           if (prevTime <= 1) {
             clearInterval(timer!); // Stop timer when time is up
-            handleAutoSubmit('timeout');
+            handleAutoSubmit("timeout");
             return 0;
           }
           return prevTime - 1;
@@ -273,38 +289,38 @@ const Exam = () => {
 
     // Prevent back navigation
     const preventBackNavigation = () => {
-      window.history.pushState(null, '', window.location.href);
+      window.history.pushState(null, "", window.location.href);
     };
-    
+
     // Push initial state
-    window.history.pushState(null, '', window.location.href);
-    
+    window.history.pushState(null, "", window.location.href);
+
     const handlePopState = (e: PopStateEvent) => {
-      console.log('Back button pressed - checking if warning already active');
+      console.log("Back button pressed - checking if warning already active");
       e.preventDefault();
       // Push state again to prevent going back
-      window.history.pushState(null, '', window.location.href);
-      
+      window.history.pushState(null, "", window.location.href);
+
       // Don't restart timer if already running
       if (securityTimerRef.current) {
-        console.log('Timer already running, ignoring duplicate trigger');
+        console.log("Timer already running, ignoring duplicate trigger");
         return;
       }
-      
-      console.log('Starting new warning');
+
+      console.log("Starting new warning");
       // Show warning instead of immediate submit
-      setSecurityWarningType('navigation');
+      setSecurityWarningType("navigation");
       setShowSecurityWarning(true);
       setSecurityWarningTimer(10);
-      
+
       // Start countdown
       let timeRemaining = 10;
       securityTimerRef.current = setInterval(() => {
         timeRemaining -= 1;
-        console.log('Security countdown:', timeRemaining);
-        
+        console.log("Security countdown:", timeRemaining);
+
         if (timeRemaining <= 0) {
-          console.log('Time up - auto submitting');
+          console.log("Time up - auto submitting");
           if (securityTimerRef.current) {
             clearInterval(securityTimerRef.current);
             securityTimerRef.current = null;
@@ -323,28 +339,28 @@ const Exam = () => {
     };
 
     const handleFullscreenChange = () => {
-      console.log('Fullscreen changed:', document.fullscreenElement);
-      
+      console.log("Fullscreen changed:", document.fullscreenElement);
+
       if (!document.fullscreenElement) {
         // User exited fullscreen
-        console.log('User exited fullscreen - starting warning');
+        console.log("User exited fullscreen - starting warning");
         setShowFullscreenWarning(true);
         setFullscreenWarningTimer(10);
-        
+
         // Clear any existing timer
         if (fullscreenTimerRef.current) {
           clearInterval(fullscreenTimerRef.current);
         }
-        
+
         // Start countdown
         let timeRemaining = 10;
         fullscreenTimerRef.current = setInterval(() => {
           timeRemaining -= 1;
-          console.log('Countdown:', timeRemaining);
-          
+          console.log("Countdown:", timeRemaining);
+
           if (timeRemaining <= 0) {
             // Time's up, auto-submit
-            console.log('Time up - auto submitting');
+            console.log("Time up - auto submitting");
             if (fullscreenTimerRef.current) {
               clearInterval(fullscreenTimerRef.current);
               fullscreenTimerRef.current = null;
@@ -353,7 +369,8 @@ const Exam = () => {
             toast({
               className: "dark",
               variant: "destructive",
-              description: "Exam auto-submitted due to exiting fullscreen mode.",
+              description:
+                "Exam auto-submitted due to exiting fullscreen mode.",
             });
             handleAutoSubmit();
           } else {
@@ -362,7 +379,7 @@ const Exam = () => {
         }, 1000);
       } else {
         // User returned to fullscreen
-        console.log('User returned to fullscreen');
+        console.log("User returned to fullscreen");
         if (fullscreenTimerRef.current) {
           clearInterval(fullscreenTimerRef.current);
           fullscreenTimerRef.current = null;
@@ -378,30 +395,30 @@ const Exam = () => {
     };
 
     const handleVisibilityChange = () => {
-      console.log('Visibility changed:', document.visibilityState);
+      console.log("Visibility changed:", document.visibilityState);
       if (document.visibilityState === "hidden") {
-        console.log('Tab switched - checking if warning already active');
-        
+        console.log("Tab switched - checking if warning already active");
+
         // Don't restart timer if already running
         if (securityTimerRef.current) {
-          console.log('Timer already running, ignoring duplicate trigger');
+          console.log("Timer already running, ignoring duplicate trigger");
           return;
         }
-        
-        console.log('Starting new warning');
+
+        console.log("Starting new warning");
         // Show warning instead of immediate submit
-        setSecurityWarningType('tab');
+        setSecurityWarningType("tab");
         setShowSecurityWarning(true);
         setSecurityWarningTimer(10);
-        
+
         // Start countdown
         let timeRemaining = 10;
         securityTimerRef.current = setInterval(() => {
           timeRemaining -= 1;
-          console.log('Security countdown:', timeRemaining);
-          
+          console.log("Security countdown:", timeRemaining);
+
           if (timeRemaining <= 0) {
-            console.log('Time up - auto submitting');
+            console.log("Time up - auto submitting");
             if (securityTimerRef.current) {
               clearInterval(securityTimerRef.current);
               securityTimerRef.current = null;
@@ -417,9 +434,12 @@ const Exam = () => {
             setSecurityWarningTimer(timeRemaining);
           }
         }, 1000);
-      } else if (document.visibilityState === "visible" && showSecurityWarning) {
+      } else if (
+        document.visibilityState === "visible" &&
+        showSecurityWarning
+      ) {
         // User returned to tab
-        console.log('User returned to tab');
+        console.log("User returned to tab");
         if (securityTimerRef.current) {
           clearInterval(securityTimerRef.current);
           securityTimerRef.current = null;
@@ -435,32 +455,34 @@ const Exam = () => {
     };
 
     const handleWindowBlur = () => {
-      console.log('Window blur - checking conditions');
-      
+      console.log("Window blur - checking conditions");
+
       // Use a small delay to avoid false positives from modal dialogs
       setTimeout(() => {
         if (document.visibilityState === "hidden" || !document.hasFocus()) {
-          console.log('Confirmed window blur - checking if warning already active');
-          
+          console.log(
+            "Confirmed window blur - checking if warning already active",
+          );
+
           // Don't restart timer if already running
           if (securityTimerRef.current) {
-            console.log('Timer already running, ignoring duplicate trigger');
+            console.log("Timer already running, ignoring duplicate trigger");
             return;
           }
-          
-          console.log('Starting new warning');
-          setSecurityWarningType('window');
+
+          console.log("Starting new warning");
+          setSecurityWarningType("window");
           setShowSecurityWarning(true);
           setSecurityWarningTimer(10);
-          
+
           // Start countdown
           let timeRemaining = 10;
           securityTimerRef.current = setInterval(() => {
             timeRemaining -= 1;
-            console.log('Security countdown:', timeRemaining);
-            
+            console.log("Security countdown:", timeRemaining);
+
             if (timeRemaining <= 0) {
-              console.log('Time up - auto submitting');
+              console.log("Time up - auto submitting");
               if (securityTimerRef.current) {
                 clearInterval(securityTimerRef.current);
                 securityTimerRef.current = null;
@@ -481,23 +503,23 @@ const Exam = () => {
     };
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      console.log('Before unload - auto submitting');
+      console.log("Before unload - auto submitting");
       e.preventDefault();
-      e.returnValue = ''; // Required for some browsers
+      e.returnValue = ""; // Required for some browsers
       handleAutoSubmit();
     };
-    
+
     const handlePageHide = () => {
-      console.log('Page hide - auto submitting');
+      console.log("Page hide - auto submitting");
       handleAutoSubmit();
     };
-    
+
     const handleFocusOut = () => {
-      console.log('Focus out event');
+      console.log("Focus out event");
       // Check if focus moved outside the window
       setTimeout(() => {
         if (!document.hasFocus()) {
-          console.log('Lost focus - auto submitting');
+          console.log("Lost focus - auto submitting");
           handleAutoSubmit();
         }
       }, 100);
@@ -529,7 +551,8 @@ const Exam = () => {
         toast({
           className: "dark",
           variant: "destructive",
-          description: "Inspect element and other shortcuts are disabled during the exam.",
+          description:
+            "Inspect element and other shortcuts are disabled during the exam.",
         });
       }
     };
@@ -556,19 +579,21 @@ const Exam = () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
       window.removeEventListener("pagehide", handlePageHide);
       window.removeEventListener("focusout", handleFocusOut);
-      
+
       if (fullscreenTimerRef.current) {
         clearInterval(fullscreenTimerRef.current);
         fullscreenTimerRef.current = null;
       }
-      
+
       if (securityTimerRef.current) {
         clearInterval(securityTimerRef.current);
         securityTimerRef.current = null;
       }
-      
+
       if (document.fullscreenElement) {
-        document.exitFullscreen().catch(err => console.error("Failed to exit fullscreen:", err));
+        document
+          .exitFullscreen()
+          .catch((err) => console.error("Failed to exit fullscreen:", err));
       }
     };
   }, [isExamStarted]);
@@ -686,15 +711,15 @@ const Exam = () => {
       router.push("/dashboard");
       return;
     }
-    
+
     setIsLoading(true);
     // Simulate loading
     await new Promise((resolve) => setTimeout(resolve, 1500));
-    
+
     // Request fullscreen mode
     try {
       await document.documentElement.requestFullscreen();
-      console.log('Entered fullscreen mode');
+      console.log("Entered fullscreen mode");
     } catch (err) {
       console.error("Failed to enter fullscreen:", err);
       toast({
@@ -705,10 +730,10 @@ const Exam = () => {
       setIsLoading(false);
       return; // Don't start exam if fullscreen failed
     }
-    
+
     setIsExamStarted(true);
     setIsLoading(false);
-    console.log('Exam started');
+    console.log("Exam started");
   };
 
   const submitAnswer = async (questionId: number) => {
@@ -732,7 +757,7 @@ const Exam = () => {
             ans: answer.description || "",
           }),
           credentials: "include",
-        }
+        },
       );
 
       if (!response.ok) {
@@ -921,7 +946,7 @@ const Exam = () => {
                   onClick={startExam}
                   className={cn(
                     "w-full md:w-auto h-14 px-12 rounded-none font-black uppercase tracking-[0.3em] text-[11px]",
-                    "bg-slate-100 text-slate-950 hover:bg-white animate-slow-breath"
+                    "bg-slate-100 text-slate-950 hover:bg-white animate-slow-breath",
                   )}
                 >
                   {isLoading ? "Synchronizing..." : "Initialize Test"}
@@ -951,7 +976,7 @@ const Exam = () => {
                   "text-lg sm:text-xl font-bold tabular-nums tracking-tighter",
                   timeLeft < 300
                     ? "text-red-500 animate-pulse"
-                    : "text-blue-400"
+                    : "text-blue-400",
                 )}
               >
                 {formatTime(timeLeft)}
@@ -977,10 +1002,10 @@ const Exam = () => {
                             isActive
                               ? "bg-blue-600 border-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]"
                               : // 2. Answered Question (Green)
-                              isAnswered
-                              ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
-                              : // 3. Unanswered/Default
-                                "border-slate-800 bg-card/40 text-slate-500 hover:border-slate-600"
+                                isAnswered
+                                ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
+                                : // 3. Unanswered/Default
+                                  "border-slate-800 bg-card/40 text-slate-500 hover:border-slate-600",
                           )}
                         >
                           {String(index + 1).padStart(2, "0")}
@@ -1008,7 +1033,7 @@ const Exam = () => {
                                 QUESTION // {currentQuestionIndex + 1}
                               </span>
                               {getQuestionTypeBadge(
-                                questions[currentQuestionIndex].type
+                                questions[currentQuestionIndex].type,
                               )}
                             </div>
 
@@ -1016,7 +1041,10 @@ const Exam = () => {
                             {questions[currentQuestionIndex].picture && (
                               <div className="w-full h-48 sm:h-64 md:h-80 bg-black/40 border border-slate-800 flex items-center justify-center overflow-hidden">
                                 <img
-                                  src={questions[currentQuestionIndex].picture ?? undefined}
+                                  src={
+                                    questions[currentQuestionIndex].picture ??
+                                    undefined
+                                  }
                                   alt="Question asset"
                                   className="max-w-full max-h-full object-contain p-2"
                                 />
@@ -1042,7 +1070,7 @@ const Exam = () => {
                                           questions[currentQuestionIndex].id
                                         ]?.optionId === option.id
                                           ? "bg-blue-600/10 border-blue-600 text-white"
-                                          : "bg-background/40 border-slate-800 text-slate-400"
+                                          : "bg-background/40 border-slate-800 text-slate-400",
                                       )}
                                     >
                                       <input
@@ -1056,7 +1084,7 @@ const Exam = () => {
                                         onChange={() =>
                                           handleOptionSelect(
                                             questions[currentQuestionIndex].id,
-                                            Number(option.id)
+                                            Number(option.id),
                                           )
                                         }
                                       />
@@ -1067,7 +1095,7 @@ const Exam = () => {
                                             questions[currentQuestionIndex].id
                                           ]?.optionId === option.id
                                             ? "border-blue-500 bg-blue-500"
-                                            : "border-slate-700"
+                                            : "border-slate-700",
                                         )}
                                       >
                                         {answers[
@@ -1080,7 +1108,7 @@ const Exam = () => {
                                         {option.text}
                                       </span>
                                     </label>
-                                  )
+                                  ),
                                 )}
                               </div>
                             ) : (
@@ -1094,7 +1122,7 @@ const Exam = () => {
                                 onChange={(e) =>
                                   handleDescriptiveAnswer(
                                     questions[currentQuestionIndex].id,
-                                    e.target.value
+                                    e.target.value,
                                   )
                                 }
                                 onCopy={handleCopyPaste}
@@ -1118,25 +1146,27 @@ const Exam = () => {
                         variant="outline"
                         onClick={() =>
                           setCurrentQuestionIndex((prev) =>
-                            Math.max(0, prev - 1)
+                            Math.max(0, prev - 1),
                           )
                         }
                         disabled={currentQuestionIndex === 0}
                         className="border-slate-700 text-slate-300 hover:text-white uppercase tracking-wider sm:tracking-widest text-[9px] sm:text-[10px] font-black px-3 sm:px-6 flex-1 md:flex-initial"
                       >
-                        <ChevronLeft className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" /> Previous
+                        <ChevronLeft className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />{" "}
+                        Previous
                       </Button>
                       <Button
                         variant="outline"
                         onClick={() =>
                           setCurrentQuestionIndex((prev) =>
-                            Math.min(questions.length - 1, prev + 1)
+                            Math.min(questions.length - 1, prev + 1),
                           )
                         }
                         disabled={currentQuestionIndex === questions.length - 1}
                         className="border-slate-700 text-slate-300 hover:text-white uppercase tracking-wider sm:tracking-widest text-[9px] sm:text-[10px] font-black px-3 sm:px-6 flex-1 md:flex-initial"
                       >
-                        Next <ChevronRight className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
+                        Next{" "}
+                        <ChevronRight className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
                     </div>
 
@@ -1159,8 +1189,8 @@ const Exam = () => {
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="max-w-md w-full border border-slate-800 bg-card p-6 sm:p-8 space-y-4 sm:space-y-6 shadow-2xl relative">
-
+            className="max-w-md w-full border border-slate-800 bg-card p-6 sm:p-8 space-y-4 sm:space-y-6 shadow-2xl relative"
+          >
             <div className="space-y-3 sm:space-y-4 text-center">
               <h3 className="text-xl sm:text-2xl font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-white">
                 Final Authorization
@@ -1200,12 +1230,12 @@ const Exam = () => {
               </Button>
               <Button
                 disabled={submitConfirmText !== "SUBMIT"}
-                onClick={() => handleFinalSubmit('manual')}
+                onClick={() => handleFinalSubmit("manual")}
                 className={cn(
                   "flex-1 h-14 rounded-none font-black uppercase text-xs tracking-[0.1em] transition-all",
                   submitConfirmText === "SUBMIT"
                     ? "bg-red-600 text-white shadow-[0_0_25px_rgba(220,38,38,0.4)] hover:bg-red-500"
-                    : "bg-red-950/30 text-red-900/50 border border-red-900/20"
+                    : "bg-red-950/30 text-red-900/50 border border-red-900/20",
                 )}
               >
                 Confirm Submission
@@ -1214,15 +1244,14 @@ const Exam = () => {
           </motion.div>
         </div>
       )}
-      
       {/* Fullscreen Warning Modal */}
       {showFullscreenWarning && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-red-950/80 backdrop-blur-md p-4 sm:p-6">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="max-w-md w-full border-4 border-red-500 bg-card p-6 sm:p-8 space-y-4 sm:space-y-6 shadow-2xl relative">
-
+            className="max-w-md w-full border-4 border-red-500 bg-card p-6 sm:p-8 space-y-4 sm:space-y-6 shadow-2xl relative"
+          >
             <div className="space-y-3 sm:space-y-4 text-center">
               <AlertTriangle className="w-16 h-16 sm:w-20 sm:h-20 text-red-500 mx-auto animate-pulse" />
               <h3 className="text-xl sm:text-2xl font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-red-500">
@@ -1242,13 +1271,13 @@ const Exam = () => {
                   Seconds Remaining
                 </p>
               </div>
-              
+
               <p className="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider">
                 Return to fullscreen immediately
                 <br />
                 <span className="text-red-500">or exam will auto-submit!</span>
               </p>
-              
+
               <Button
                 onClick={async () => {
                   try {
@@ -1265,24 +1294,24 @@ const Exam = () => {
           </motion.div>
         </div>
       )}
-      
       {/* Security Breach Warning Modal (Tab Switch / Navigation / Window Blur) */}
       {showSecurityWarning && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-red-950/80 backdrop-blur-md p-4 sm:p-6">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="max-w-md w-full border-4 border-red-500 bg-card p-6 sm:p-8 space-y-4 sm:space-y-6 shadow-2xl relative">
-
+            className="max-w-md w-full border-4 border-red-500 bg-card p-6 sm:p-8 space-y-4 sm:space-y-6 shadow-2xl relative"
+          >
             <div className="space-y-3 sm:space-y-4 text-center">
               <AlertTriangle className="w-16 h-16 sm:w-20 sm:h-20 text-red-500 mx-auto animate-pulse" />
               <h3 className="text-xl sm:text-2xl font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-red-500">
                 SECURITY VIOLATION
               </h3>
               <p className="text-[10px] sm:text-xs font-black uppercase tracking-wider sm:tracking-widest text-slate-300">
-                {securityWarningType === 'tab' && 'Tab switch detected'}
-                {securityWarningType === 'navigation' && 'Navigation attempt detected'}
-                {securityWarningType === 'window' && 'Window switch detected'}
+                {securityWarningType === "tab" && "Tab switch detected"}
+                {securityWarningType === "navigation" &&
+                  "Navigation attempt detected"}
+                {securityWarningType === "window" && "Window switch detected"}
               </p>
             </div>
 
@@ -1295,13 +1324,13 @@ const Exam = () => {
                   Seconds Remaining
                 </p>
               </div>
-              
+
               <p className="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider">
                 Return to exam immediately
                 <br />
                 <span className="text-red-500">or exam will auto-submit!</span>
               </p>
-              
+
               <Button
                 onClick={() => {
                   // Clear the timer and dismiss warning
@@ -1327,6 +1356,6 @@ const Exam = () => {
       )}
     </div>
   );
-};
+};;
 
 export default Exam;

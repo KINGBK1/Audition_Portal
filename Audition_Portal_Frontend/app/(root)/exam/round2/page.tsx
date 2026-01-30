@@ -29,6 +29,7 @@ export default function Round2() {
   const [isLoading, setIsLoading] = useState(true);
   const [isNewEntry, setIsNewEntry] = useState(true);
   const [isUnderReview, setIsUnderReview] = useState(false);
+  const [taskAlloted, setTaskAlloted] = useState<string>("");
 
   // URL Validation Logic
   const validateUrl = (url: string, type: "github" | "creative"): boolean => {
@@ -120,12 +121,14 @@ export default function Round2() {
           const [firstLine, secondLine] = storedLinks.split(/\r?\n/, 2);
           const review = round2Data.entry.review;
           const reviewPanel = round2Data.entry.panel;
+          const taskAlloted = round2Data.entry.taskAlloted;
 
           setTaskLink(firstLine || "");
           setGdLink(secondLine || "");
           setStatus(dbStatus || "incomplete");
           setIsNewEntry(false);
           setPanel(reviewPanel);
+          setTaskAlloted(taskAlloted || "");
 
           // Check review.forwarded status
           if (review) {
@@ -278,6 +281,61 @@ export default function Round2() {
             </span>
           </h1>
         </motion.div>
+
+        {/* TASK ALLOTED SECTION */}
+        {taskAlloted && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="w-full max-w-4xl mx-auto my-6"
+          >
+            <div className="relative border border-cyan-500/30 bg-gradient-to-br from-cyan-950/30 via-blue-950/20 to-purple-950/30 backdrop-blur-xl p-6 sm:p-8 rounded-none shadow-[0_0_40px_rgba(6,182,212,0.15)] overflow-hidden">
+              {/* Top accent bar */}
+              <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 shadow-[0_0_20px_rgba(6,182,212,0.6)]" />
+              
+              {/* Corner decorations */}
+              <div className="absolute top-0 left-0 w-3 h-3 border-l-2 border-t-2 border-cyan-400" />
+              <div className="absolute top-0 right-0 w-3 h-3 border-r-2 border-t-2 border-purple-400" />
+              <div className="absolute bottom-0 left-0 w-3 h-3 border-l-2 border-b-2 border-cyan-400" />
+              <div className="absolute bottom-0 right-0 w-3 h-3 border-r-2 border-b-2 border-purple-400" />
+
+              <div className="flex items-start gap-4 relative z-10">
+                <div className="flex-shrink-0 mt-1">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.5)]">
+                    <HiClock className="w-5 h-5 sm:w-6 sm:h-6 text-white animate-pulse" />
+                  </div>
+                </div>
+                
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-3">
+                    <h3 className="text-sm sm:text-base font-black uppercase tracking-[0.2em] text-cyan-300">
+                      TASK ALLOTED
+                    </h3>
+                    <Badge className="bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 rounded-none font-bold text-[10px]">
+                      ASSIGNED
+                    </Badge>
+                  </div>
+                  
+                  <div className="bg-black/40 border border-cyan-500/20 p-4 rounded-none">
+                    <p className="text-slate-200 text-sm sm:text-base leading-relaxed whitespace-pre-wrap break-words">
+                      {taskAlloted}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Animated background effect */}
+              <motion.div
+                animate={{
+                  opacity: [0.1, 0.2, 0.1],
+                }}
+                transition={{ duration: 3, repeat: Infinity }}
+                className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-purple-500/5 pointer-events-none"
+              />
+            </div>
+          </motion.div>
+        )}
 
         {/* MAIN CONTENT GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 md:gap-10 w-full my-4 sm:my-6 items-stretch">

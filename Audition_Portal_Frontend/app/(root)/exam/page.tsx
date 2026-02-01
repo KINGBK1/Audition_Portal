@@ -86,7 +86,7 @@ const Exam = () => {
 
   // Check if Round 1 deadline has passed
   const isRoundOneEnded = () => {
-    const targetDate = "2026-01-31T23:59:59"; // Same date as dashboard timer
+    const targetDate = "2026-02-03T23:59:59"; // Same date as dashboard timer
     const difference = +new Date(targetDate) - +new Date();
     return difference <= 0;
   };

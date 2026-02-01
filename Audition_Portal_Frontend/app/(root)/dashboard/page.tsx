@@ -24,7 +24,7 @@ import { panelLinks } from '@/components/panelLinks';
 
 const Dashboard = () => {
   const calculateTimeLeft = () => {
-    const targetDate = "2026-01-31T23:59:59"; // Your actual round end date
+    const targetDate = "2026-02-03T23:59:59"; // Your actual round end date
     const difference = +new Date(targetDate) - +new Date();
     let timeLeft = {
       days: 0,

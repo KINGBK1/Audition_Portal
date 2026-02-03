@@ -130,6 +130,13 @@ export default function Round2() {
           setPanel(reviewPanel);
           setTaskAlloted(taskAlloted || "");
 
+          // Redirect if no task is allotted
+          if (!taskAlloted || taskAlloted.trim() === "") {
+            toast.error("No task has been allotted yet");
+            router.push("/dashboard");
+            return;
+          }
+
           // Check review.forwarded status
           if (review) {
             if (review.forwarded === false) {
@@ -162,6 +169,7 @@ export default function Round2() {
 
   useEffect(() => {
     fetchUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSubmit = async () => {

@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react'
-import { CheckCircle2, ArrowRight, Trophy, Sparkles, Star } from 'lucide-react';
+import { CheckCircle2, ArrowRight, Trophy, Sparkles, Star, Clock } from 'lucide-react';
 import { panelLinks } from '@/components/panelLinks';
 
 const Dashboard = () => {
@@ -148,6 +148,8 @@ const Dashboard = () => {
   const isRoundThreeOrHigher = userInfo?.round && userInfo.round >= 3;
   const showStartButton = !userInfo?.hasGivenExam;
   const [panel, setPanel] = useState<number | null>(null);
+  const [taskAlloted, setTaskAlloted] = useState<string | null>(null);
+  const [isLoadingTask, setIsLoadingTask] = useState(false);
   
   // Check if timer has expired (all values are 0)
   const isTimerExpired = timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0;
@@ -187,15 +189,16 @@ const Dashboard = () => {
   const submissionMessage = getSubmissionMessage();
 
   const handleRoundNavigation = () => {
-    if (userInfo?.round === 2) {
+    if (userInfo?.round === 2 && taskAlloted) {
       push(`/exam/round2`);
     }
   };
 
 
-  // Fetch user's panel number
+  // Fetch user's panel number and task alloted
   const handleUserPanel = async () => {
     if (userInfo?.round === 2) {
+      setIsLoadingTask(true);
       try {
         const round2Res = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/round2/data`,
@@ -209,11 +212,15 @@ const Dashboard = () => {
           const round2Data = await round2Res.json();
           if (round2Data.entry) {
             const reviewPanel = round2Data.entry.panel;
+            const task = round2Data.entry.taskAlloted;
             setPanel(reviewPanel);
+            setTaskAlloted(task);
           }
         };
       } catch (error) {
         console.error("Error fetching Round 2 data:", error);
+      } finally {
+        setIsLoadingTask(false);
       }
     }
   }
@@ -222,6 +229,7 @@ const Dashboard = () => {
   if (userInfo?.round === 2) {
     handleUserPanel();
   }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [userInfo?.round]);
 
   return (
@@ -331,6 +339,109 @@ const Dashboard = () => {
               </div>
             </div>
           ) : isRoundTwo ? (
+            isLoadingTask ? (
+              <Loader />
+            ) : !taskAlloted ? (
+              <div className="flex items-center justify-center min-h-screen z-10 relative px-4 py-8 sm:py-0">
+                <div className="relative w-full max-w-2xl">
+                  {/* Hourglass Icon */}
+                  <div className="absolute -top-4 sm:-top-6 md:-top-8 left-1/2 transform -translate-x-1/2 z-20">
+                    <div className="relative">
+                      <Clock className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 text-blue-500 animate-pulse" />
+                    </div>
+                  </div>
+
+                  {/* Main Card */}
+                  <div className="border border-slate-800 bg-[#020617]/95 backdrop-blur-md w-full shadow-2xl relative rounded-none p-6 pt-12 sm:p-8 sm:pt-14 md:p-10 md:pt-16">
+                    {/* Signature Blue Top Line */}
+                    <div className="absolute top-0 left-0 w-full h-[2px] bg-blue-500" />
+
+                    <div className="text-center pb-6 sm:pb-8">
+                      <div className="flex items-center justify-center mb-4 sm:mb-6">
+                        <div className="bg-blue-500/10 border border-blue-500/50 text-blue-400 px-2 py-1 sm:px-3 sm:py-1.5 md:px-4 md:py-2 rounded-none text-[8px] sm:text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em]">
+                          ROUND 02 - PENDING
+                        </div>
+                      </div>
+
+                      <h2 className="text-2xl sm:text-3xl md:text-5xl font-light tracking-[0.08em] sm:tracking-[0.12em] md:tracking-[0.15em] text-white uppercase font-sans px-2">
+                        Task Assignment Pending
+                      </h2>
+
+                      <p className="text-[10px] sm:text-[11px] font-black tracking-[0.15em] sm:tracking-[0.2em] text-slate-400 mt-3 sm:mt-4 uppercase font-mono">
+                        Awaiting Task Allocation
+                      </p>
+                    </div>
+
+                    <div className="space-y-6 sm:space-y-8">
+                      {/* Stats */}
+                      <div className="grid grid-cols-2 border-y border-slate-800/50 py-6 sm:py-8 font-mono">
+                        <div className="border-r border-slate-800/50 text-center">
+                          <div className="text-3xl sm:text-4xl md:text-5xl font-black text-white pb-2 sm:pb-3">
+                            02
+                          </div>
+                          <div className="text-[9px] sm:text-[10px] tracking-[0.2em] sm:tracking-[0.25em] md:tracking-[0.3em] text-slate-500 uppercase font-bold">
+                            Current Round
+                          </div>
+                        </div>
+                        <div className="text-center flex pt-4 flex-col justify-between items-center">
+                          <div className="text-xl sm:text-2xl md:text-3xl font-black text-slate-600 pb-1 sm:pb-2">
+                            PENDING
+                          </div>
+                          <div className="text-[9px] sm:text-[10px] tracking-[0.2em] sm:tracking-[0.25em] md:tracking-[0.3em] text-slate-500 uppercase font-bold">
+                            Task Status
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Message */}
+                      <div className="space-y-4 sm:space-y-6 pt-2">
+                        <p className="text-slate-400 text-[10px] sm:text-[11px] font-bold tracking-[0.15em] sm:tracking-[0.2em] leading-relaxed uppercase text-center px-2">
+                          Your Round 2 task will be assigned shortly
+                        </p>
+                        <p className="text-slate-500 text-[9px] sm:text-[10px] tracking-[0.15em] sm:tracking-[0.2em] leading-relaxed text-center max-w-md mx-auto px-2">
+                          Meanwhile, join your assigned WhatsApp panel below. 
+                          Once your task is allotted, you&apos;ll be able to proceed.
+                        </p>
+                      </div>
+
+                      {/* WhatsApp Panel Button */}
+                      <div className="pt-2">
+                        <button
+                          onClick={() => {
+                            if (panel && panelLinks[panel]) {
+                              window.open(panelLinks[panel], '_blank', 'noopener,noreferrer');
+                            } else {
+                              alert('Panel information not available yet');
+                            }
+                          }}
+                          disabled={!panel}
+                          className={cn(
+                            "w-full h-11 sm:h-12 md:h-14 flex items-center justify-center gap-3 sm:gap-4 font-black text-[11px] sm:text-[12px] md:text-[14px] uppercase tracking-[0.2em] sm:tracking-[0.25em] md:tracking-[0.3em] transition-all duration-300 rounded-none",
+                            panel
+                              ? "bg-green-500 hover:bg-green-600 text-white cursor-pointer"
+                              : "bg-slate-800 text-slate-600 cursor-not-allowed"
+                          )}
+                        >
+                          <FaWhatsapp className="text-xl sm:text-2xl" />
+                          <span>Join Round 2 Panel {panel ? panel : ""}</span>
+                        </button>
+                      </div>
+
+                      {/* Status Indicator */}
+                      <div className="pt-2 sm:pt-4">
+                        <div className="inline-flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-3 border border-blue-500/20 bg-blue-500/5 text-blue-400 font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] w-full justify-center">
+                          <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_#3b82f6]" />
+                          Status: Awaiting Task Allocation
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Background Glow */}
+                  <div className="absolute inset-0 -z-10 bg-blue-500/5 blur-[80px] sm:blur-[100px] md:blur-[120px] rounded-full" />
+                </div>
+              </div>
+            ) : (
             <div className="flex items-center justify-center min-h-screen z-10 relative px-4 py-8 sm:py-12">
               <div className="relative w-full max-w-2xl">
                 {/* Trophy Section: Responsive scaling and positioning */}
@@ -416,7 +527,13 @@ const Dashboard = () => {
                     {/* Action Button */}
                     <button
                       onClick={handleRoundNavigation}
-                      className="w-full bg-white text-black hover:bg-blue-600 hover:text-white font-black text-[10px] sm:text-[11px] md:text-[13px] uppercase tracking-[0.25em] sm:tracking-[0.3em] md:tracking-[0.4em] h-11 sm:h-12 md:h-14 transition-all duration-300 flex items-center justify-center gap-2 rounded-none"
+                      disabled={!taskAlloted}
+                      className={cn(
+                        "w-full font-black text-[10px] sm:text-[11px] md:text-[13px] uppercase tracking-[0.25em] sm:tracking-[0.3em] md:tracking-[0.4em] h-11 sm:h-12 md:h-14 transition-all duration-300 flex items-center justify-center gap-2 rounded-none",
+                        taskAlloted 
+                          ? "bg-white text-black hover:bg-blue-600 hover:text-white cursor-pointer" 
+                          : "bg-slate-800 text-slate-500 cursor-not-allowed"
+                      )}
                     >
                       <span>Initialize Round 02</span>
                       <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -428,6 +545,7 @@ const Dashboard = () => {
                 <div className="absolute inset-0 -z-10 bg-blue-500/5 blur-[60px] sm:blur-[80px] md:blur-[120px] rounded-full" />
               </div>
             </div>
+            )
           ) : isRoundThreeOrHigher ? (
             <div className="flex items-center justify-center min-h-screen z-10 relative px-4 py-8 sm:py-0">
               <div className="relative w-full max-w-2xl">
